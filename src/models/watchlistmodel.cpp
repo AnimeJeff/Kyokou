@@ -1,6 +1,11 @@
 #include "watchlistmodel.h"
 
 
+void WatchListModel::moveEnded(){
+    emit layoutChanged ();
+    save();
+}
+
 int WatchListModel::rowCount(const QModelIndex &parent) const
 {
     if (parent.isValid())
@@ -15,14 +20,13 @@ QVariant WatchListModel::data(const QModelIndex &index, int role) const
 
 //    if (index.row() < WATCHING || index.row() > DROPPED)return;
 
-    int i = m_currentList->at(index.row ());
 
     switch (role) {
     case TitleRole:
-        return m_list[i].title;
+        return m_currentList->at(index.row ())->title;
         break;
     case CoverRole:
-        return m_list[i].coverUrl;
+        return m_currentList->at(index.row ())->coverUrl;
         break;
     default:
         break;

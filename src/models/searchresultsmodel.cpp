@@ -3,19 +3,13 @@
 
 
 
-int SearchResultsModel::rowCount(const QModelIndex &parent) const
-{
-
+int SearchResultsModel::rowCount(const QModelIndex &parent) const{
     if (parent.isValid())
         return 0;
-
-
     return mList.count ();
 }
 
-
-QVariant SearchResultsModel::data(const QModelIndex &index, int role) const
-{
+QVariant SearchResultsModel::data(const QModelIndex &index, int role) const{
     if (!index.isValid())
         return QVariant();
 

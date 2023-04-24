@@ -1,6 +1,7 @@
 #ifndef DOWNLOADMODEL_H
 #define DOWNLOADMODEL_H
 
+#include <QAbstractListModel>
 #include <QDir>
 #include <QObject>
 #include <QProcess>
@@ -14,11 +15,9 @@ class DownloadTask : public QObject,public QRunnable {
     Q_OBJECT
     QProcess* process;
 public:
-    explicit DownloadTask(const QString& videoName, const QString& folder, const QString& link, const QString& headers)
-        : m_videoName(videoName), m_folder(folder), m_link(link), m_headers(headers)
-    {
-    }
-
+    explicit DownloadTask(const QString& videoName, const QString& folder, const QString& link, const QString& headers,QObject* parent = nullptr)
+        : m_videoName(videoName), m_folder(folder), m_link(link), m_headers(headers),QObject(parent)
+    {}
     ~DownloadTask(){
         if (process->state() == QProcess::Running) {
             process->kill();
@@ -71,15 +70,15 @@ private:
     bool m_cancelled = false;
 };
 
-
-class DownloadModel: public QObject
+class DownloadModel: public QAbstractListModel
 {
     Q_OBJECT
 public:
-    DownloadModel(){
+    explicit DownloadModel(QObject *parent = nullptr): QAbstractListModel(parent){
+
         pool.setMaxThreadCount(4);
     }
-    QThreadPool pool;
+    QThreadPool pool{this};
     QVector<DownloadTask*> tasks;
 
     void downloadM3u8(QString videoName,const QString& folder,const QString& link,const QString& referer) {
@@ -88,7 +87,7 @@ public:
         QString headers = "authority:\"AUTHORITY\"|origin:\"https://REFERER\"|referer:\"https://REFERER/\"|user-agent:\"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36\"sec-ch-ua:\"Not A;Brand\";v=\"99\", \"Chromium\";v=\"102\", \"Google Chrome\";v=\"102\"";
         headers.replace("REFERER", referer.isEmpty() ? link.split("https://")[1].split("/")[0] : referer);
 
-        DownloadTask* task = new DownloadTask(videoName, folder, link, headers);
+        DownloadTask* task = new DownloadTask(videoName, folder, link, headers,this);
         connect(task, &DownloadTask::finished, task, &QObject::deleteLater);
         int index = tasks.size ();
         connect(task, &DownloadTask::finished, task, [&,index](){
@@ -121,6 +120,15 @@ public:
 
 
 
+
+    // QAbstractItemModel interface
+public:
+    int rowCount(const QModelIndex &parent) const{
+        return tasks.count ();
+    };
+    QVariant data(const QModelIndex &index, int role) const{
+        return QVariant();
+    };
 };
 
 #endif // DOWNLOADMODEL_H

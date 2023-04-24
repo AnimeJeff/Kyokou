@@ -1,6 +1,7 @@
 #ifndef SHOWRESPONSE_H
 #define SHOWRESPONSE_H
 #include "episode.h"
+#include "nlohmann/json.hpp"
 
 #include <QMetaType>
 
@@ -44,6 +45,21 @@ public:
         this->coverUrl=coverUrl;
         this->provider=provider;
     };
+    ShowResponse(nlohmann::json& jsonObject){
+        this->jsonObject = &jsonObject;
+        this->link = QString::fromStdString(jsonObject["link"].get<std::string>());
+        this->title = QString::fromStdString(jsonObject["title"].get<std::string>());
+        this->coverUrl = QString::fromStdString(jsonObject["cover"].get<std::string>());
+        this->provider = jsonObject["provider"].get<int>();
+        this->setLastWatchedIndex(jsonObject["lastWatchedIndex"].get<int>());
+        this->isInWatchList = true;
+        this->listType = jsonObject["listType"].get<int>();
+        if(this->listType < 0 || this->listType > 3){
+            qWarning()<<"Invalid list type.";
+            this->listType = 0;
+            jsonObject["listType"] = 0;
+        }
+    };
     ShowResponse(){};
     QString title = "";
     QString link = "";
@@ -82,11 +98,31 @@ public:
         return debug;
     }
     int getLastWatchedIndex() const {return lastWatchedIndex;}
-    void setLastWatchedIndex(int index) { lastWatchedIndex = index;}
+
+    void setLastWatchedIndex(int index) {
+        if(lastWatchedIndex==index)return;
+        lastWatchedIndex = index;
+        if(jsonObject){
+            (*jsonObject)["lastWatchedIndex"] = index;
+        }
+    }
+
+    void setListType(int listType){
+        if(this->listType==listType)return;
+        this->listType = listType;
+        if(jsonObject){
+            (*jsonObject)["listType"] = listType;
+        }
+    }
 
     friend class ShowResponseObject;
     friend class WatchListModel;
+    bool operator==(const ShowResponse& other) const {
+        return (title == other.title) && (link == other.link);
+    }
+    nlohmann::json* jsonObject;
 private:
+
     ShowResponseObject* object;
     bool isInWatchList = false;
     int lastWatchedIndex = -1;
@@ -96,6 +132,7 @@ private:
 class ShowResponseObject:public QObject{
     Q_OBJECT
     ShowResponse show;
+    ShowResponse* watchListShow;
     Q_PROPERTY(QString title READ title NOTIFY showChanged);
     Q_PROPERTY(QString coverUrl READ coverUrl NOTIFY showChanged);
     Q_PROPERTY(QString desc READ desc NOTIFY showChanged);
@@ -122,8 +159,9 @@ public:
         show.isInWatchList = isInWatchList;
         emit showPropertyChanged();
     }
+
     inline void setListType(int listType) {
-        show.listType = listType;
+        show.setListType (listType);
         emit listTypeChanged();
     }
 
@@ -133,11 +171,13 @@ public:
         emit showChanged();
     }
 
-    inline ShowResponse* getShow() {return &show;}
-
-    inline void emitPropertyChanged(){
-        emit showPropertyChanged ();
+    inline void setWatchListShow(ShowResponse* show) {
+        this->watchListShow = show;
     }
+
+    inline ShowResponse getShow() const {return show;}
+
+public:
     inline QString title() const {return show.title;}
     inline QString coverUrl() const {return show.coverUrl;}
     inline bool hasShow() const {return !show.title.isEmpty ();}
@@ -153,6 +193,7 @@ public:
     inline QString link() const {return show.link;}
     inline QVector<Episode> episodes() const {return show.episodes;}
     inline int listType() const {return show.listType;}
+    inline int provider() const {return show.provider;}
 signals:
     void showChanged(void);
     void showPropertyChanged(void);

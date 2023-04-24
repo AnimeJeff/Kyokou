@@ -30,11 +30,6 @@
 #define QS(str) QString::fromStdString(str)
 
 
-
-
-
-
-
 class Functions{
 public:
     static void httpsIfy(std::string& text) {

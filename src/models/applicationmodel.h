@@ -18,11 +18,11 @@ class ApplicationModel : public QObject
     Q_PROPERTY(WatchListModel* watchList READ watchListModel CONSTANT)
 //    Q_PROPERTY(WatchListModel* watchList READ watchListModel CONSTANT)
 
-    EpisodeListModel m_episodeListModel;
-    PlaylistModel m_playlistModel;
-    SearchResultsModel m_searchResultsModel;
-    WatchListModel m_watchListModel;
-    DownloadModel m_downloadModel;
+    EpisodeListModel m_episodeListModel{this};
+    PlaylistModel m_playlistModel{this};
+    SearchResultsModel m_searchResultsModel{this};
+    WatchListModel m_watchListModel{this};
+    DownloadModel m_downloadModel{this};
 public:
     static ApplicationModel& instance()
     {
@@ -32,13 +32,7 @@ public:
     Q_INVOKABLE void loadSourceFromList(int index){
         emit loadingStart();
         int watchListIndex = -1;
-        if(Global::instance ().currentShowObject ()->isInWatchList ()){
-            watchListIndex = m_watchListModel.currentShowListIndex ();
-        }
-        m_playlistModel.syncList (watchListIndex);
-        if(m_episodeListModel.getIsReversed()){
-            index = Global::instance ().currentShowObject()->episodes().count () - index - 1;
-        }
+        m_playlistModel.syncList (m_watchListModel.getShowInList (Global::instance().currentShowObject ()->getShow ()));
         m_playlistModel.loadSource (index);
         emit loadingEnd ();
     }
@@ -59,7 +53,7 @@ private:
     explicit ApplicationModel(QObject *parent = nullptr): QObject(parent){
         connect(&m_watchListModel,&WatchListModel::detailsRequested,&m_searchResultsModel,&SearchResultsModel::getDetails);
 
-        connect(&m_playlistModel,&PlaylistModel::setLastWatchedIndex,&m_watchListModel,&WatchListModel::updateLastWatchedIndex);
+        connect(&m_playlistModel,&PlaylistModel::updatedLastWatchedIndex,&m_watchListModel,&WatchListModel::save);
 
         connect(&m_watchListModel,&WatchListModel::indexMoved,&m_playlistModel,&PlaylistModel::changeWatchListIndex);
 

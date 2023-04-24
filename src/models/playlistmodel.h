@@ -8,6 +8,8 @@
 #include <QtConcurrent>
 
 
+
+
 class PlaylistModel : public QAbstractListModel
 {
     Q_OBJECT
@@ -23,15 +25,15 @@ private:
     ShowParser *currentProvider;
     QString m_currentShowLink;
     QString m_currentShowName;
-    int m_watchListIndex = -1;
+//    int m_watchListIndex = -1;
     int playlistIndex = -1;
     QFile* m_historyFile;
-    QFutureWatcher<QString> m_watcher{};
+    QFutureWatcher<QString> m_watcher;
     QVector<Episode> m_playlist;
     bool online = true;
     QString m_onLaunchFile;
     QString m_onLaunchPlaylist;
-
+    ShowResponse* m_watchListShowItem;
     QString currentItemName() const{
         if(playlistIndex<0 || playlistIndex>m_playlist.size ())return "";
         const Episode& currentItem = m_playlist[playlistIndex];
@@ -51,13 +53,16 @@ private:
 
 public:
     explicit PlaylistModel(QObject *parent = nullptr):QAbstractListModel(parent){
-        connect(&m_watcher, &QFutureWatcher<QString>::finished,this,[&]() {
-            QString results = m_watcher.future ().result ();
-            emit sourceFetched(results);
-            loading = false;
-            emit loadingChanged();
-        });
-    };
+            //        connect(&m_watcher, &QFutureWatcher<QString>::finished,this,[&]() {
+            ////            try{
+            ////                QString results = m_watcher.future ().result ();
+            ////                emit sourceFetched(results);
+            ////            }catch(std::exception& e){
+            ////                qCritical()<<e.what ();
+            ////            }
+
+            //        });
+        };
 
     ~PlaylistModel(){
         delete m_historyFile;
@@ -66,7 +71,6 @@ public:
     void setOnLaunchFile(QString file){
         m_onLaunchFile = file;
     }
-
     QString getPlayOnLaunchFile(){
         return m_onLaunchFile;
     }
@@ -148,21 +152,12 @@ public:
         }
     }
 
-    inline bool hasNextItem(){
-        return playlistIndex < m_playlist.size ()-1;
-    }
 
-    inline bool hasPrecedingItem(){
-        return playlistIndex>0;
-    }
-
-    inline void playNextItem(){
-        loadOffset (1);
-    }
-
-    inline void playPrecedingItem(){
-        loadOffset (-1);
-    }
+    Q_INVOKABLE void loadOffset(int offset);
+    bool hasNextItem();
+    bool hasPrecedingItem();
+    void playNextItem();
+    void playPrecedingItem();
 
     Q_INVOKABLE void loadSource(int index){
         loading = true;
@@ -170,18 +165,25 @@ public:
         this->playlistIndex = index;
         emit currentIndexChanged();
         if(online){
-            if(m_watchListIndex!=-1){
-                emit setLastWatchedIndex(m_watchListIndex,index);
+            if(m_watchListShowItem){
+                m_watchListShowItem->setLastWatchedIndex (index);
+                emit updatedLastWatchedIndex();
             }
             if(m_currentShowLink == Global::instance().currentShowObject ()->link ()){
                 Global::instance().currentShowObject ()->setLastWatchedIndex (index);
             }
+//            QFuture<void> future = QtConcurrent::run([&]() {
 
-            m_watcher.setFuture (QtConcurrent::run ([&](){
-                QVector<VideoServer> servers = currentProvider->loadServers (&m_playlist[playlistIndex]);
-                currentProvider->extractSource (&servers.first ());
-                return servers.first ().source;
-            }));
+//            });
+            try{
+                QVector<VideoServer> servers = currentProvider->loadServers (m_playlist[playlistIndex]);
+                currentProvider->extractSource(servers[0]);
+                emit sourceFetched (servers[0].source);
+                loading = false;
+                emit loadingChanged();
+            }catch(const std::exception& e){
+                qCritical() << e.what ();
+            }
 
         }else{
             emit sourceFetched(m_playlist[playlistIndex].localPath);
@@ -195,32 +197,30 @@ public:
         }
     }
 
-    Q_INVOKABLE void loadOffset(int offset){
-        playlistIndex += offset;
-        loadSource(playlistIndex);
-    }
+
 
 signals:
     void loadingChanged(void);
     void sourceFetched(QString link);
     void currentIndexChanged(void);
-    void setLastWatchedIndex(int index,int lastWatchedIndex);
+    void updatedLastWatchedIndex();
     void showNameChanged(void);
 public slots:
-    void syncList(int watchListIndex){
+    void syncList(ShowResponse* watchListShowItem){
         online=true;
         currentProvider=Global::instance().getCurrentShowProvider();
         m_playlist = Global::instance ().currentShowObject ()->episodes();
-        m_watchListIndex = watchListIndex;
+        m_watchListShowItem = watchListShowItem;
         m_currentShowLink = Global::instance().currentShowObject ()->link ();
         m_currentShowName = Global::instance().currentShowObject ()->title ();
+
         emit layoutChanged ();
         emit showNameChanged();
     }
     inline void changeWatchListIndex(int from,int to){
-        if(from==m_watchListIndex){
-            m_watchListIndex=to;
-        }
+//        if(from==m_watchListIndex){
+//            m_watchListIndex=to;
+//        }
     }
 private:
     enum{

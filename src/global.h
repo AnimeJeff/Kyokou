@@ -13,7 +13,7 @@ class Global : public QObject {
     Q_OBJECT
     Q_PROPERTY(ShowResponseObject* currentShowObject READ currentShowObject CONSTANT)
     Q_PROPERTY(QList<ShowParser*> providers READ providers CONSTANT)
-    Q_PROPERTY(ShowParser* currentSearchProvider READ getCurrentShowProvider CONSTANT)
+    Q_PROPERTY(ShowParser* currentSearchProvider READ getCurrentSearchProvider NOTIFY currentSearchProviderChanged)
 
     QMap<int,ShowParser*> providersMap{
         {Providers::e_Nivod,new Nivod},
@@ -21,9 +21,9 @@ class Global : public QObject {
         {Providers::e_Gogoanime,new Gogoanime}
     };
 
-    ShowResponseObject m_currentShowObject;
+    ShowResponseObject m_currentShowObject{this};
 
-    ShowParser* m_currentSearchProvider;
+    ShowParser* m_currentSearchProvider = providersMap[Providers::e_Gogoanime];
 public:
 
     inline ShowResponseObject* currentShowObject() {
@@ -35,7 +35,7 @@ public:
     }
 
     inline ShowParser* getCurrentShowProvider() {
-        return providersMap[m_currentShowObject.getShow()->provider];
+        return providersMap[m_currentShowObject.provider()];
     }
 
     inline ShowParser* getCurrentSearchProvider() {
@@ -49,7 +49,7 @@ public:
 
     inline Q_INVOKABLE void changeSearchProvider(int providerEnum) {
         m_currentSearchProvider = providersMap[providerEnum];
-        emit currentShowProviderChanged();
+        emit currentSearchProviderChanged();
     }
 
     static Global& instance() {
@@ -58,11 +58,9 @@ public:
     }
 
 signals:
-    void currentShowPropertyChanged(void);
-    void currentShowProviderChanged(void);
+    void currentSearchProviderChanged(void);
 private:
     Global() {
-        m_currentSearchProvider = providersMap[Providers::e_Nivod];
     }
 
     ~Global(){

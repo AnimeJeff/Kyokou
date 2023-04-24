@@ -9,11 +9,12 @@ class Nivod: public ShowParser
 {
     bool filterSearched = false;
     std::map<std::string, std::string> lastSearch;
+
+public:
+    Nivod(){};
     int providerEnum() override{
         return Providers::e_Nivod;
     }
-public:
-    Nivod(){};
     QString name() override {return "泥巴影院";}
 
     std::string hostUrl() override {return "https://www.nivod4.tv/";}
@@ -36,8 +37,7 @@ public:
         lastSearch=data;
         filterSearched=false;
         std::string response = callAPI("https://api.nivodz.com/show/search/WEB/3.2", data);
-        QVector<ShowResponse> results = showsFromJsonArray (nlohmann::json::parse(response)["list"]);
-        return results;
+        return showsFromJsonArray (nlohmann::json::parse(response)["list"]);
     };
 
     QVector<ShowResponse> filterSearch(int page, std::string sortBy,std::string channel,std::string regionId = "0",std::string langId="0",std::string yearRange=" ") {
@@ -58,8 +58,7 @@ public:
         lastSearch=data;
         filterSearched=true;
         std::string response = callAPI("https://api.nivodz.com/show/filter/WEB/3.2", data);
-        QVector<ShowResponse> results = showsFromJsonArray(nlohmann::json::parse(response)["list"]);
-        return results;
+        return showsFromJsonArray(nlohmann::json::parse(response)["list"]);
     }
 
     QVector<ShowResponse> popular(int page, int type)override {
@@ -101,12 +100,12 @@ public:
         return show;
     };
 
-    QVector<VideoServer> loadServers(Episode *episode) override{
-        return QVector<VideoServer>{VideoServer{"default",episode->link,{{"referer","https://www.nivod.tv/"}}}};
+    QVector<VideoServer> loadServers(const Episode& episode) override{
+        return QVector<VideoServer>{VideoServer{"default",episode.link,{{"referer","https://www.nivod.tv/"}}}};
     };
 
-    void extractSource(VideoServer *server) override{
-        auto codes = Functions::split(server->link,'&');
+    void extractSource(VideoServer& server) override{
+        auto codes = Functions::split(server.link,'&');
         std::map<std::string, std::string> data = {
             {"play_id_code", codes[1]},
             {"show_id_code", codes[0]},
@@ -114,7 +113,7 @@ public:
             {"episode_id","0"}
         };
         auto playUrl=nlohmann::json::parse(callAPI("https://api.nivodz.com/show/play/info/WEB/3.3", data))["entity"]["plays"][0]["playUrl"].get <std::string>();//video quality
-        server->source = QString::fromStdString (playUrl);
+        server.source = QString::fromStdString (playUrl);
     };
 
     QVector<ShowResponse> fetchMore() override{
@@ -231,13 +230,12 @@ private:
             if(!item["postYear"].is_null ()){
                 show.releaseDate = QString::number(item["postYear"].get<int>());
             }
-
             //            Status status = Status::Completed;
             //            if (showResponse.latestTxt.contains("更新")) {
             //                status = Status::Ongoing;
             //            }
 
-            results.push_back (show);
+            results.push_back (std::move(show));
         }
         m_canFetchMore=!results.isEmpty ();
         return results;

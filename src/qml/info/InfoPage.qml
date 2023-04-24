@@ -209,7 +209,11 @@ Item{
             text:"Continue from " + app.episodeListModel.continueEpisodeName
             height: 50
             onClicked: {
-                app.loadSourceFromList(app.episodeListModel.continueIndex)
+                let index = app.episodeListModel.continueIndex
+                if(app.episodeListModel.reversed){
+                    index = episodeListView.count - index - 1
+                }
+                app.loadSourceFromList(index)
             }
         }
     }
@@ -236,7 +240,6 @@ Item{
                     lastWatchedIndex = episodeListView.count - lastWatchedIndex - 1
                 }
                 if(lastWatchedIndex === index){
-                    //                    continueWatchingButton.text ="Continue from " + model.number.toString() + (model.title === undefined || parseInt(model.title) === model.number ? "" : "\n" + model.title)
                     return "red"
                 }
                 return "#f2f2f2"

@@ -11,10 +11,10 @@ class Consumet9anime final:public ShowParser
 {
     std::string m_lastSearch;
     bool m_widgetSearched = false;
+public:
     int providerEnum() override{
         return Providers::e_Consumet9anime;
     }
-public:
     Consumet9anime();
     QString name() override {return "9anime";};
     std::string hostUrl()override{return "lol.com";};
@@ -31,7 +31,7 @@ public:
             anime.link = QS(result["id"].get<std::string> ());
             anime.coverUrl = QS(result["image"].get<std::string> ());
             anime.provider = Providers::e_Consumet9anime;
-            animes.push_back (anime);
+            animes.push_back (std::move(anime));
         }
         return animes;
     };
@@ -94,23 +94,22 @@ public:
         return anime;
     };
 
-    QVector<VideoServer> loadServers(Episode *episode)override{
+    QVector<VideoServer> loadServers(const Episode& episode)override{
         QVector<VideoServer> servers{
-            VideoServer{"vidcloud",episode->link},
-            VideoServer{"streamsb",episode->link},
-            VideoServer{"vidstreaming",episode->link},
-            VideoServer{"streamtape",episode->link},
-            VideoServer{"vidcloud",episode->link}
+            VideoServer{"vidcloud",episode.link},
+            VideoServer{"streamsb",episode.link},
+            VideoServer{"vidstreaming",episode.link},
+            VideoServer{"streamtape",episode.link},
+            VideoServer{"vidcloud",episode.link}
         };
         return servers;
     };
 
-    void extractSource(VideoServer *server)override{
-
-        qDebug()<<"https://api.consumet.org/anime/9anime/watch/"+server->link+"?server="+server->name.toStdString ();
-        auto response = client.get ("https://api.consumet.org/anime/9anime/watch/"+server->link+"&server="+server->name.toStdString ()).json ();
-        qDebug()<<response.dump ();
-        server->source = QS(response["sources"][0]["url"].get<std::string> ());
+    void extractSource(VideoServer& server)override{
+//        qDebug()<<"https://api.consumet.org/anime/9anime/watch/"+server.link+"?server="+server.name.toStdString ();
+        auto response = client.get ("https://api.consumet.org/anime/9anime/watch/"+server.link+"&server="+server.name.toStdString ()).json ();
+//        qDebug()<<response.dump ();
+        server.source = QS(response["sources"][0]["url"].get<std::string> ());
     };
 private:
     QVector<ShowResponse> parseAnimes(std::string url){
@@ -127,7 +126,7 @@ private:
             anime.provider = Providers::e_Consumet9anime;
             anime.link = Functions::findBetween (anchor.attr ("href").as_string (),"/watch/","/ep-").c_str ();
             anime.latestTxt = node.selectText(".//span[@class='ep-status total']/span");
-            animes.push_back (anime);
+            animes.push_back (std::move(anime));
         });
         return animes;
     };

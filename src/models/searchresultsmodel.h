@@ -13,7 +13,6 @@
 class SearchResultsModel : public QAbstractListModel
 {
     Q_OBJECT
-
     Q_PROPERTY(bool loading READ isLoading NOTIFY loadingChanged);
     bool fetchingMore = false;
     QTimer timeoutTimer;
@@ -74,22 +73,46 @@ public:
         loading=true;
         emit loadingChanged();
         fetchingMore = false;
-        timeoutTimer.start(timeoutDuration);
-        m_searchWatcher.setFuture (QtConcurrent::run(&ShowParser::search, Global::instance ().getCurrentSearchProvider (), query, page, type));
+        //        timeoutTimer.start(timeoutDuration);
+//        m_searchWatcher.setFuture (QtConcurrent::run(&ShowParser::search, Global::instance ().getCurrentSearchProvider (), query, page, type));
+        m_searchWatcher.setFuture(QtConcurrent::run ([&](){
+            try{
+                return Global::instance ().getCurrentSearchProvider ()->search (query,page,type);
+            }catch(const std::exception& e){
+                qCritical() << e.what ();
+            }
+            return QVector<ShowResponse>();
+        }));
     }
 
     Q_INVOKABLE void latest(int page,int type){
         loading=true;
         emit loadingChanged();
         fetchingMore = false;
-        m_searchWatcher.setFuture (QtConcurrent::run (&ShowParser::latest,Global::instance ().getCurrentSearchProvider (),page,type));
+//        m_searchWatcher.setFuture (QtConcurrent::run (&ShowParser::latest,Global::instance ().getCurrentSearchProvider (),page,type));
+        m_searchWatcher.setFuture(QtConcurrent::run ([&](){
+            try{
+                return Global::instance ().getCurrentSearchProvider ()->latest (page,type);
+            }catch(const std::exception& e){
+                qCritical() << e.what ();
+            }
+            return QVector<ShowResponse>();
+        }));
     }
 
     Q_INVOKABLE void popular(int page,int type){
         loading=true;
         emit loadingChanged();
         fetchingMore = false;
-        m_searchWatcher.setFuture (QtConcurrent::run (&ShowParser::popular,Global::instance ().getCurrentSearchProvider (),page,type));
+//        m_searchWatcher.setFuture (QtConcurrent::run (&ShowParser::popular,Global::instance ().getCurrentSearchProvider (),page,type));
+        m_searchWatcher.setFuture(QtConcurrent::run ([&](){
+            try{
+                return Global::instance ().getCurrentSearchProvider ()->popular (page,type);
+            }catch(const std::exception& e){
+                qCritical() << e.what ();
+            }
+            return QVector<ShowResponse>();
+        }));
     }
 
     Q_INVOKABLE void loadDetails(int index){
@@ -109,12 +132,19 @@ public slots:
         }
         loading=true;
         emit loadingChanged();
-        m_detailLoadingWatcher.setFuture(QtConcurrent::run (&ShowParser::loadDetails,Global::instance().getProvider(show.provider),show));
+        //        m_detailLoadingWatcher.setFuture(QtConcurrent::run (&ShowParser::loadDetails,Global::instance().getProvider(show.provider),show));
 
+        m_detailLoadingWatcher.setFuture(QtConcurrent::run ([&](){
+            try{
+                return Global::instance().getProvider(show.provider)->loadDetails (show);
+            }catch(const std::exception& e){
+                qCritical() << e.what ();
+            }
+            return ShowResponse{};
+        }));
     }
 
 private:
-
     enum{
         TitleRole = Qt::UserRole,
         CoverRole
@@ -135,8 +165,15 @@ public:
     Q_INVOKABLE void loadMore(){
         loading=true;
         fetchingMore = true;
-//        emit loadingStart();
-        m_searchWatcher.setFuture (QtConcurrent::run (&ShowParser::fetchMore,Global::instance ().getCurrentSearchProvider ()));
+//        m_searchWatcher.setFuture (QtConcurrent::run (&ShowParser::fetchMore,Global::instance ().getCurrentSearchProvider ()));
+        m_searchWatcher.setFuture(QtConcurrent::run ([&](){
+            try{
+                return Global::instance ().getCurrentSearchProvider ()->fetchMore ();
+            }catch(const std::exception& e){
+                qCritical() << e.what ();
+            }
+            return QVector<ShowResponse>();
+        }));
     };
 
     Q_INVOKABLE bool canLoadMore()const{
@@ -144,7 +181,7 @@ public:
         return Global::instance ().getCurrentSearchProvider ()->canFetchMore ();
     }
 signals:
-//    void currentShowChanged(void);
+    //    void currentShowChanged(void);
     void fetchMoreResults(void);
     void detailsLoaded(void);
     void sourceFetched(QString link);

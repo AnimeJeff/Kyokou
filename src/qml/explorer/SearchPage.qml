@@ -61,6 +61,7 @@ Item {
         property int prevContentY
 
         onAtYEndChanged: {
+            console.log(app.searchResultsModel.canLoadMore())
             if(atYEnd && count > 0 && app.searchResultsModel.canLoadMore()){
                 contentY = realContentHeight-height
                 prevContentY=contentY
@@ -74,6 +75,15 @@ Item {
                     list.contentY = list.prevContentY+100
 
                 }
+            }
+        }
+        onContentHeightChanged: {
+            console.log(Math.ceil(list.count/6)*cellHeight,height)
+            console.log(app.searchResultsModel.canLoadMore())
+
+            if( Math.ceil(list.count/6)*cellHeight<height && count>0){
+                app.searchResultsModel.loadMore();
+                console.log("loadmore")
             }
         }
 

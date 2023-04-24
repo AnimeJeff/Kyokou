@@ -3,6 +3,27 @@
 
 
 
+bool PlaylistModel::hasNextItem(){
+    return playlistIndex < m_playlist.size ()-1;
+}
+
+bool PlaylistModel::hasPrecedingItem(){
+    return playlistIndex>0;
+}
+
+void PlaylistModel::playNextItem(){
+    loadOffset (1);
+}
+
+void PlaylistModel::playPrecedingItem(){
+    loadOffset (-1);
+}
+
+void PlaylistModel::loadOffset(int offset){
+    playlistIndex += offset;
+    loadSource(playlistIndex);
+}
+
 int PlaylistModel::rowCount(const QModelIndex &parent) const
 {
     if (parent.isValid())

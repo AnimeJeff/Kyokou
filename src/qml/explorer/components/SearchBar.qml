@@ -119,7 +119,7 @@ Item {
         }
         model: ListModel{}
         hoverEnabled: true
-        currentIndex: 0
+        displayText: global.currentSearchProvider.name
         delegate: ItemDelegate {
             text: model.name
             width: parent.width
@@ -133,16 +133,15 @@ Item {
                 hoverEnabled: true
                 onClicked: {
                     global.changeSearchProvider(model.providerEnum)
-                    providersComboBox.displayText = model.name
                     providersComboBox.popup.close()
                 }
             }
         }
         Component.onCompleted: {
+
             global.providers.forEach(function(provider) {
                 providersComboBox.model.append({name:provider.name,providerEnum:provider.providerEnum})
             })
-            providersComboBox.displayText = global.currentSearchProvider.name
         }
     }
 

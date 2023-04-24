@@ -30,9 +30,9 @@ public:
 
     bool extract(VideoServer *server)override{
         NetworkClient client;
-        auto response = client.get(server->link).document();
+        auto response = client.get(server->link);
         if (Functions::containsSubstring (server->link,"streaming.php")){
-            std::string it =response.selectFirst("//script[@data-name='episode']").attr("data-value").value ();
+            std::string it =response.document().selectFirst("//script[@data-name='episode']").attr("data-value").as_string ();
             std::string decrypted = decrypt (it, keysAndIv.key, keysAndIv.iv);
             decrypted.erase(std::remove(decrypted.begin(), decrypted.end(), '\t'), decrypted.end());  // Remove all occurrences of '\t'
             std::string id = Functions::findBetween(decrypted, "", "&");
@@ -48,6 +48,7 @@ public:
             //            qDebug()<<"source"<<QString::fromStdString (source)<<"\n";
             //            qDebug()<<"source_bk"<<QString::fromStdString (source_bk)<<"\n";
             server->source=QString::fromStdString (source);
+//            qDebug()<<server->source<<"not my fault";
             return true;
         }
         return false;

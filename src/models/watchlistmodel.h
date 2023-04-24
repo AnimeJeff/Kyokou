@@ -21,19 +21,19 @@ private:
         DROPPED,
     };
     nlohmann::json m_jsonList;
-    QVector<ShowResponse> m_list;
-    QVector<int> m_watchingList;
-    QVector<int> m_plannedList;
-    QVector<int> m_onHoldList;
-    QVector<int> m_droppedList;
-    QVector<int>* m_currentList = &m_watchingList;
+    QVector<ShowResponse*> m_list;
+    QVector<ShowResponse*> m_watchingList;
+    QVector<ShowResponse*> m_plannedList;
+    QVector<ShowResponse*> m_onHoldList;
+    QVector<ShowResponse*> m_droppedList;
+    QVector<ShowResponse*>* m_currentList = &m_watchingList;
 
-    QMap<int,QVector<int>*>listMap{
-                                      {WATCHING, &m_watchingList},
-                                      {PLANNED, &m_plannedList},
-                                      {ON_HOLD, &m_onHoldList},
-                                      {DROPPED, &m_droppedList},
-                                      };
+    QMap<int,QVector<ShowResponse*>*>listMap{
+                                                 {WATCHING, &m_watchingList},
+                                                 {PLANNED, &m_plannedList},
+                                                 {ON_HOLD, &m_onHoldList},
+                                                 {DROPPED, &m_droppedList},
+                                                 };
 
     int m_listType = WATCHING;
     int getlistType(){
@@ -44,10 +44,9 @@ private:
         m_currentList = listMap[listType];
         emit layoutChanged ();
     }
-
     int m_currentShowListIndex = -1;
 public:
-    WatchListModel(){
+    explicit WatchListModel(QObject *parent = nullptr): QAbstractListModel(parent){
         std::ifstream infile(".watchlist");
         if (!infile.good()) { // file doesn't exist or is corrupted
             std::ofstream outfile(".watchlist"); // create new file
@@ -60,54 +59,39 @@ public:
         }
 
         for (int i = 0; i < m_jsonList.size (); ++i) {
-            nlohmann::json& showItem = m_jsonList[i];
-            ShowResponse show;
-            show.link = QString::fromStdString(showItem["link"].get<std::string>());
-            show.title = QString::fromStdString(showItem["title"].get<std::string>());
-            show.coverUrl = QString::fromStdString(showItem["cover"].get<std::string>());
-            show.provider = showItem["provider"].get<int>();
-            show.setLastWatchedIndex(showItem["lastWatchedIndex"].get<int>());
-            show.isInWatchList = true;
-            show.listType = showItem["listType"].get<int>();
-            switch(show.listType){
+            m_list.push_back(new ShowResponse(m_jsonList[i]));
+            switch(m_list.last ()->listType){
             case WATCHING:
-                m_watchingList.push_back (i);
+                m_watchingList.push_back (m_list.last ());
                 break;
             case PLANNED:
-                m_plannedList.push_back (i);
+                m_plannedList.push_back (m_list.last ());
                 break;
             case ON_HOLD:
-                m_onHoldList.push_back (i);
+                m_onHoldList.push_back (m_list.last ());
                 break;
             case DROPPED:
-                m_droppedList.push_back (i);
+                m_droppedList.push_back (m_list.last ());
                 break;
-            default:
-                qWarning()<<"Invalid list type.";
-                show.listType = WATCHING;
-                showItem["listType"] = WATCHING;
-                m_watchingList.push_back (i);
             }
-            m_list.push_back(show);
+
         }
     };
-
-    ~WatchListModel() {}
-
+    ~WatchListModel() {
+        for(const auto& item:m_list){
+            delete item;
+        }
+        m_list.clear ();
+        m_watchingList.clear ();
+        m_plannedList.clear ();
+        m_onHoldList.clear ();
+        m_droppedList.clear ();
+    }
 public:
-    Q_INVOKABLE void add(ShowResponse& show, int listType = WATCHING){
+    Q_INVOKABLE void add(const ShowResponse& show, int listType = WATCHING){
         if(show.isInWatchList || checkInList (show))return;
 
-        if(show.object){
-            show.object->setIsInWatchList (true);
-            show.object->setListType (listType);
-        }else{
-            show.isInWatchList=true;
-            show.listType=listType;
-        }
 
-        m_list.push_back (show);
-        emit layoutChanged ();
         nlohmann::json showObj;
         showObj["title"]= show.title.toStdString ();
         showObj["cover"]= show.coverUrl.toStdString ();
@@ -116,156 +100,139 @@ public:
         showObj["listType"] = listType;
         showObj["lastWatchedIndex"] = show.getLastWatchedIndex();
         m_jsonList.push_back (showObj);
+
+        m_list.push_back (new ShowResponse(m_jsonList[m_jsonList.size()-1]));
+        listMap[listType]->push_back (m_list.last ());
+        if(m_listType == listType)emit layoutChanged ();
+
         save();
     }
 
     Q_INVOKABLE void addCurrentShow(int listType = WATCHING){
         if(Global::instance ().currentShowObject ()->isInWatchList ()){
-            auto link = Global::instance ().currentShowObject ()->link ().toStdString ();
-            if(Global::instance ().currentShowObject ()->listType ()==listType)return;
-            m_list[m_currentShowListIndex].listType= listType;
+            changeListType (getShowInList (Global::instance ().currentShowObject ()->getShow ()),listType);
             emit layoutChanged();
-            m_jsonList[m_currentShowListIndex] = listType;
             save();
-            Global::instance ().currentShowObject ()->setListType (listType);
             return;
         }
-        add(*Global::instance ().currentShowObject ()->getShow (), listType);
+        add(Global::instance ().currentShowObject ()->getShow (), listType);
+        Global::instance ().currentShowObject ()->setIsInWatchList (true);
+        Global::instance ().currentShowObject ()->setListType (listType);
     }
 
-    Q_INVOKABLE void remove(ShowResponse& show){
-        show.isInWatchList = false;
-        std::string link = show.link.toStdString ();
-        for (size_t i = 0; i < m_jsonList.size(); i++) {
-            if (m_jsonList[i]["link"] == link) {
+    void changeListType(ShowResponse* show, const int& to){
+        if(!m_list.contains (show))return;
+        if(show->listType == to) return;
+
+        try{
+            listMap[show->listType]->removeOne(show);
+            show->setListType (to);
+            listMap[to]->push_back(show);
+
+            int index = m_list.indexOf (show);
+            m_list.move (index,m_list.count ()-1);
+
+            m_jsonList.push_back(m_jsonList[index]);
+            m_jsonList.erase(m_jsonList.begin() + index);
+            emit layoutChanged();
+        }catch(QException& e){
+            e.what ();
+        }
+
+
+    }
+
+    Q_INVOKABLE void remove(const ShowResponse& show){
+        for (int i = 0; i < m_list.size(); i++) {
+            if (m_list[i]->link == show.link) {
+                if(show.object){
+                    show.object->setIsInWatchList(false);
+                    show.object->setListType(-1);
+                }
+                listMap[show.listType]->removeOne (m_list[i]);
                 removeAtIndex (i);
                 break;
             }
         }
-        save();
+
     }
 
     Q_INVOKABLE void removeAtIndex(int index){
-        if (index < 0 && index > m_jsonList.size()) return;
+        if (index < 0 || index >= m_list.size()) return;
         m_jsonList.erase(m_jsonList.begin() + index);
-        m_list.remove(index);
+        delete m_list.at (index);
+        m_list.removeAt (index);
         emit layoutChanged ();
+        save();
     }
 
     Q_INVOKABLE void removeCurrentShow(){
-        removeAtIndex (m_currentShowListIndex);
-        Global::instance ().currentShowObject ()->setIsInWatchList(false);
-        Global::instance ().currentShowObject ()->setListType(-1);
-        //        qDebug()<<"IN LIST REMOVED: " <<Global::instance ().currentShowObject ()->getShow ()->getIsInWatchList ();
+        remove (Global::instance ().currentShowObject ()->getShow ());
     }
 
     Q_INVOKABLE void loadDetails(int index){
-        int i;
         switch(m_listType){
         case WATCHING:
-            i = m_watchingList[index];
+            emit detailsRequested(*m_watchingList[index]);
             break;
         case PLANNED:
-            i = m_plannedList[index];
+            emit detailsRequested(*m_plannedList[index]);
             break;
         case ON_HOLD:
-            i = m_onHoldList[index];
+            emit detailsRequested(*m_onHoldList[index]);
             break;
         case DROPPED:
-            i = m_droppedList[index];
+            emit detailsRequested(*m_droppedList[index]);
             break;
         default:
             return;
         }
-        emit detailsRequested(m_list.at (i));
     }
 
     Q_INVOKABLE void move(int from, int to){
-        //        if (from < 0 || from >= m_jsonList.size() || to < 0 || to >= m_jsonList.size()) return;
-        QVector<int>* currentList;
-        if(m_listType == WATCHING)currentList = &m_watchingList;
-        else if(m_listType == PLANNED) currentList = &m_plannedList;
-        else return;
-
-
-        int actualFrom = currentList->at (from);
-        int actualTo = currentList->at (to);
-
-        qDebug()<<"currentList ="<<m_listType << "from"<<from<<"to"<<to;
-        qDebug()<<m_list[actualFrom].title << "to" << m_list[actualTo].title;
-
-
-        qDebug()<<"actualFrom"<<actualFrom<<"actualTo"<<actualTo;
-        qDebug()<<"\n";
-        m_list.move(actualFrom, actualTo);
-
-
-
-        emit indexMoved (actualFrom, actualTo);
-
+        int actualFrom = m_list.indexOf(m_currentList->at (from));
+        int actualTo = m_list.indexOf (m_currentList->at (to));
+        m_currentList->move (from,to);
+        m_list.move(actualFrom,actualTo);
         auto element_to_move = m_jsonList[actualFrom];
         m_jsonList.erase(m_jsonList.begin() + actualFrom);
         m_jsonList.insert(m_jsonList.begin() + actualTo, element_to_move);
-        save();
     }
 
-    Q_INVOKABLE void moveEnded(){
-        m_watchingList.clear ();
-        m_plannedList.clear ();
-        for(int i =0 ; i<m_list.count ();i++){
-            int listType  = m_list[i].listType;
-            if (listType == WATCHING) {
-                m_watchingList.push_back (i);
-            }else if (listType == PLANNED) {
-                m_plannedList.push_back (i);
-            }
-        }
-        emit layoutChanged ();
-    }
+    Q_INVOKABLE void moveEnded();;
 
     void update(const ShowResponse& show){
         if(!show.isInWatchList)return;
-        std::string link = show.link.toStdString ();
-        for (size_t i = 0; i < m_jsonList.size(); i++) {
-            if (m_jsonList[i]["link"] == link) {
-                updateLastWatchedIndex(i,show.getLastWatchedIndex ());
-                break;
-            }
-        }
+        getShowInList (show)->setLastWatchedIndex (show.getLastWatchedIndex ());
     }
 
     void updateCurrentShow(){
-        updateLastWatchedIndex(m_currentShowListIndex,Global::instance ().currentShowObject ()->lastWatchedIndex ());
+        update(Global::instance().currentShowObject ()->getShow ());
     }
 
     bool checkInList(const ShowResponse& show){
-        std::string title = show.title.toStdString ();
-        std::string coverUrl = show.coverUrl.toStdString ();
-        std::string link = show.link.toStdString ();
-        for(const auto& item:m_jsonList.items ()){
-            nlohmann::json showItem = item.value();
-            if(showItem["link"]==link){
-                return true;
-            }
+        if(getShowInList (show)){
+            return true;
         }
         return false;
-    }
 
-    void save(){
-        std::ofstream output_file(".watchlist");
-        output_file << m_jsonList.dump (4);
-        output_file.close();
     }
 
     int getIndex(const QString& link){
         for (int i = 0; i < m_list.size(); i++) {
-            if (m_list[i].link == link) {
+            if (m_list[i]->link == link) {
                 return i;
-                break;
             }
         }
         return -1;
     }
+
+    ShowResponse* getShowInList(const ShowResponse& show) {
+        const auto iter = std::find_if(m_list.begin(), m_list.end(),
+                                       [&](const ShowResponse* ptr) { return ptr->link == show.link; });
+        return iter == m_list.end() ? nullptr : *iter;
+    }
+
 
 public:
     int currentShowListIndex(){
@@ -280,10 +247,10 @@ public slots:
         auto link = Global::instance().currentShowObject ()->link ();
         for(int i = 0;i<m_list.count ();i++){
             const auto& item = m_list[i];
-            if(item.link==link){
+            if(item->link==link){
                 Global::instance().currentShowObject()->setIsInWatchList(true);
-                Global::instance().currentShowObject()->setLastWatchedIndex(item.lastWatchedIndex);
-                Global::instance().currentShowObject()->setListType(item.listType);
+                Global::instance().currentShowObject()->setLastWatchedIndex(item->lastWatchedIndex);
+                Global::instance().currentShowObject()->setListType(item->listType);
                 m_currentShowListIndex = -1;
                 return true;
             }
@@ -295,11 +262,12 @@ public slots:
         return false;
     }
 
-    void updateLastWatchedIndex(int index,int lastWatchedIndex){
-        m_list[index].setLastWatchedIndex (lastWatchedIndex);
-        m_jsonList[index]["lastWatchedIndex"]=lastWatchedIndex;
-        save();
+    void save(){
+        std::ofstream output_file(".watchlist");
+        output_file << m_jsonList.dump (4);
+        output_file.close();
     }
+
 
 
 
@@ -310,9 +278,9 @@ private:
         TitleRole = Qt::UserRole,
         CoverRole
     };
-    int rowCount(const QModelIndex &parent) const;
-    QVariant data(const QModelIndex &index, int role) const;
-    QHash<int, QByteArray> roleNames() const;
+    int rowCount(const QModelIndex &parent) const override ;
+    QVariant data(const QModelIndex &index, int role) const override ;
+    QHash<int, QByteArray> roleNames() const override ;
 };
 
 #endif // WATCHLISTMODEL_H

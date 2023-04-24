@@ -21,9 +21,9 @@ protected:
     NetworkClient client;
     QFutureWatcher<void> watcher;
     QFutureWatcher<QVector<ShowResponse>> searchWatcher;
-    virtual int providerEnum() = 0;
 public:
     ShowParser(){};
+    virtual int providerEnum() = 0;
     virtual QString name() = 0;
     virtual std::string hostUrl() = 0;
     virtual QVector<ShowResponse> search(QString query,int page,int type) = 0;
@@ -32,8 +32,8 @@ public:
     virtual bool canFetchMore() final {return m_canFetchMore;};
     virtual QVector<ShowResponse> fetchMore() = 0;
     virtual ShowResponse loadDetails(ShowResponse show)  = 0;
-    virtual QVector<VideoServer> loadServers(Episode* episode) = 0;
-    virtual void extractSource(VideoServer* server) = 0;
+    virtual QVector<VideoServer> loadServers(const Episode& episode) = 0;
+    virtual void extractSource(VideoServer& server) = 0;
 signals:
     void sourceFetched(QString link);
     void error(QString errorString);

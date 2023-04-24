@@ -16,10 +16,11 @@ class Gogoanime : public ShowParser
         LATEST,
         POPULAR
     };
+
+public:
     int providerEnum() override{
         return Providers::e_Gogoanime;
     }
-public:
     Gogoanime();
     QString name() override{
         return "Gogoanime";
@@ -43,7 +44,7 @@ public:
             anime.provider = Providers::e_Gogoanime;
             anime.releaseDate = node.selectText (".//p[@class=\"released\"]"); //TODO remove released
             anime.releaseDate.remove (0,10);
-            animes.append (anime);
+            animes.append (std::move(anime));
         });
         m_canFetchMore=!animes.empty ();
         return animes;
@@ -61,7 +62,7 @@ public:
                 anime.provider = Providers::e_Gogoanime;
                 anime.latestTxt=QS(element.selectText (".//p[last()]/a"));
                 anime.title = QS(anchor.attr ("title").as_string ());
-                animes.push_back (anime);
+                animes.push_back (std::move(anime));
             });
         m_canFetchMore=!animes.empty ();
         m_lastSearch = "popular";
@@ -82,7 +83,7 @@ public:
                 anime.coverUrl = element.selectFirst(".//div/a/img").attr("src").as_string();
                 anime.latestTxt = element.selectText(".//p[@class='episode']");
                 anime.provider = Providers::e_Gogoanime;
-                animes.push_back(anime);
+                animes.push_back(std::move(anime));
             });
         m_lastSearch = "latest";
         m_canFetchMore=!animes.empty ();
@@ -114,39 +115,33 @@ public:
         return anime;
     };
 
-    QVector<VideoServer> loadServers(Episode *episode) override{
-
-        auto url = hostUrl ()+episode->link;
-
-        //        qDebug()<<url<<client.get(url).document ().selectText ("//div[@class='anime_muti_link']/ul/li/a");
-
-        auto servers = client.get(url).document ().select("//div[@class='anime_muti_link']/ul/li").map <VideoServer>([&](pugi::xpath_node node){
+    QVector<VideoServer> loadServers(const Episode& episode) override{
+        QVector<VideoServer> servers;
+        client.get(hostUrl ()+episode.link).document ().select("//div[@class='anime_muti_link']/ul/li/a").forEach ([&](pugi::xpath_node node){
             VideoServer server;
-            server.name = node.selectText (".//a");
-            std::string link = node.selectFirst (".//a"). attr("data-video").value ();
+            server.name = node.node().child_value ();
+            std::string link = node.attr("data-video").as_string ();
             Functions::httpsIfy(link);
             server.link = link;
-            server.headers["referer"] = QS(hostUrl ());
-            //            qDebug()<<server.name;
-            //            qDebug()<<server.link;
-            return server;
+//            server.headers["referer"] = QS(hostUrl ());
+            servers.push_back (std::move (server));
         });
 
         return QVector<VideoServer>(servers.begin (),servers.end ());
     };
 
-    void extractSource(VideoServer *server) override{
-        auto domain = server->link;
-        VideoExtractor *extractor;
+    void extractSource(VideoServer& server) override{
+        auto domain = server.link;
+//        VideoExtractor *extractor;
         //rank the servers by preference
         //        QHash<int,QHash<QString,QString>> serverPreference;
         if (Functions::containsSubstring(domain, "gogo")
             || Functions::containsSubstring(domain, "goload")
             || Functions::containsSubstring(domain, "playgo")
             || Functions::containsSubstring(domain, "anihdplay")) {
-            extractor = new GogoCDN;
-            extractor->extract(server);
-            delete extractor;
+            GogoCDN eextractor;
+            eextractor.extract(&server);
+//            delete extractor;
         } else if (Functions::containsSubstring(domain, "sb")
                    || Functions::containsSubstring(domain, "sss")) {
             //            extractor = new StreamSB(server);
