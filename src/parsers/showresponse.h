@@ -33,6 +33,8 @@ enum Providers{
     e_Consumet9anime,
     e_Gogoanime,
     e_NineAnime,
+    e_NtDongMan,
+    e_HuaLe,
 };
 class ShowResponseObject;
 
@@ -103,7 +105,7 @@ public:
         if(lastWatchedIndex==index)return;
         lastWatchedIndex = index;
         if(jsonObject){
-            (*jsonObject)["lastWatchedIndex"] = index;
+            jsonObject->at("lastWatchedIndex") = index;
         }
     }
 
@@ -111,7 +113,8 @@ public:
         if(this->listType==listType)return;
         this->listType = listType;
         if(jsonObject){
-            (*jsonObject)["listType"] = listType;
+            qDebug()<<"has json obj";
+            jsonObject->at("listType") = listType;
         }
     }
 
@@ -120,7 +123,7 @@ public:
     bool operator==(const ShowResponse& other) const {
         return (title == other.title) && (link == other.link);
     }
-    nlohmann::json* jsonObject;
+    nlohmann::json* jsonObject = nullptr;
 private:
 
     ShowResponseObject* object;
@@ -161,7 +164,8 @@ public:
     }
 
     inline void setListType(int listType) {
-        show.setListType (listType);
+//        show.listType = listType;
+        show.setListType(listType);
         emit listTypeChanged();
     }
 

@@ -34,7 +34,7 @@ Rectangle {
     Connections{
         target: global.currentShowObject
         function onListTypeChanged() {
-            console.log(global.currentShowObject.listType)
+//            console.log(global.currentShowObject.listType)
         }
     }
 
@@ -91,7 +91,7 @@ Rectangle {
         ImageButton {
             image:"qrc:/resources/images/search.png"
             hoverImage:"qrc:/resources/images/search.png"
-            MouseArea {cursorShape: Qt.PointingHandCursor}
+            HoverCursorArea{}
             Layout.preferredWidth: sideBar.width
             Layout.preferredHeight: sideBar.width
             onClicked: {
@@ -103,7 +103,7 @@ Rectangle {
         ImageButton {
             image:"qrc:/resources/images/view-details.png"
             hoverImage:"qrc:/resources/images/view-details.png"
-            MouseArea {cursorShape: Qt.PointingHandCursor}
+            HoverCursorArea{}
             Layout.preferredWidth: sideBar.width
             Layout.preferredHeight: sideBar.width
             onClicked: {
@@ -116,14 +116,14 @@ Rectangle {
             hoverImage:"qrc:/resources/images/library.png"
             Layout.preferredWidth: sideBar.width
             Layout.preferredHeight: sideBar.width
-            MouseArea {cursorShape: Qt.PointingHandCursor}
+            HoverCursorArea{}
             onClicked: gotoPage(2)
             selected: currentPage === 2
         }
         ImageButton {
             image:"qrc:/resources/images/retro-tv.png"
             hoverImage:"qrc:/resources/images/retro-tv.png"
-            MouseArea {cursorShape: Qt.PointingHandCursor}
+            HoverCursorArea{}
             Layout.preferredWidth: sideBar.width
             Layout.preferredHeight: sideBar.width
             onClicked: gotoPage(3)
@@ -135,7 +135,7 @@ Rectangle {
             hoverImage:"qrc:/resources/images/download.png"
             Layout.preferredWidth: sideBar.width
             Layout.preferredHeight: sideBar.width
-            MouseArea {cursorShape: Qt.PointingHandCursor}
+            HoverCursorArea{}
             onClicked: gotoPage(4)
             selected: currentPage === 4
         }
@@ -157,7 +157,7 @@ Rectangle {
             hoverImage:"qrc:/resources/images/settings.png"
             Layout.preferredWidth: sideBar.width
             Layout.preferredHeight: sideBar.width
-            MouseArea {cursorShape: Qt.PointingHandCursor}
+            HoverCursorArea{}
         }
     }
 }

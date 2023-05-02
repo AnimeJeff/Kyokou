@@ -1,6 +1,6 @@
 <RCC>
     <qresource prefix="/">
-        <file alias="images/error">resources/images/error_image.png</file>
+        <file>resources/images/error_image.png</file>
         <file>resources/images/pause_grey.png</file>
         <file>resources/images/pause_grey_on.png</file>
         <file>resources/images/pause_lightgrey.png</file>
@@ -51,5 +51,11 @@
         <file>src/qml/explorer/components/SearchContainer.qml</file>
         <file>src/qml/SideBar.qml</file>
         <file>src/qml/DownloadPage.qml</file>
+        <file>src/qml/components/CustomTextField.qml</file>
+        <file>src/qml/components/HoverCursorArea.qml</file>
+        <file>src/qml/components/CustomComboBox.qml</file>
+        <file>src/qml/components/CustomButton.qml</file>
+        <file>src/qml/components/CustomSwitch.qml</file>
+        <file>src/qml/components/CustomSlider.qml</file>
     </qresource>
 </RCC>

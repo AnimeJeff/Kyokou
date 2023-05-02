@@ -25,21 +25,20 @@ private:
     ShowParser *currentProvider;
     QString m_currentShowLink;
     QString m_currentShowName;
-//    int m_watchListIndex = -1;
     int playlistIndex = -1;
     QFile* m_historyFile;
-    QFutureWatcher<QString> m_watcher;
+    QFutureWatcher<void> m_watcher;
     QVector<Episode> m_playlist;
     bool online = true;
     QString m_onLaunchFile;
     QString m_onLaunchPlaylist;
-    ShowResponse* m_watchListShowItem;
+    std::shared_ptr<ShowResponse> m_watchListShowItem;
     QString currentItemName() const{
         if(playlistIndex<0 || playlistIndex>m_playlist.size ())return "";
         const Episode& currentItem = m_playlist[playlistIndex];
         QString itemName = "[%1/%2] %3";
         itemName = itemName.arg (playlistIndex+1).arg (m_playlist.size ()).arg (currentItem.number);
-        if (currentItem.title.length () != 0) {
+        if (currentItem.title.length () > 0) {
             itemName+=". "+ currentItem.title;
         }
         return itemName;
@@ -53,16 +52,10 @@ private:
 
 public:
     explicit PlaylistModel(QObject *parent = nullptr):QAbstractListModel(parent){
-            //        connect(&m_watcher, &QFutureWatcher<QString>::finished,this,[&]() {
-            ////            try{
-            ////                QString results = m_watcher.future ().result ();
-            ////                emit sourceFetched(results);
-            ////            }catch(std::exception& e){
-            ////                qCritical()<<e.what ();
-            ////            }
+        connect(&m_watcher, &QFutureWatcher<void>::finished,this,[&]() {
 
-            //        });
-        };
+        });
+    };
 
     ~PlaylistModel(){
         delete m_historyFile;
@@ -110,7 +103,6 @@ public:
         if (directory.exists(".mpv.history")) {
             if (m_historyFile->open(QIODevice::ReadOnly | QIODevice::Text)) {
                 lastWatched = QTextStream(m_historyFile).readAll().trimmed();
-                //                qDebug()<<lastWatched;
                 m_historyFile->close ();
             }
         }
@@ -172,18 +164,19 @@ public:
             if(m_currentShowLink == Global::instance().currentShowObject ()->link ()){
                 Global::instance().currentShowObject ()->setLastWatchedIndex (index);
             }
-//            QFuture<void> future = QtConcurrent::run([&]() {
 
-//            });
-            try{
-                QVector<VideoServer> servers = currentProvider->loadServers (m_playlist[playlistIndex]);
-                currentProvider->extractSource(servers[0]);
-                emit sourceFetched (servers[0].source);
+            m_watcher.setFuture (QtConcurrent::run([&]() {
+                try{
+                    QVector<VideoServer> servers = currentProvider->loadServers (m_playlist[playlistIndex]);
+                    QString source = currentProvider->extractSource(servers[0]);
+                    emit sourceFetched(source);
+                }catch(const QException& e){
+                    qCritical() << e.what ();
+                    emit encounteredError("Encountered error while extracting" + QString(e.what ()));
+                }
                 loading = false;
                 emit loadingChanged();
-            }catch(const std::exception& e){
-                qCritical() << e.what ();
-            }
+            }));
 
         }else{
             emit sourceFetched(m_playlist[playlistIndex].localPath);
@@ -205,22 +198,22 @@ signals:
     void currentIndexChanged(void);
     void updatedLastWatchedIndex();
     void showNameChanged(void);
+    void encounteredError(QString error);
 public slots:
-    void syncList(ShowResponse* watchListShowItem){
+    void syncList(std::shared_ptr<ShowResponse> watchListShowItem){
         online=true;
         currentProvider=Global::instance().getCurrentShowProvider();
         m_playlist = Global::instance ().currentShowObject ()->episodes();
         m_watchListShowItem = watchListShowItem;
         m_currentShowLink = Global::instance().currentShowObject ()->link ();
         m_currentShowName = Global::instance().currentShowObject ()->title ();
-
         emit layoutChanged ();
         emit showNameChanged();
     }
     inline void changeWatchListIndex(int from,int to){
-//        if(from==m_watchListIndex){
-//            m_watchListIndex=to;
-//        }
+        //        if(from==m_watchListIndex){
+        //            m_watchListIndex=to;
+        //        }
     }
 private:
     enum{

@@ -104,7 +104,7 @@ public:
         return QVector<VideoServer>{VideoServer{"default",episode.link,{{"referer","https://www.nivod.tv/"}}}};
     };
 
-    void extractSource(VideoServer& server) override{
+    QString extractSource(VideoServer& server) override{
         auto codes = Functions::split(server.link,'&');
         std::map<std::string, std::string> data = {
             {"play_id_code", codes[1]},
@@ -113,7 +113,7 @@ public:
             {"episode_id","0"}
         };
         auto playUrl=nlohmann::json::parse(callAPI("https://api.nivodz.com/show/play/info/WEB/3.3", data))["entity"]["plays"][0]["playUrl"].get <std::string>();//video quality
-        server.source = QString::fromStdString (playUrl);
+        return QString::fromStdString (playUrl);
     };
 
     QVector<ShowResponse> fetchMore() override{

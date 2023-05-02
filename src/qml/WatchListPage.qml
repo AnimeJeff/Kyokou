@@ -87,7 +87,7 @@ Rectangle{
                                    }
                                    let diff = Math.abs(newIndex-oldIndex)
                                    if(diff === 1 || diff === itemPerRow){
-                                       console.log(oldIndex,newIndex)
+//                                       console.log(oldIndex,newIndex)
                                        app.watchList.move(oldIndex,newIndex)
                                        visualModel.items.move(oldIndex,newIndex)
                                    }
@@ -139,7 +139,6 @@ Rectangle{
             }
         }
     }
-
 
     GridView{
         ScrollBar.vertical: ScrollBar {}

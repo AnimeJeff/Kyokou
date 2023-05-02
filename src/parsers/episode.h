@@ -41,9 +41,9 @@ struct VideoServer{
         unsigned int outroEnd;
     };
 
-    SkipData* skipData;
+//    SkipData* skipData;
     ~VideoServer(){
-        if(skipData)delete skipData;
+//        if(skipData)delete skipData;
     }
 };
 

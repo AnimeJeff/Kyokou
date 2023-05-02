@@ -26,20 +26,19 @@ public:
         return "Gogoanime";
     }
     std::string hostUrl() override{
-        return  "https://gogoanime.gr";
+        return  "https://gogoanime.cl";
     }
 
     QVector<ShowResponse> search(QString query, int page, int type=0) override{
         m_currentPage=page;
         m_lastSearch=query;
-        std::string url = "https://gogoanime.gr/search.html?keyword=" + Functions::urlEncode(query.toStdString ()) + "&page="+std::to_string(page);
+        std::string url = hostUrl()+"/search.html?keyword=" + Functions::urlEncode(query.toStdString ()) + "&page="+std::to_string(page);
         QVector<ShowResponse> animes;
         client.get(url).document().select("//ul[@class='items']/li").forEach ([&](pugi::xpath_node node) {
             ShowResponse anime;
             auto anchor = node.selectFirst(".//p[@class=\"name\"]/a");
             anime.title = anchor.attr("title").as_string();
-            anime.coverUrl =
-                node.selectFirst(".//img").attr("src").as_string();
+            anime.coverUrl = node.selectFirst(".//img").attr("src").as_string();
             anime.link = anchor.attr ("href").as_string ();
             anime.provider = Providers::e_Gogoanime;
             anime.releaseDate = node.selectText (".//p[@class=\"released\"]"); //TODO remove released
@@ -57,7 +56,7 @@ public:
             .select ("//div[@class='added_series_body popular']/ul/li").forEach([&](pugi::xpath_node element){
                 ShowResponse anime;
                 pugi::xpath_node anchor = element.selectFirst ("a");
-                anime.link = QS(hostUrl()+anchor.attr("href").as_string ());
+                anime.link = anchor.attr("href").as_string ();
                 anime.coverUrl = QS(Functions::findBetween (anchor.selectFirst(".//div[@class='thumbnail-popular']").attr ("style").as_string (),"url('","');"));
                 anime.provider = Providers::e_Gogoanime;
                 anime.latestTxt=QS(element.selectText (".//p[last()]/a"));
@@ -78,9 +77,16 @@ public:
                 auto anchor = element.selectFirst (".//p[@class='name']/a");
                 std::string title = anchor.node ().child_value ();
                 Functions::replaceAll (title,"\n"," ");
-                anime.title=title.c_str ();
-                anime.link = QS("https://gogoanime.gr/category" + Functions::substringBefore (anchor.attr ("href").as_string (),"-episode"));
+                anime.title = title.c_str ();
+                anime.title = anime.title.trimmed ();
                 anime.coverUrl = element.selectFirst(".//div/a/img").attr("src").as_string();
+                auto lastSlashIndex =  anime.coverUrl.lastIndexOf("/");
+                auto lastDotIndex =  anime.coverUrl.lastIndexOf(".");
+                auto id = anime.coverUrl.mid(lastSlashIndex + 1, lastDotIndex - lastSlashIndex - 1);
+                if(id.back ().isDigit ()){
+                    id = id.mid(0,id.lastIndexOf ('-'));
+                }
+                anime.link = "/category/" + id;
                 anime.latestTxt = element.selectText(".//p[@class='episode']");
                 anime.provider = Providers::e_Gogoanime;
                 animes.push_back(std::move(anime));
@@ -91,9 +97,10 @@ public:
     }
 
     ShowResponse loadDetails(ShowResponse anime) override{
-        auto url = anime.link;
-        auto doc = client.get(url.toStdString ()).document ();
-        anime.description = doc.selectFirst ("//span[contains(text(),'Plot Summary')]/parent::*/text()").toString ().substr(1).c_str ();
+
+        auto doc = client.get(hostUrl() + anime.link.toStdString ()).document ();
+        anime.description = doc.selectFirst ("//span[contains(text() ,'Plot Summary')]").parent ().text ().as_string ();
+        anime.description = anime.description.trimmed ();
         anime.status=doc.selectFirst ("//span[contains(text(),'Status')]/following-sibling::*/text()").toString ().c_str ();
         anime.description.replace ("\n"," ");
         doc.select ("//span[contains(text(),\"Genre\")]/following-sibling::*/text()").forEach ([&](pugi::xpath_node node){
@@ -130,26 +137,25 @@ public:
         return QVector<VideoServer>(servers.begin (),servers.end ());
     };
 
-    void extractSource(VideoServer& server) override{
-        auto domain = server.link;
-//        VideoExtractor *extractor;
-        //rank the servers by preference
-        //        QHash<int,QHash<QString,QString>> serverPreference;
-        if (Functions::containsSubstring(domain, "gogo")
-            || Functions::containsSubstring(domain, "goload")
-            || Functions::containsSubstring(domain, "playgo")
-            || Functions::containsSubstring(domain, "anihdplay")) {
-            GogoCDN eextractor;
-            eextractor.extract(&server);
-//            delete extractor;
-        } else if (Functions::containsSubstring(domain, "sb")
-                   || Functions::containsSubstring(domain, "sss")) {
+    QString extractSource(VideoServer& server) override{
+        if (Functions::containsSubstring(server.link, "gogo")
+            || Functions::containsSubstring(server.link, "goload")
+            || Functions::containsSubstring(server.link, "playgo")
+            || Functions::containsSubstring(server.link, "anihdplay")
+            || Functions::containsSubstring(server.link, "playtaku")
+            ) {
+            GogoCDN extractor;
+            return extractor.extract(server.link);
+        } else if (Functions::containsSubstring(server.link, "sb")
+                   || Functions::containsSubstring(server.link, "sss")) {
             //            extractor = new StreamSB(server);
-        } else if (Functions::containsSubstring(domain, "fplayer")
-                   || Functions::containsSubstring(domain, "fembed")) {
+        } else if (Functions::containsSubstring(server.link, "fplayer")
+                   || Functions::containsSubstring(server.link, "fembed")) {
             //            extractor = new FPlayer(server);
+        }else{
+            qDebug()<<"Cannot find extract " << server.link;
+            QException().raise ();
         }
-
     };
 
     QVector<ShowResponse> fetchMore() override {

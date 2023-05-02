@@ -20,61 +20,40 @@ class SearchResultsModel : public QAbstractListModel
     bool loading = false;
     QFutureWatcher<QVector<ShowResponse>> m_searchWatcher{};
     QFutureWatcher<ShowResponse> m_detailLoadingWatcher{};
-    QVector<ShowResponse> mList;
+    QVector<ShowResponse> m_List;
 public:
     explicit SearchResultsModel(QObject *parent = nullptr)
         : QAbstractListModel(parent){
-        timeoutTimer.setSingleShot(true);
-
-        //        QObject::connect(&m_searchWatcher, &QFutureWatcher<QVector<ShowResponse>>::canceled, [&]() {
-        //            qDebug() << "Took too long to load shows.";
-        //            emit loadingEnd();
-        //        });
-        //        QObject::connect(&timeoutTimer, &QTimer::timeout, [&]() {
-        //            timeoutTimer.stop();
-
-        //        });
-        //        QObject::connect(&m_searchWatcher, &QFutureWatcher<int>::started, [&](){
-        //            timeoutTimer.start(timeoutDuration);
-        //        });
+//        timeoutTimer.setSingleShot(true);
         QObject::connect(&m_searchWatcher, &QFutureWatcher<QVector<ShowResponse>>::finished,this, [&]() {
-            try{
-                QVector<ShowResponse> results = m_searchWatcher.future ().result ();
-                if(fetchingMore){
-                    mList+=results;
-                }else{
-                    mList=results;
-                }
-
-            }catch(const QException& e){
-                qDebug()<<e.what ();
+            QVector<ShowResponse> results = m_searchWatcher.future ().result ();
+            if(fetchingMore){
+                const int oldCount = m_List.count();
+                beginInsertRows(QModelIndex(), oldCount, oldCount + results.count() - 1);
+                m_List.reserve(oldCount + results.count());
+                m_List += std::move(results);
+                endInsertRows();
+                fetchingMore = false;
+            }else{
+                m_List.reserve(results.count());
+                m_List.swap(results);
+                emit layoutChanged ();
             }
-            emit layoutChanged ();
-
             loading=false;
             emit loadingChanged();
-            emit postItemsAppended();
         });
-
-
-        //        QObject::connect(&m_detailLoadingWatcher, &QFutureWatcher<int>::canceled, [&]() {
-        //            qDebug() << "Took too long to load details.";
-        //            emit loadingEnd();
-        //        });
         QObject::connect(&m_detailLoadingWatcher, &QFutureWatcher<ShowResponse>::finished,this, [&]() {
             Global::instance().currentShowObject ()->setShow (m_detailLoadingWatcher.future ().result ());
             emit detailsLoaded();
             loading = false;
             emit loadingChanged();
         });
+        latest (1,0);
     }
 
-    Q_INVOKABLE void search(QString query,int page,int type){
+    Q_INVOKABLE void search(const QString& query,int page,int type){
         loading=true;
         emit loadingChanged();
-        fetchingMore = false;
-        //        timeoutTimer.start(timeoutDuration);
-//        m_searchWatcher.setFuture (QtConcurrent::run(&ShowParser::search, Global::instance ().getCurrentSearchProvider (), query, page, type));
         m_searchWatcher.setFuture(QtConcurrent::run ([&](){
             try{
                 return Global::instance ().getCurrentSearchProvider ()->search (query,page,type);
@@ -86,10 +65,9 @@ public:
     }
 
     Q_INVOKABLE void latest(int page,int type){
-        loading=true;
+        loading = true;
         emit loadingChanged();
-        fetchingMore = false;
-//        m_searchWatcher.setFuture (QtConcurrent::run (&ShowParser::latest,Global::instance ().getCurrentSearchProvider (),page,type));
+        //        m_searchWatcher.setFuture (QtConcurrent::run (&ShowParser::latest,Global::instance ().getCurrentSearchProvider (),page,type));
         m_searchWatcher.setFuture(QtConcurrent::run ([&](){
             try{
                 return Global::instance ().getCurrentSearchProvider ()->latest (page,type);
@@ -104,7 +82,6 @@ public:
         loading=true;
         emit loadingChanged();
         fetchingMore = false;
-//        m_searchWatcher.setFuture (QtConcurrent::run (&ShowParser::popular,Global::instance ().getCurrentSearchProvider (),page,type));
         m_searchWatcher.setFuture(QtConcurrent::run ([&](){
             try{
                 return Global::instance ().getCurrentSearchProvider ()->popular (page,type);
@@ -116,31 +93,27 @@ public:
     }
 
     Q_INVOKABLE void loadDetails(int index){
-        getDetails(mList[index]);
+        getDetails(m_List[index]);
     }
 
-public:
-    QVector<ShowResponse> list() const{return mList;};
-    Q_INVOKABLE ShowResponse* get(int index) {return &mList[index];}
-    Q_INVOKABLE ShowResponse itemAt(int index) const {return mList[index];}
-
 public slots:
-    void getDetails(ShowResponse show){
+    void getDetails(const ShowResponse& show){
         if(Global::instance().currentShowObject ()->title() == show.title){
             emit detailsLoaded();
             return;
         }
         loading=true;
         emit loadingChanged();
-        //        m_detailLoadingWatcher.setFuture(QtConcurrent::run (&ShowParser::loadDetails,Global::instance().getProvider(show.provider),show));
-
         m_detailLoadingWatcher.setFuture(QtConcurrent::run ([&](){
             try{
-                return Global::instance().getProvider(show.provider)->loadDetails (show);
+                auto provider = Global::instance().getProvider(show.provider);
+                if(provider)
+                    return provider->loadDetails (show);
+                else qDebug()<<"cannot find provider for "<< show.provider;
             }catch(const std::exception& e){
                 qCritical() << e.what ();
             }
-            return ShowResponse{};
+            return show;
         }));
     }
 
@@ -164,8 +137,8 @@ private:
 public:
     Q_INVOKABLE void loadMore(){
         loading=true;
+        emit loadingChanged();
         fetchingMore = true;
-//        m_searchWatcher.setFuture (QtConcurrent::run (&ShowParser::fetchMore,Global::instance ().getCurrentSearchProvider ()));
         m_searchWatcher.setFuture(QtConcurrent::run ([&](){
             try{
                 return Global::instance ().getCurrentSearchProvider ()->fetchMore ();

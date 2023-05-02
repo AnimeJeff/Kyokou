@@ -3,6 +3,7 @@
 #define UTILS_H
 
 #include <QCursor>
+#include <QGuiApplication>
 #include <QObject>
 #include <QPointF>
 
@@ -15,8 +16,13 @@ public:
     explicit CursorPosProvider(QObject *parent = nullptr) : QObject(parent)
     {}
 
-    Q_INVOKABLE QPointF cursorPos()
+    Q_INVOKABLE QPointF pos()
     {
+        return QCursor::pos();
+    }
+    Q_INVOKABLE QPointF setCursorShape(Qt::CursorShape cursorShape)
+    {
+        QGuiApplication::setOverrideCursor(QCursor(cursorShape));
         return QCursor::pos();
     }
     static CursorPosProvider& instance()
@@ -25,8 +31,8 @@ public:
         return s_instance;
     }
     ~CursorPosProvider() {} // Private destructor to prevent external deletion.
-    CursorPosProvider(const ApplicationModel&) = delete; // Disable copy constructor.
-    CursorPosProvider& operator=(const ApplicationModel&) = delete; // Disable copy assignment.
+    CursorPosProvider(const CursorPosProvider&) = delete; // Disable copy constructor.
+    CursorPosProvider& operator=(const CursorPosProvider&) = delete; // Disable copy assignment.
 };
 
 #endif // UTILS_H

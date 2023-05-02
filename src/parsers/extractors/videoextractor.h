@@ -12,7 +12,7 @@ private:
 public:
     VideoExtractor(){};
     ~VideoExtractor(){};
-    virtual bool extract(VideoServer *server) = 0;
+    virtual QString extract(std::string link) = 0;
 };
 
 #endif // VIDEOEXTRACTOR_H

@@ -1,6 +1,6 @@
-#include "vidstream.h"
+//#include "vidstream.h"
 
-Vidstream::Vidstream()
-{
+//Vidstream::Vidstream()
+//{
 
-}
+//}

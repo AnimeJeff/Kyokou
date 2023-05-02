@@ -19,10 +19,6 @@ Window {
     title: ""//qsTr("kyokou")
     property bool maximised: window.visibility === Window.FullScreen
     property var mpv : mpvPage.mpv
-    //    onActiveFocusItemChanged: {
-    //        console.log(activeFocusItem)
-    //    console.log(activeFocusItem.dumpItemTree())}
-
     function setMaximised(shouldFullscreen){
         if(shouldFullscreen){
             window.visibility = Window.FullScreen;

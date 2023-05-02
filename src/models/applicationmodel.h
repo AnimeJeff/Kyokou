@@ -58,7 +58,9 @@ private:
         connect(&m_watchListModel,&WatchListModel::indexMoved,&m_playlistModel,&PlaylistModel::changeWatchListIndex);
 
         connect(Global::instance ().currentShowObject (), &ShowResponseObject::showChanged,&m_watchListModel,&WatchListModel::checkCurrentShowInList);
-
+        connect(Global::instance ().currentShowObject (), &ShowResponseObject::showChanged,[&](){
+            m_episodeListModel.setIsReversed(false);
+        });
 //        m_downloadModel.downloadM3u8 ("lmao","D:\\TV\\temp\\尖峰时刻","https://ngzx.vizcloud.co/simple/EqPFIf8QWADtjDlGha7rC5QuqFxVu_T7SkR7rqk+wYMnU94US2El_Po4w1ynT_yP+tyVRt8p/br/H2/v.m3u8","https://ngzx.vizcloud.co");
 
     };

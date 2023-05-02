@@ -166,19 +166,10 @@ GridView {
 
     onContentYChanged: {
         if(!moving && (lastIndex !== (list.count-1))){
-//            console.log("why!!!")
-
-//            console.log("back to lastY",(lastY+originY),contentHeight)
-//            contentY = lastY + originY
-            console.log("back to index",lastIndex)
             list.positionViewAtIndex(lastIndex,GridView.End)
-            //            canFetch = true
         }else if(moving){
-//            console.log("moving")
             canFetch = true
         }
-
-        //        lastY = contentY-originY
     }
 
 

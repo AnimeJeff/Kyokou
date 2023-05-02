@@ -16,8 +16,8 @@ Rectangle {
                    }
         onPositionChanged: (mouse)=> {
                                if(!window.maximised && clickPos !== null){
-                                   window.x = mousePosition.cursorPos().x - clickPos.x
-                                   window.y = mousePosition.cursorPos().y - clickPos.y
+                                   window.x = cursor.pos().x - clickPos.x
+                                   window.y = cursor.pos().y - clickPos.y
                                }
                            }
         onDoubleClicked: {

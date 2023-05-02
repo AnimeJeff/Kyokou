@@ -21,14 +21,14 @@ private:
         DROPPED,
     };
     nlohmann::json m_jsonList;
-    QVector<ShowResponse*> m_list;
-    QVector<ShowResponse*> m_watchingList;
-    QVector<ShowResponse*> m_plannedList;
-    QVector<ShowResponse*> m_onHoldList;
-    QVector<ShowResponse*> m_droppedList;
-    QVector<ShowResponse*>* m_currentList = &m_watchingList;
+    QVector<std::shared_ptr<ShowResponse>> m_list;
+    QVector<std::shared_ptr<ShowResponse>> m_watchingList;
+    QVector<std::shared_ptr<ShowResponse>> m_plannedList;
+    QVector<std::shared_ptr<ShowResponse>> m_onHoldList;
+    QVector<std::shared_ptr<ShowResponse>> m_droppedList;
+    QVector<std::shared_ptr<ShowResponse>>* m_currentList = &m_watchingList;
 
-    QMap<int,QVector<ShowResponse*>*>listMap{
+    QMap<int,QVector<std::shared_ptr<ShowResponse>>*>listMap{
                                                  {WATCHING, &m_watchingList},
                                                  {PLANNED, &m_plannedList},
                                                  {ON_HOLD, &m_onHoldList},
@@ -59,7 +59,7 @@ public:
         }
 
         for (int i = 0; i < m_jsonList.size (); ++i) {
-            m_list.push_back(new ShowResponse(m_jsonList[i]));
+            m_list.push_back(std::make_shared<ShowResponse>(ShowResponse(m_jsonList[i])));
             switch(m_list.last ()->listType){
             case WATCHING:
                 m_watchingList.push_back (m_list.last ());
@@ -79,7 +79,7 @@ public:
     };
     ~WatchListModel() {
         for(const auto& item:m_list){
-            delete item;
+
         }
         m_list.clear ();
         m_watchingList.clear ();
@@ -89,28 +89,30 @@ public:
     }
 public:
     Q_INVOKABLE void add(const ShowResponse& show, int listType = WATCHING){
-        if(show.isInWatchList || checkInList (show))return;
+        //        if(show.isInWatchList || checkInList (show))return;
 
 
-        nlohmann::json showObj;
-        showObj["title"]= show.title.toStdString ();
-        showObj["cover"]= show.coverUrl.toStdString ();
-        showObj["link"] = show.link.toStdString ();
-        showObj["provider"] = show.provider;
-        showObj["listType"] = listType;
-        showObj["lastWatchedIndex"] = show.getLastWatchedIndex();
+        nlohmann::json showObj = nlohmann::json::object({
+                                                         {"title", show.title.toStdString ()},
+                                                         {"cover", show.coverUrl.toStdString ()},
+                                                         {"link",show.link.toStdString ()},
+                                                         {"provider",show.provider},
+                                                         {"listType",listType},
+                                                         {"lastWatchedIndex",show.lastWatchedIndex},
+                                                         });
         m_jsonList.push_back (showObj);
-
-        m_list.push_back (new ShowResponse(m_jsonList[m_jsonList.size()-1]));
+//        qDebug()<<showObj.dump();
+        m_list.push_back (std::make_shared<ShowResponse>(ShowResponse(m_jsonList[m_jsonList.size()-1])));
+//        qDebug()<<showObj.dump();
         listMap[listType]->push_back (m_list.last ());
         if(m_listType == listType)emit layoutChanged ();
-
         save();
     }
 
     Q_INVOKABLE void addCurrentShow(int listType = WATCHING){
         if(Global::instance ().currentShowObject ()->isInWatchList ()){
             changeListType (getShowInList (Global::instance ().currentShowObject ()->getShow ()),listType);
+            Global::instance ().currentShowObject ()->setListType (listType);
             emit layoutChanged();
             save();
             return;
@@ -120,7 +122,7 @@ public:
         Global::instance ().currentShowObject ()->setListType (listType);
     }
 
-    void changeListType(ShowResponse* show, const int& to){
+    void changeListType(std::shared_ptr<ShowResponse> show, const int& to){
         if(!m_list.contains (show))return;
         if(show->listType == to) return;
 
@@ -160,7 +162,7 @@ public:
     Q_INVOKABLE void removeAtIndex(int index){
         if (index < 0 || index >= m_list.size()) return;
         m_jsonList.erase(m_jsonList.begin() + index);
-        delete m_list.at (index);
+//        delete m_list.at (index);
         m_list.removeAt (index);
         emit layoutChanged ();
         save();
@@ -227,9 +229,9 @@ public:
         return -1;
     }
 
-    ShowResponse* getShowInList(const ShowResponse& show) {
+    std::shared_ptr<ShowResponse> getShowInList(const ShowResponse& show) {
         const auto iter = std::find_if(m_list.begin(), m_list.end(),
-                                       [&](const ShowResponse* ptr) { return ptr->link == show.link; });
+                                       [&](const std::shared_ptr<ShowResponse> ptr) { return ptr->link == show.link; });
         return iter == m_list.end() ? nullptr : *iter;
     }
 
@@ -251,6 +253,7 @@ public slots:
                 Global::instance().currentShowObject()->setIsInWatchList(true);
                 Global::instance().currentShowObject()->setLastWatchedIndex(item->lastWatchedIndex);
                 Global::instance().currentShowObject()->setListType(item->listType);
+//                Global::instance().currentShowObject()->setJsonObject(m_jsonList[i]);
                 m_currentShowListIndex = -1;
                 return true;
             }

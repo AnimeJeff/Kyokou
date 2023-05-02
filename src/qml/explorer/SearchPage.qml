@@ -5,9 +5,6 @@ import "../components"
 
 Item {
     id: searchPage
-    property alias resultsList : list
-
-
     SearchBar{
         id:searchBar
         anchors{
@@ -19,6 +16,7 @@ Item {
     }
 
     LoadingScreen{
+        id:loadingScreen
         anchors.fill: parent
         loading: app.searchResultsModel.loading
     }
@@ -26,64 +24,62 @@ Item {
     GridView {
         id: list
         property real aspectRatio:319/225
-        property real itemPerRow: 6
+        property real itemPerRow: Math.floor(window.width/200)
+        property real spacing: 10
+
+
         boundsBehavior:Flickable.StopAtBounds
-        anchors.top: searchBar.bottom
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
+        boundsMovement: Flickable.StopAtBounds
+
+        anchors{
+            topMargin: list.spacing
+            top: searchBar.bottom
+            left: parent.left
+            right: parent.right
+            bottom: parent.bottom
+            leftMargin: list.spacing
+        }
         model: app.searchResultsModel
         cellHeight: cellWidth * aspectRatio + 35
         cellWidth: width/itemPerRow
+
         delegate:  itemDelegate
         highlight: highlight
         highlightFollowsCurrentItem: false
-//        focus: true
+        //        focus: true
         clip: true
 
-//        footer: Rectangle{
-//            color: "transparent"
-//            width: parent.width
-//            height: 100
-//            z:list.z+1
-//            BusyIndicator{
-//                running: true
-//                visible: true
-//                width: width
-//                height: parent.height
-//                anchors.centerIn: parent
+        //        footer: Rectangle{
+        //            color: "transparent"
+        //            width: parent.width
+        //            height: 100
+        //            z:list.z+1
+        //            BusyIndicator{
+        //                running: true
+        //                visible: true
+        //                width: width
+        //                height: parent.height
+        //                anchors.centerIn: parent
 
-//            }
-//        }
+        //            }
+        //        }
 
-        interactive: true
-        property int realContentHeight: Math.ceil(list.count/6)*cellHeight
-        property int prevContentY
+        //        interactive: true
+        //        property int realContentHeight: Math.ceil(list.count/6)*cellHeight
 
         onAtYEndChanged: {
-            console.log(app.searchResultsModel.canLoadMore())
             if(atYEnd && count > 0 && app.searchResultsModel.canLoadMore()){
-                contentY = realContentHeight-height
-                prevContentY=contentY
                 app.searchResultsModel.loadMore();
             }
         }
-        Connections{
-            target: app.searchResultsModel
-            function onPostItemsAppended(){
-                if(list.prevContentY){
-                    list.contentY = list.prevContentY+100
-
-                }
-            }
-        }
+//        onCountChanged: {
+//            if( Math.ceil(list.count/list.itemPerRow)*cellHeight<height && count>0){
+//                app.searchResultsModel.loadMore();
+//            }
+//        }
         onContentHeightChanged: {
-            console.log(Math.ceil(list.count/6)*cellHeight,height)
-            console.log(app.searchResultsModel.canLoadMore())
-
-            if( Math.ceil(list.count/6)*cellHeight<height && count>0){
+            if( Math.ceil(list.count/list.itemPerRow)*cellHeight<height && count>0){
                 app.searchResultsModel.loadMore();
-                console.log("loadmore")
             }
         }
 
@@ -95,8 +91,8 @@ Item {
                     id:coverImage
                     source:  model.cover// : "qrc:/kyokou/images/error_image.png"
                     onStatusChanged: if (coverImage.status === Image.Error) source = "qrc:/resources/images/error_image.png"
-                    width: list.width/list.itemPerRow
-                    height: coverImage.width * list.aspectRatio
+                    width: list.width/list.itemPerRow -list.spacing
+                    height: width * list.aspectRatio
                     BusyIndicator {
                         id: busyIndicator
                         anchors.centerIn: parent
@@ -106,11 +102,15 @@ Item {
                         height: 70
                         width: 70
                     }
+
                     MouseArea{
                         anchors.fill: parent
                         onClicked: (mouse)=>{
                                        app.searchResultsModel.loadDetails(index)
                                    }
+                        hoverEnabled: true
+                        onEntered: cursor.setCursorShape(Qt.PointingHandCursor)
+                        onExited: cursor.setCursorShape(Qt.ArrowCursor)
                     }
                 }
                 Text {
@@ -138,5 +138,4 @@ Item {
 
 
     }
-
 }

@@ -20,9 +20,7 @@ download option
 
 library
 rename watchlist to library
-change background of library page 
 add manga list to library
-add planned list
 migrate to another source
 fix jump to beginning
 

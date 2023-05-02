@@ -33,9 +33,8 @@ public:
     virtual QVector<ShowResponse> fetchMore() = 0;
     virtual ShowResponse loadDetails(ShowResponse show)  = 0;
     virtual QVector<VideoServer> loadServers(const Episode& episode) = 0;
-    virtual void extractSource(VideoServer& server) = 0;
+    virtual QString extractSource(VideoServer& server) = 0;
 signals:
-    void sourceFetched(QString link);
     void error(QString errorString);
 
 };

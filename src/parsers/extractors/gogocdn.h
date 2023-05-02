@@ -28,17 +28,17 @@ public:
         std::string iv;
     };
 
-    bool extract(VideoServer *server)override{
+    QString extract(std::string link)override{
         NetworkClient client;
-        auto response = client.get(server->link);
-        if (Functions::containsSubstring (server->link,"streaming.php")){
+        auto response = client.get(link);
+        if (Functions::containsSubstring (link,"streaming.php")){
             std::string it =response.document().selectFirst("//script[@data-name='episode']").attr("data-value").as_string ();
             std::string decrypted = decrypt (it, keysAndIv.key, keysAndIv.iv);
             decrypted.erase(std::remove(decrypted.begin(), decrypted.end(), '\t'), decrypted.end());  // Remove all occurrences of '\t'
             std::string id = Functions::findBetween(decrypted, "", "&");
             std::string end = Functions::substringAfter(decrypted,id);
             std::string encryptedId = encrypt(id, keysAndIv.key, keysAndIv.iv);
-            std::string encryptedUrl = "https://" + getHostFromUrl(server->link)+ "/encrypt-ajax.php?id=" + encryptedId + end + "&alias=" + id;
+            std::string encryptedUrl = "https://" + getHostFromUrl(link)+ "/encrypt-ajax.php?id=" + encryptedId + end + "&alias=" + id;
             std::string encrypted = client.get(encryptedUrl, {{"X-Requested-With", "XMLHttpRequest"}}).body;
             std::string dataEncrypted = Functions::findBetween(encrypted, "{\"data\":\"", "\"}");
             std::string jumbledJson = decrypt(dataEncrypted, keysAndIv.secondKey, keysAndIv.iv);
@@ -47,11 +47,11 @@ public:
             auto source_bk = nlohmann::json::parse (jumbledJson)["source_bk"][0]["file"].get <std::string>();
             //            qDebug()<<"source"<<QString::fromStdString (source)<<"\n";
             //            qDebug()<<"source_bk"<<QString::fromStdString (source_bk)<<"\n";
-            server->source=QString::fromStdString (source);
+
+            return QString::fromStdString (source);
 //            qDebug()<<server->source<<"not my fault";
-            return true;
         }
-        return false;
+        return "";
     }
 
     std::string getHostFromUrl(const std::string& url) {

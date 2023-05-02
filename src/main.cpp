@@ -41,6 +41,7 @@ int main(int argc, char *argv[]){
     //        return 6;
     //    }
 
+
     std::setlocale(LC_NUMERIC, "C");
     qputenv("LC_NUMERIC", QByteArrayLiteral("C"));
     qputenv("PYTHONIOENCODING", QByteArrayLiteral("utf-8"));
@@ -53,7 +54,7 @@ int main(int argc, char *argv[]){
     QQmlApplicationEngine engine;
     engine.rootContext ()->setContextProperty("app",&ApplicationModel::instance ());
     engine.rootContext ()->setContextProperty("global",&Global::instance ());
-    engine.rootContext ()->setContextProperty("mousePosition",&CursorPosProvider::instance ());
+    engine.rootContext ()->setContextProperty("cursor",&CursorPosProvider::instance ());
 
 
 

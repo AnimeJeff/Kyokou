@@ -19,11 +19,7 @@ class EpisodeListModel : public QAbstractListModel
     bool isReversed = false;
     QString continueEpisodeName;
     int continueIndex;
-    void setIsReversed(bool isReversed){
-        this->isReversed = isReversed;
-        emit layoutChanged ();
-        emit reversedChanged();
-    }
+
 
     QString getContinueEpisodeName(){
         return continueEpisodeName;
@@ -50,6 +46,11 @@ signals:
     void continueIndexChanged(void);
     void reversedChanged(void);
 public:
+    void setIsReversed(bool isReversed){
+        this->isReversed = isReversed;
+        emit layoutChanged ();
+        emit reversedChanged();
+    }
     bool getIsReversed() const{
         return isReversed;
     }
