@@ -15,7 +15,7 @@
 #include <cryptopp/base64.h>
 #include <cryptopp/filters.h>
 #include <cryptopp/modes.h>
-#include <functions.hpp>
+#include "tools/functions.h"
 #include <regex>
 
 class GogoCDN: public VideoExtractor

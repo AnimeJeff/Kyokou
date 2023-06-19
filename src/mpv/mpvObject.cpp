@@ -17,15 +17,12 @@
 #include "mpvObject.h"
 #include <stdexcept>
 #include <clocale>
-
 #include <QDebug>
 #include <QDir>
 #include <QOpenGLContext>
 #include <QSettings>
 #include <QStandardPaths>
 #include <QMetaType>
-
-
 
 
 #if QT_VERSION_MAJOR >= 6
@@ -49,10 +46,10 @@ public:
 
         QObject::connect(&timer, &QTimer::timeout, [&](){
 //            qDebug() << ApplicationModel::instance ().playlistModel ()->getPlayOnLaunchFile ();
-            m_obj->open(ApplicationModel::instance ().playlistModel ()->getPlayOnLaunchFile ());
+            m_obj->open(Application::instance ().playlistModel ()->getPlayOnLaunchFile ());
             timer.stop ();
         });
-        if(ApplicationModel::instance ().playlistModel ()->getPlayOnLaunchFile ().length () > 0){
+        if(Application::instance ().playlistModel ()->getPlayOnLaunchFile ().length () > 0){
             timer.start ();
         }
 
@@ -410,9 +407,9 @@ void MpvObject::onMpvEvent()
         case MPV_EVENT_IDLE:
         {
             //            Q_ASSERT(playlistModel != nullptr);
-            if (m_endFileReason == MPV_END_FILE_REASON_EOF && ApplicationModel::instance().playlistModel()->hasNextItem())
+            if (m_endFileReason == MPV_END_FILE_REASON_EOF && Application::instance().playlistModel()->hasNextItem())
             {
-                ApplicationModel::instance().playlistModel()->playNextItem();
+                Application::instance().playlistModel()->playNextItem();
             }
             else
             {

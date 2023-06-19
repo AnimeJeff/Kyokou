@@ -9,6 +9,9 @@ add advanced search
 handle connection timeout
 if error emit error string
 cancel slot
+showprovider method to return types available
+
+
 
 
 info page

@@ -8,10 +8,8 @@
 #include <QTextStream>
 
 #include "mpv/mpvObject.h"
-#include "models/applicationmodel.h"
-#include "models/watchlistmodel.h"
-#include "models/downloadmodel.h"
-#include "tools.hpp"
+#include "application.h"
+#include "tools/cursorposprovider.hpp"
 
 bool parseArgs(int argc, char *argv[]);
 //void print(const QString& str){
@@ -52,7 +50,7 @@ int main(int argc, char *argv[]){
     QQuickStyle::setStyle("Universal");
 
     QQmlApplicationEngine engine;
-    engine.rootContext ()->setContextProperty("app",&ApplicationModel::instance ());
+    engine.rootContext ()->setContextProperty("app",&Application::instance ());
     engine.rootContext ()->setContextProperty("global",&Global::instance ());
     engine.rootContext ()->setContextProperty("cursor",&CursorPosProvider::instance ());
 
@@ -109,10 +107,10 @@ bool parseArgs(int argc, char *argv[]){
         return false;
     }else if(!play.empty()){
         if(!cleanPath (play,false))return false;
-        ApplicationModel::instance ().playlistModel ()->setOnLaunchFile (play.c_str ());
+        Application::instance ().playlistModel ()->setOnLaunchFile (play.c_str ());
     }else if(!dir.empty()){
         if(!cleanPath (dir,true))return false;
-        ApplicationModel::instance ().playlistModel ()->setOnLaunchPlaylist (dir.c_str ());
+        Application::instance ().playlistModel ()->setOnLaunchPlaylist (dir.c_str ());
     }
     return true;
 }

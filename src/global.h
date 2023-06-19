@@ -6,8 +6,9 @@
 #include "parsers/providers/gogoanime.h"
 #include "parsers/providers/nivod.h"
 #include "parsers/providers/ntdongman.h"
-#include "parsers/providers/unstable/consumet9anime.h"
 #include "parsers/providers/huale.h"
+
+#include <parsers/providers/nineanimehq.h>
 
 class Global : public QObject {
 
@@ -17,57 +18,44 @@ class Global : public QObject {
     Q_PROPERTY(ShowParser* currentSearchProvider READ getCurrentSearchProvider NOTIFY currentSearchProviderChanged)
 
     QMap<int,ShowParser*> providersMap{
-        {Providers::e_Nivod,new Nivod},
-        {Providers::e_HuaLe,new HuaLe},
-//        {Providers::e_Consumet9anime,new Consumet9anime},
-        {Providers::e_Gogoanime,new Gogoanime},
-//        {Providers::e_NtDongMan,new NtDongMan},
-    };
-
+                                         {Providers::e_Nivod,new Nivod},
+                                         {Providers::e_HuaLe,new HuaLe},
+                                         {Providers::e_Gogoanime,new Gogoanime},
+                                         //        {Providers::e_NtDongMan,new NtDongMan},
+                                         {Providers::e_NineAnimeHQ,new NineanimeHQ},
+                                         };
     ShowResponseObject m_currentShowObject{this};
-
-    ShowParser* m_currentSearchProvider = providersMap[Providers::e_Gogoanime];
+    ShowParser* m_currentSearchProvider;
 public:
-
     inline ShowResponseObject* currentShowObject() {
         return &m_currentShowObject;
     };
-
     inline ShowParser* getProvider(int provider) const {
         if(providersMap.contains(provider))return providersMap[provider];
         return nullptr;
     }
-
     inline ShowParser* getCurrentShowProvider() {
         return providersMap[m_currentShowObject.provider()];
     }
-
     inline ShowParser* getCurrentSearchProvider() {
         Q_ASSERT(m_currentSearchProvider!=nullptr);
         return m_currentSearchProvider;
     }
-
     inline QList<ShowParser*> providers() const {
         return providersMap.values ();
     }
-
     inline Q_INVOKABLE void changeSearchProvider(int providerEnum) {
         m_currentSearchProvider = providersMap[providerEnum];
         emit currentSearchProviderChanged();
     }
-
     static Global& instance() {
         static Global instance;
         return instance;
     }
-
-signals:
-    void currentSearchProviderChanged(void);
 private:
     Global() {
-
+        m_currentSearchProvider = providersMap[Providers::e_Gogoanime];
     }
-
     ~Global(){
         m_currentSearchProvider=nullptr;
         for (auto it = providersMap.begin(); it != providersMap.end(); ++it) {
@@ -75,9 +63,9 @@ private:
         }
         providersMap.clear ();
     }
-
     Global(const Global&) = delete; // delete copy constructor
     Global& operator=(const Global&) = delete; // delete copy assignment operator
-
+signals:
+    void currentSearchProviderChanged(void);
 };
 #endif // GLOBAL_H

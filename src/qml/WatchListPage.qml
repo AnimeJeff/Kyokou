@@ -117,6 +117,7 @@ Rectangle{
             ListElement { text: "Planned" }
             ListElement { text: "On Hold" }
             ListElement { text: "Dropped" }
+            ListElement { text: "Completed" }
         }
         hoverEnabled: true
         currentIndex: app.watchList.listType

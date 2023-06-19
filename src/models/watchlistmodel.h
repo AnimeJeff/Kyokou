@@ -19,6 +19,7 @@ private:
         PLANNED,
         ON_HOLD,
         DROPPED,
+        COMPLETED
     };
     nlohmann::json m_jsonList;
     QVector<std::shared_ptr<ShowResponse>> m_list;
@@ -26,14 +27,16 @@ private:
     QVector<std::shared_ptr<ShowResponse>> m_plannedList;
     QVector<std::shared_ptr<ShowResponse>> m_onHoldList;
     QVector<std::shared_ptr<ShowResponse>> m_droppedList;
+    QVector<std::shared_ptr<ShowResponse>> m_completedList;
     QVector<std::shared_ptr<ShowResponse>>* m_currentList = &m_watchingList;
 
     QMap<int,QVector<std::shared_ptr<ShowResponse>>*>listMap{
-                                                 {WATCHING, &m_watchingList},
-                                                 {PLANNED, &m_plannedList},
-                                                 {ON_HOLD, &m_onHoldList},
-                                                 {DROPPED, &m_droppedList},
-                                                 };
+        {WATCHING, &m_watchingList},
+        {PLANNED, &m_plannedList},
+        {ON_HOLD, &m_onHoldList},
+        {DROPPED, &m_droppedList},
+        {COMPLETED,&m_completedList}
+    };
 
     int m_listType = WATCHING;
     int getlistType(){
@@ -74,7 +77,6 @@ public:
                 m_droppedList.push_back (m_list.last ());
                 break;
             }
-
         }
     };
     ~WatchListModel() {
@@ -101,9 +103,9 @@ public:
                                                          {"lastWatchedIndex",show.lastWatchedIndex},
                                                          });
         m_jsonList.push_back (showObj);
-//        qDebug()<<showObj.dump();
+        //        qDebug()<<showObj.dump();
         m_list.push_back (std::make_shared<ShowResponse>(ShowResponse(m_jsonList[m_jsonList.size()-1])));
-//        qDebug()<<showObj.dump();
+        //        qDebug()<<showObj.dump();
         listMap[listType]->push_back (m_list.last ());
         if(m_listType == listType)emit layoutChanged ();
         save();
@@ -162,7 +164,7 @@ public:
     Q_INVOKABLE void removeAtIndex(int index){
         if (index < 0 || index >= m_list.size()) return;
         m_jsonList.erase(m_jsonList.begin() + index);
-//        delete m_list.at (index);
+        //        delete m_list.at (index);
         m_list.removeAt (index);
         emit layoutChanged ();
         save();
@@ -253,7 +255,7 @@ public slots:
                 Global::instance().currentShowObject()->setIsInWatchList(true);
                 Global::instance().currentShowObject()->setLastWatchedIndex(item->lastWatchedIndex);
                 Global::instance().currentShowObject()->setListType(item->listType);
-//                Global::instance().currentShowObject()->setJsonObject(m_jsonList[i]);
+                //                Global::instance().currentShowObject()->setJsonObject(m_jsonList[i]);
                 m_currentShowListIndex = -1;
                 return true;
             }

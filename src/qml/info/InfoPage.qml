@@ -190,6 +190,7 @@ Item{
                             ListElement { text: "Planned" }
                             ListElement { text: "On Hold" }
                             ListElement { text: "Dropped" }
+                            ListElement { text: "Completed" }
                         }
                     }
 

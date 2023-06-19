@@ -1,8 +1,8 @@
 #ifndef VIDEOEXTRACTOR_H
 #define VIDEOEXTRACTOR_H
 
-#include <parsers/episode.h>
-#include <functions.hpp>
+#include "parsers/episode.h"
+#include "tools/functions.h"
 
 
 class VideoExtractor

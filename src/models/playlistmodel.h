@@ -144,7 +144,6 @@ public:
         }
     }
 
-
     Q_INVOKABLE void loadOffset(int offset);
     bool hasNextItem();
     bool hasPrecedingItem();
@@ -157,19 +156,20 @@ public:
         this->playlistIndex = index;
         emit currentIndexChanged();
         if(online){
-            if(m_watchListShowItem){
-                m_watchListShowItem->setLastWatchedIndex (index);
-                emit updatedLastWatchedIndex();
-            }
-            if(m_currentShowLink == Global::instance().currentShowObject ()->link ()){
-                Global::instance().currentShowObject ()->setLastWatchedIndex (index);
-            }
-
             m_watcher.setFuture (QtConcurrent::run([&]() {
                 try{
                     QVector<VideoServer> servers = currentProvider->loadServers (m_playlist[playlistIndex]);
-                    QString source = currentProvider->extractSource(servers[0]);
-                    emit sourceFetched(source);
+                    if(!servers.empty ()){
+                        QString source = currentProvider->extractSource(servers[0]);
+                        emit sourceFetched(source);
+                    }
+                    if(m_watchListShowItem){
+                        m_watchListShowItem->setLastWatchedIndex (index);
+                        emit updatedLastWatchedIndex();
+                    }
+                    if(m_currentShowLink == Global::instance().currentShowObject ()->link ()){
+                        Global::instance().currentShowObject ()->setLastWatchedIndex (index);
+                    }
                 }catch(const QException& e){
                     qCritical() << e.what ();
                     emit encounteredError("Encountered error while extracting" + QString(e.what ()));
@@ -189,8 +189,6 @@ public:
             emit loadingChanged();
         }
     }
-
-
 
 signals:
     void loadingChanged(void);

@@ -30,9 +30,8 @@ enum class Status {
 };
 enum Providers{
     e_Nivod,
-    e_Consumet9anime,
+    e_NineAnimeHQ,
     e_Gogoanime,
-    e_NineAnime,
     e_NtDongMan,
     e_HuaLe,
 };
@@ -56,7 +55,7 @@ public:
         this->setLastWatchedIndex(jsonObject["lastWatchedIndex"].get<int>());
         this->isInWatchList = true;
         this->listType = jsonObject["listType"].get<int>();
-        if(this->listType < 0 || this->listType > 3){
+        if(this->listType < 0 || this->listType > 4){
             qWarning()<<"Invalid list type.";
             this->listType = 0;
             jsonObject["listType"] = 0;
@@ -151,34 +150,28 @@ class ShowResponseObject:public QObject{
     Q_PROPERTY(int listType READ listType NOTIFY listTypeChanged);
 public:
     ShowResponseObject(QObject* parent = nullptr) : QObject(parent) {}
-
     inline void setLastWatchedIndex(int index) {
         show.lastWatchedIndex = index;
         emit showPropertyChanged();
         emit lastWatchedIndexChanged();
     }
-
     inline void setIsInWatchList(bool isInWatchList) {
         show.isInWatchList = isInWatchList;
         emit showPropertyChanged();
     }
-
     inline void setListType(int listType) {
 //        show.listType = listType;
         show.setListType(listType);
         emit listTypeChanged();
     }
-
     inline void setShow(const ShowResponse& show) {
         this->show = show;
         this->show.object = this;
         emit showChanged();
     }
-
     inline void setWatchListShow(ShowResponse* show) {
         this->watchListShow = show;
     }
-
     inline ShowResponse getShow() const {return show;}
 
 public:

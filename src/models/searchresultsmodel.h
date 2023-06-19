@@ -24,7 +24,7 @@ class SearchResultsModel : public QAbstractListModel
 public:
     explicit SearchResultsModel(QObject *parent = nullptr)
         : QAbstractListModel(parent){
-//        timeoutTimer.setSingleShot(true);
+        //        timeoutTimer.setSingleShot(true);
         QObject::connect(&m_searchWatcher, &QFutureWatcher<QVector<ShowResponse>>::finished,this, [&]() {
             QVector<ShowResponse> results = m_searchWatcher.future ().result ();
             if(fetchingMore){
@@ -105,13 +105,17 @@ public slots:
         loading=true;
         emit loadingChanged();
         m_detailLoadingWatcher.setFuture(QtConcurrent::run ([&](){
-            try{
-                auto provider = Global::instance().getProvider(show.provider);
-                if(provider)
+
+            auto provider = Global::instance().getProvider(show.provider);
+            if(provider){
+                try{
+                    qDebug()<<"Loading details for" << show.title << "with" << provider->name () << "using the link:" << show.link;
                     return provider->loadDetails (show);
-                else qDebug()<<"cannot find provider for "<< show.provider;
-            }catch(const std::exception& e){
-                qCritical() << e.what ();
+                }catch(const QException& e){
+                    qDebug()<<e.what ();
+                }
+            }else{
+                qDebug()<<"Unable to find a provider for provider enum" << show.provider;
             }
             return show;
         }));
