@@ -20,7 +20,7 @@ class Application : public QObject
     Q_PROPERTY(EpisodeListModel* episodeListModel READ episodeListModel CONSTANT)
     Q_PROPERTY(SearchResultsModel* showExplorer READ searchResultsModel CONSTANT)
     Q_PROPERTY(WatchListModel* watchList READ watchListModel CONSTANT)
-
+private:
     Q_PROPERTY(QList<MediaProvider*> providers READ providers CONSTANT)
     Q_PROPERTY(MediaProvider* currentSearchProvider READ getCurrentSearchProvider NOTIFY currentSearchProviderChanged)
     Q_PROPERTY(MediaDataObject* currentShowObject READ getCurrentShowObject CONSTANT)
@@ -29,21 +29,15 @@ class Application : public QObject
     MediaDataObject* getCurrentShowObject(){
         return &currentShowObject;
     }
-    MediaProvider* m_currentSearchProvider = providersMap[MediaProvider::Gogoanime] ;
     QMap<int,MediaProvider*> providersMap{{MediaProvider::Nivod,new Nivod},
 //                                         {Providers::e_HuaLe,new HuaLe},
                                          {MediaProvider::Gogoanime,new Gogoanime},
                                          //        {Providers::e_NtDongMan,new NtDongMan},
                                          {MediaProvider::NineAnimeHQ,new NineanimeHQ},
                                          };
+    MediaProvider* m_currentSearchProvider = providersMap[MediaProvider::Gogoanime] ;
 
-    friend PlaylistModel;
-    friend SearchResultsModel;
-    friend EpisodeListModel;
-    friend WatchListModel;
-    //todo mediamanager
-    //remove mediadataobject
-    //
+
     inline MediaProvider* getProvider(int provider) const {
         if(providersMap.contains(provider)) return providersMap[provider];
         return nullptr;
@@ -59,6 +53,10 @@ class Application : public QObject
         return providersMap.values ();
     }
 
+    friend PlaylistModel;
+    friend SearchResultsModel;
+    friend EpisodeListModel;
+    friend WatchListModel;
     EpisodeListModel m_episodeListModel{this};
     PlaylistModel m_playlistModel{this};
     SearchResultsModel m_searchResultsModel{this};
@@ -66,10 +64,10 @@ class Application : public QObject
     DownloadModel m_downloadModel{this};
 
 public:
-    PlaylistModel* playlistModel(){return &m_playlistModel;}
-    EpisodeListModel* episodeListModel(){return &m_episodeListModel;}
-    SearchResultsModel* searchResultsModel(){return &m_searchResultsModel;}
-    WatchListModel* watchListModel(){return &m_watchListModel;}
+    inline PlaylistModel* playlistModel(){return &m_playlistModel;}
+    inline EpisodeListModel* episodeListModel(){return &m_episodeListModel;}
+    inline SearchResultsModel* searchResultsModel(){return &m_searchResultsModel;}
+    inline WatchListModel* watchListModel(){return &m_watchListModel;}
 public:
     Q_INVOKABLE void changeSearchProvider(int providerEnum) {
         m_currentSearchProvider = providersMap[providerEnum];
