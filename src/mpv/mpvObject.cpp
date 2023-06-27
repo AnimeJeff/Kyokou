@@ -392,6 +392,7 @@ void MpvObject::onMpvEvent()
 
         case MPV_EVENT_FILE_LOADED:
             m_state = VIDEO_PLAYING;
+            SetThreadExecutionState(ES_CONTINUOUS | ES_DISPLAY_REQUIRED);
             emit stateChanged();
             break;
 
@@ -407,12 +408,9 @@ void MpvObject::onMpvEvent()
         case MPV_EVENT_IDLE:
         {
             //            Q_ASSERT(playlistModel != nullptr);
-            if (m_endFileReason == MPV_END_FILE_REASON_EOF && Application::instance().playlistModel()->hasNextItem())
-            {
+            if (m_endFileReason == MPV_END_FILE_REASON_EOF){
                 Application::instance().playlistModel()->playNextItem();
-            }
-            else
-            {
+            }else{
                 m_state = STOPPED;
                 emit stateChanged();
             }
@@ -492,10 +490,12 @@ void MpvObject::onMpvEvent()
                 if (propValue && m_state == VIDEO_PLAYING)
                 {
                     m_state = VIDEO_PAUSED;
+                    SetThreadExecutionState(ES_CONTINUOUS);
                 }
                 else if (!propValue && m_state == VIDEO_PAUSED)
                 {
                     m_state = VIDEO_PLAYING;
+                    SetThreadExecutionState(ES_CONTINUOUS | ES_DISPLAY_REQUIRED);
                 }
                 emit stateChanged();
             }

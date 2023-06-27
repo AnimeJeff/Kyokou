@@ -7,6 +7,8 @@ import MpvPlayer 1.0
 import "./explorer"
 import "./info"
 import "./player"
+import "./watchlist"
+import "./download"
 import "./components"
 
 Window {
@@ -19,6 +21,7 @@ Window {
     title: ""//qsTr("kyokou")
     property bool maximised: window.visibility === Window.FullScreen
     property var mpv : mpvPage.mpv
+    property real lastScrollY:0
     function setMaximised(shouldFullscreen){
         if(shouldFullscreen){
             window.visibility = Window.FullScreen;
@@ -33,11 +36,6 @@ Window {
     }
 
     property bool playerIsFullScreen:false
-
-
-
-
-
 
     Rectangle{
         id:viewRect
@@ -71,13 +69,15 @@ Window {
                 color: "black"
             }
         }
+
         MpvPage{
             id:mpvPage
             visible: false
             anchors.fill: stackView
-
         }
+
     }
+
     MouseArea{
         anchors.fill: parent
         acceptedButtons: Qt.ForwardButton | Qt.BackButton
@@ -87,13 +87,11 @@ Window {
                            let nextPage = sideBar.currentPage+1
                            sideBar.gotoPage(nextPage === Object.keys(sideBar.pages).length ? 0 : nextPage)
                        }else{
-
                            let prevPage = sideBar.currentPage-1
                            sideBar.gotoPage(prevPage < 0 ? Object.keys(sideBar.pages).length-1 : prevPage)
                        }
                    }
     }
-
 
     Dialog {
         id: errorPopup

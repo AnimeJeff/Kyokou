@@ -205,93 +205,129 @@ Item{
 
     Keys.enabled: true
     Keys.onPressed: event => handleKeyPress(event)
-    function handleKeyPress(event){
-        if(event.modifiers & Qt.ControlModifier){
-            if (event.key === Qt.Key_1) {
-                mpv.loadAnime4K(1)
-            } else if (event.key === Qt.Key_2) {
-                mpv.loadAnime4K(2)
-            } else if (event.key === Qt.Key_3) {
-                mpv.loadAnime4K(3)
-            } else if (event.key === Qt.Key_4) {
-                mpv.loadAnime4K(4)
-            } else if (event.key === Qt.Key_5) {
-                mpv.loadAnime4K(5)
-            } else if (event.key === Qt.Key_6) {
-                mpv.loadAnime4K(6)
-            } else if (event.key === Qt.Key_0) {
-                mpv.loadAnime4K(0)
-            } else if (event.key === Qt.Key_Z) {
-                mpv.seek(mpv.time - 90)
-            } else if (event.key === Qt.Key_X) {
-                mpv.seek(mpv.time + 90)
-            } else if (event.key === Qt.Key_S) {
-                mpv.playPrecedingItem()
-            } else if (event.key === Qt.Key_D) {
-                mpv.playNextItem()
-            }
-        } else if (event.key === Qt.Key_Escape && playerIsFullScreen) {
-            setPlayerFullscreen(false)
-        } else if (event.key === Qt.Key_P) {
-            playlistBar.toggle()
-        }else if (event.key === Qt.Key_W) {
-            playlistBar.visible = !playlistBar.visible
-        } else if (event.key === Qt.Key_Up) {
-            volumeSlider.value += 5
-        } else if (event.key === Qt.Key_Down) {
-            volumeSlider.value -= 5
-        } else if (event.key === Qt.Key_Q) {
-            volumeSlider.value += 5
-        } else if (event.key === Qt.Key_A) {
-            volumeSlider.value -= 5
-        } else if (event.key === Qt.Key_Space) {
-            if(mpv.state === MpvObject.VIDEO_PLAYING) mpv.pause()
-            else mpv.play()
-        }else if (event.key === Qt.Key_Clear) {
-            if(mpv.state === MpvObject.VIDEO_PLAYING) mpv.pause()
-            else mpv.play()
-        }else if (event.key === Qt.Key_PageUp) {
-            mpv.playNextItem()
-        }else if (event.key === Qt.Key_Home) {
-            mpv.playPrecedingItem()
-        }
-        else if (event.key === Qt.Key_PageDown) {
-            mpv.seek(mpv.time + 90)
-        }
-        else if (event.key === Qt.Key_End) {
+    function handleCtrlModifiedKeyPress(key){
+        switch(key){
+        case Qt.Key_1:
+            mpv.loadAnime4K(1)
+            break;
+        case Qt.Key_2:
+            mpv.loadAnime4K(2)
+            break;
+        case Qt.Key_3:
+            mpv.loadAnime4K(3)
+            break;
+        case Qt.Key_4:
+            mpv.loadAnime4K(4)
+            break;
+        case Qt.Key_5:
+            mpv.loadAnime4K(5)
+            break;
+        case Qt.Key_0:
+            mpv.loadAnime4K(0)
+            break;
+        case Qt.Key_Z:
             mpv.seek(mpv.time - 90)
-        }
-        else if (event.key === Qt.Key_Plus) {
-            mpv.setSpeed(mpv.speed + 0.1)
-        }
-        else if (event.key === Qt.Key_Minus) {
-            mpv.setSpeed(mpv.speed - 0.1)
-        }
-        else if (event.key === Qt.Key_S) {
-            mpv.setSpeed(mpv.speed - 0.1)
-        } else if (event.key === Qt.Key_D) {
-            mpv.setSpeed(mpv.speed + 0.1)
-        } else if (event.key === Qt.Key_R) {
-            if(mpv.speed > 1.0) mpv.setSpeed(1.0)
-            else mpv.setSpeed(2.0)
-        } else if (event.key === Qt.Key_F) {
-            setPlayerFullscreen(!playerIsFullScreen)
-        } else if (event.key === Qt.Key_M) {
-            mpv.mute()
-        } else if (event.key === Qt.Key_Z || event.key === Qt.Key_Left) {
-            mpv.seek(mpv.time - 5)
-        } else if (event.key === Qt.Key_X || event.key === Qt.Key_Right) {
-            mpv.seek(mpv.time + 5)
-        } else if (event.key === Qt.Key_Tab) {
-            mpv.showText(app.playlistModel.currentItemName)
-        }else if (event.key === Qt.Key_Asterisk) {
-            mpv.showText(app.playlistModel.currentItemName)
-        }else if (event.key === Qt.Key_Slash) {
-            mouseArea.peak()
+            break;
+        case Qt.Key_X:
+            mpv.seek(mpv.time + 90)
+            break;
+        case Qt.Key_S:
+            mpv.playPrecedingItem()
+            break;
+        case Qt.Key_D:
+            mpv.playNextItem()
+            break;
         }
     }
 
+
+    function handleKeyPress(event){
+        if(event.modifiers & Qt.ControlModifier){
+            handleCtrlModifiedKeyPress(event.key)
+        }else{
+            switch (event.key) {
+            case Qt.Key_Escape:
+                if (playerIsFullScreen) {
+                    setPlayerFullscreen(false);
+                }
+                break;
+            case Qt.Key_P:
+                playlistBar.toggle();
+                break;
+            case Qt.Key_W:
+                playlistBar.visible = !playlistBar.visible;
+                break;
+            case Qt.Key_Up:
+                volumeSlider.value += 5;
+                break;
+            case Qt.Key_Down:
+                volumeSlider.value -= 5;
+                break;
+            case Qt.Key_Q:
+                volumeSlider.value += 5;
+                break;
+            case Qt.Key_A:
+                volumeSlider.value -= 5;
+                break;
+            case Qt.Key_Space:
+            case Qt.Key_Clear:
+                if (mpv.state === MpvObject.VIDEO_PLAYING) {
+                    mpv.pause();
+                } else {
+                    mpv.play();
+                }
+                break;
+            case Qt.Key_PageUp:
+                mpv.playNextItem();
+                break;
+            case Qt.Key_Home:
+                mpv.playPrecedingItem();
+                break;
+            case Qt.Key_PageDown:
+                mpv.seek(mpv.time + 90);
+                break;
+            case Qt.Key_End:
+                mpv.seek(mpv.time - 90);
+                break;
+            case Qt.Key_Plus:
+            case Qt.Key_D:
+                mpv.setSpeed(mpv.speed + 0.1);
+                break;
+            case Qt.Key_Minus:
+            case Qt.Key_S:
+                mpv.setSpeed(mpv.speed - 0.1);
+                break;
+            case Qt.Key_R:
+                // @disable-check M127
+                mpv.speed > 1.0 ? mpv.setSpeed(1.0):mpv.setSpeed(2.0)
+                break;
+            case Qt.Key_F:
+                setPlayerFullscreen(!playerIsFullScreen);
+                break;
+            case Qt.Key_M:
+                mpv.mute();
+                break;
+            case Qt.Key_Z:
+            case Qt.Key_Left:
+                mpv.seek(mpv.time - 5);
+                break;
+            case Qt.Key_X:
+            case Qt.Key_Right:
+                mpv.seek(mpv.time + 5);
+                break;
+            case Qt.Key_Tab:
+            case Qt.Key_Asterisk:
+                mpv.showText(app.playlistModel.currentItemName);
+                break;
+            case Qt.Key_Slash:
+                mouseArea.peak();
+                break;
+            }
+        }
+    }
     KeyNavigation.tab:mpvPage
-
-
 }
+
+
+
+

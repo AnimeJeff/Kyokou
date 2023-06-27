@@ -5,6 +5,7 @@ import "../components"
 
 Item {
     id: searchPage
+
     SearchBar{
         id:searchBar
         anchors{
@@ -18,7 +19,10 @@ Item {
     LoadingScreen{
         id:loadingScreen
         anchors.fill: parent
-        loading: app.searchResultsModel.loading
+        loading: app.showExplorer.loading
+    }
+    Component.onCompleted: {
+        list.contentY=lastScrollY
     }
 
     GridView {
@@ -39,15 +43,17 @@ Item {
             bottom: parent.bottom
             leftMargin: list.spacing
         }
-        model: app.searchResultsModel
+        model: app.showExplorer
         cellHeight: cellWidth * aspectRatio + 35
         cellWidth: width/itemPerRow
 
         delegate:  itemDelegate
         highlight: highlight
         highlightFollowsCurrentItem: false
-        //        focus: true
         clip: true
+        onContentYChanged: {
+            lastScrollY = contentY
+        }
 
         //        footer: Rectangle{
         //            color: "transparent"
@@ -68,20 +74,23 @@ Item {
         //        property int realContentHeight: Math.ceil(list.count/6)*cellHeight
 
         onAtYEndChanged: {
-            if(atYEnd && count > 0 && app.searchResultsModel.canLoadMore()){
-                app.searchResultsModel.loadMore();
+            if(atYEnd && count > 0 && app.showExplorer.canLoadMore()){
+                app.showExplorer.loadMore();
             }
         }
-//        onCountChanged: {
-//            if( Math.ceil(list.count/list.itemPerRow)*cellHeight<height && count>0){
-//                app.searchResultsModel.loadMore();
+        onCountChanged: {
+            //            if(Math.ceil(list.count/list.itemPerRow)*cellHeight<height && count>0){
+            //                app.showExplorer.loadMore();
+            //            }
+//            if(list.count<30){
+//                app.showExplorer.loadMore();
 //            }
-//        }
-        onContentHeightChanged: {
-            if( Math.ceil(list.count/list.itemPerRow)*cellHeight<height && count>0){
-                app.searchResultsModel.loadMore();
-            }
         }
+        //        onContentHeightChanged: {
+        //            if( Math.ceil(list.count/list.itemPerRow)*cellHeight<height && count>0){
+        //                app.showExplorer.loadMore();
+        //            }
+        //        }
 
         Component {
             id: itemDelegate
@@ -106,7 +115,7 @@ Item {
                     MouseArea{
                         anchors.fill: parent
                         onClicked: (mouse)=>{
-                                       app.searchResultsModel.loadDetails(index)
+                                       app.showExplorer.loadDetails(index)
                                    }
                         hoverEnabled: true
                         onEntered: cursor.setCursorShape(Qt.PointingHandCursor)
@@ -127,15 +136,13 @@ Item {
                         anchors.fill: parent
                         onClicked: (mouse)=>{
                                        if (mouse.button === Qt.RightButton){
-                                           loadShowInfo()
+                                           app.showExplorer.loadDetails(index)
                                        }
                                    }
                     }
                 }
             }
         }
-
-
-
     }
+
 }

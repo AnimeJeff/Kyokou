@@ -15,7 +15,7 @@ Item {
             Layout.preferredWidth: searchBar.width/2
             placeholderText: qsTr("Enter query!")
             onAccepted: {
-                app.searchResultsModel.search(searchTextField.text,1,1)
+                app.showExplorer.search(searchTextField.text,1,1)
             }
         }
 
@@ -25,7 +25,7 @@ Item {
             text: "Search"
             focusPolicy: Qt.NoFocus
             onClicked: {
-                app.searchResultsModel.search(searchTextField.text,1,1)
+                app.showExplorer.search(searchTextField.text,1,1)
             }
         }
 
@@ -36,7 +36,7 @@ Item {
             text: "Latest"
             focusPolicy: Qt.NoFocus
             onClicked: {
-                app.searchResultsModel.latest(1,3)
+                app.showExplorer.latest(1,3)
             }
         }
 
@@ -46,7 +46,7 @@ Item {
             text: "Popular"
             focusPolicy: Qt.NoFocus
             onClicked: {
-                app.searchResultsModel.popular(1,3)
+                app.showExplorer.popular(1,3)
             }
         }
 
@@ -54,15 +54,15 @@ Item {
             id:providersComboBox
             Layout.fillWidth: true
             Layout.fillHeight: true
-            displayText: global.currentSearchProvider.name
+            displayText: app.currentSearchProvider.name
             model: ListModel{}
             Component.onCompleted: {
-                global.providers.forEach(function(provider) {
+                app.providers.forEach(function(provider) {
                     providersComboBox.model.append({text:provider.name,providerEnum:provider.providerEnum})
                 })
             }
             onClickedFun:function(index,model){
-                global.changeSearchProvider(model.providerEnum)
+                app.changeSearchProvider(model.providerEnum)
                 providersComboBox.popup.close()
             }
         }

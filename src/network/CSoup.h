@@ -23,7 +23,7 @@ public:
 
     ~CSoup(){}
 
-    inline std::string selectText(std::string XPath){
+    inline const char* selectText(std::string XPath){
         return doc.select_node(XPath.data()).node().child_value ();
     }
     inline pugi::xpath_node_set select(std::string XPath){

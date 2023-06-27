@@ -1,14 +1,31 @@
 #include "episodelistmodel.h"
+#include "application.h"
 
 
 
+void EpisodeListModel::updateLastWatchedName(){
+    continueEpisodeName = "";
+    continueIndex = Application::instance().currentShowObject.lastWatchedIndex ();
+    int totalEpisodes = Application::instance().currentShowObject.episodes ().count ();
+    qDebug()<<continueIndex <<totalEpisodes;
+    if(continueIndex >= 0 && continueIndex < totalEpisodes){
+        if(continueIndex==totalEpisodes-2)continueIndex++;
+        Episode lastWatchedEpisode = Application::instance().currentShowObject.episodes().at (continueIndex);
+        continueEpisodeName = QString::number (lastWatchedEpisode.number);
+        if(!(lastWatchedEpisode.title.isEmpty () || lastWatchedEpisode.title.toInt () == lastWatchedEpisode.number)){
+            continueEpisodeName += "\n" + lastWatchedEpisode.title;
+        }
+        qDebug()<<"updated last watched index";
+    }
+    emit continueIndexChanged();
+}
 
 int EpisodeListModel::rowCount(const QModelIndex &parent) const
 {
     if (parent.isValid())
         return 0;
 
-    return Global::instance().currentShowObject ()->episodes().count ();
+    return Application::instance().currentShowObject.episodes().count ();
 }
 
 QVariant EpisodeListModel::data(const QModelIndex &index, int role) const{
@@ -17,15 +34,17 @@ QVariant EpisodeListModel::data(const QModelIndex &index, int role) const{
         return QVariant();
     int i = index.row();
     if(isReversed){
-        i = Global::instance().currentShowObject ()->episodes().count () - i - 1;
+        i = Application::instance().currentShowObject.episodes().count () - i - 1;
     }
-    const Episode& episode = Global::instance().currentShowObject ()->episodes().at (i);
+    const Episode& episode = Application::instance().currentShowObject.episodes().at (i);
 
     switch (role) {
     case TitleRole:
         return episode.title.isEmpty () ? QVariant() : episode.title;
     case NumberRole:
         return episode.number;
+    case FullTitleRole:
+        return episode.getFullTitle();
     default:
         return QVariant();
     }

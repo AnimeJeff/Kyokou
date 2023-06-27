@@ -92,14 +92,10 @@ public slots:
         m_mpv.command_async(args);
     }
     void playPrecedingItem(void){
-        if(Application::instance().playlistModel()->hasPrecedingItem ()){
-            Application::instance().playlistModel()->playPrecedingItem();
-        }
+        Application::instance().playlistModel()->playPrecedingItem();
     }
     void playNextItem(void){
-        if(Application::instance().playlistModel()->hasNextItem ()){
-            Application::instance().playlistModel()->playNextItem();
-        }
+        Application::instance().playlistModel()->playNextItem();
     }
 
 signals:

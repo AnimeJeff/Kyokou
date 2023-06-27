@@ -44,18 +44,14 @@ GridView {
         }
         property real footerHeight:100
 
-    //    interactive: true
-
     boundsBehavior: Flickable.DragOverBounds
 
 
-    model: app.searchResultsModel
+    model: app.showExplorer
     cellHeight: cellWidth * aspectRatio + 35
     cellWidth: width/itemPerRow
     delegate:Rectangle {
         id: item
-        //            width: list.cellWidth - 20
-        //            height: list.cellHeight - 10
         color: "transparent"
         Image {
             id:coverImage
@@ -88,16 +84,13 @@ GridView {
                 right: coverImage.right
             }
 
-            //            width: list.cellWidth
             wrapMode: Text.Wrap
             font.pixelSize: 12
-            //            height: contentHeight
             color: "white"
             MouseArea{
                 anchors.fill: parent
                 onClicked: (mouse)=>{
                                if (mouse.button === Qt.RightButton){
-                                   //                                       loadShowInfo()
                                }
                            }
 
@@ -109,10 +102,10 @@ GridView {
             z:parent.z+1
             onClicked: (mouse)=>{
 
-                           //                               app.searchResultsModel.loadDetails(index)
+                           //                               app.showExplorer.loadDetails(index)
                            if(list.contentY-list.originY>0)list.lastY = list.contentY-list.originY
                            console.log(list.lastY)
-                           app.searchResultsModel.loadMore()
+                           app.showExplorer.loadMore()
                        }
             cursorShape: Qt.PointingHandCursor
         }
@@ -124,44 +117,18 @@ GridView {
     clip: true
 
     property real lastY: 0
-    //    onAtYEndChanged: {
-    //        if (atYEnd && count>0 && model.canFetchMore()) {
-    //            //            list.lastIndex = list.count-1
-    //            currentIndex = list.count - 1
-
-    //            list.lastY = contentY-655
-    //            console.log(lastY)
-
-    //            //            console.log("set lastY",list.lastY)
-    //            app.searchResultsModel.fetchMore()
-    //        }
-    //    }
-
-    //    interactive: false
     property int realContentHeight: Math.ceil(list.count/list.itemPerRow)*list.cellHeight
     property int prevContentY
     property bool canFetch: true
-    //    interactive: false
     boundsMovement: GridView.StopAtBounds
     onAtYEndChanged: {
-        //        console.log(atYEnd,canFetch)
         if (atYEnd && canFetch){
             canFetch = false
             lastIndex = list.count-1
-            //            if(contentY-originY>0)lastY = contentY-originY
             lastY = contentY - originY
-//            console.log("set lastY",lastY,"contentheight",contentHeight-height)
-            //            //            console.log(contentY-originY,contentHeight-height)
-            app.searchResultsModel.loadMore()
-
-                        console.log("called")
+            app.showExplorer.loadMore()
         }
     }
-    //    WheelArea {
-    //        width: parent.width - parent.x
-    //    }
-
-
 
 
     onContentYChanged: {
@@ -171,32 +138,5 @@ GridView {
             canFetch = true
         }
     }
-
-
-
-
-    property bool layoutJustChanged: false
-    Connections{
-        target: app.searchResultsModel
-
-        function onPostItemsAppended(){
-            //            contentY = lastY+originY
-            //            list.contentY = list.prevContentY
-
-        }
-        function onLayoutChanged(){
-            //            console.log("layout changed")
-            //            console.log(count)
-            //            layoutJustChanged = true
-            //            canFetch = true
-            //            list.positionViewAtIndex(list.count-1,GridView.Beginning)
-
-        }
-    }
-
-
-
-
-
 
 }

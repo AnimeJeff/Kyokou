@@ -35,15 +35,9 @@ int main(int argc, char *argv[]){
     QGuiApplication app(argc, argv);
     app.setWindowIcon(QIcon(u":/resources/images/icon.png"_qs));
     app.setFont (QFont("Microsoft Yahei UI", 16));
-    //    if(!parseArgs (argc,argv)){
-    //        return 6;
-    //    }
-
-
     std::setlocale(LC_NUMERIC, "C");
     qputenv("LC_NUMERIC", QByteArrayLiteral("C"));
     qputenv("PYTHONIOENCODING", QByteArrayLiteral("utf-8"));
-    SetThreadExecutionState(ES_CONTINUOUS | ES_DISPLAY_REQUIRED);
 
     qmlRegisterType<MpvObject>("MpvPlayer", 1, 0, "MpvObject");
 
@@ -51,12 +45,9 @@ int main(int argc, char *argv[]){
 
     QQmlApplicationEngine engine;
     engine.rootContext ()->setContextProperty("app",&Application::instance ());
-    engine.rootContext ()->setContextProperty("global",&Global::instance ());
+//    engine.rootContext ()->setContextProperty("global",&Global::instance ());
     engine.rootContext ()->setContextProperty("cursor",&CursorPosProvider::instance ());
 
-
-
-//    const QUrl url(u"qrc:/kyokou/src/qml/main.qml"_qs);
     const QUrl url(QStringLiteral("qrc:qml/src/qml/main.qml"));
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
         &app, [url](QObject *obj, const QUrl &objUrl) {

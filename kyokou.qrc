@@ -44,18 +44,19 @@
         <file>src/qml/player/MpvPage.qml</file>
         <file>src/qml/explorer/SearchPage.qml</file>
         <file>src/qml/components/TitleBar.qml</file>
-        <file>src/qml/WatchListPage.qml</file>
         <file>src/qml/player/ControlBar.qml</file>
         <file>src/qml/info/InfoPage.qml</file>
         <file>src/qml/explorer/components/SearchBar.qml</file>
         <file>src/qml/explorer/components/SearchContainer.qml</file>
         <file>src/qml/SideBar.qml</file>
-        <file>src/qml/DownloadPage.qml</file>
         <file>src/qml/components/CustomTextField.qml</file>
         <file>src/qml/components/HoverCursorArea.qml</file>
         <file>src/qml/components/CustomComboBox.qml</file>
         <file>src/qml/components/CustomButton.qml</file>
         <file>src/qml/components/CustomSwitch.qml</file>
         <file>src/qml/components/CustomSlider.qml</file>
+        <file>src/qml/info/components/EpisodeList.qml</file>
+        <file>src/qml/watchlist/WatchListPage.qml</file>
+        <file>src/qml/download/DownloadPage.qml</file>
     </qresource>
 </RCC>

@@ -26,24 +26,9 @@ Rectangle {
     property int currentPage: 0
     // Positionate all buttons
     Connections{
-        target: app.searchResultsModel
+        target: app.showExplorer
         function onDetailsLoaded() {
             gotoPage(1)
-        }
-    }
-    Connections{
-        target: global.currentShowObject
-        function onListTypeChanged() {
-//            console.log(global.currentShowObject.listType)
-        }
-    }
-
-    Connections{
-        target: mpv
-        function onStateChanged() {
-            if(mpv.state === 1){
-                gotoPage(3)
-            }
         }
     }
 
@@ -51,20 +36,20 @@ Rectangle {
         target: app.playlistModel
         function onSourceFetched(link){
             mpv.open(link)
-            gotoPage(3)
+            gotoPage(2)
         }
     }
     property var pages: {
-        0: "explorer/SearchPage.qml",
+        0: "explorer/SearchPage.qml", //todo keep track of location of last scroll and scroll to
         1: "info/InfoPage.qml",
-        2: "WatchListPage.qml",
-        3: mpvPage,
-        4: "DownloadPage.qml"
+        2: mpvPage,
+        3: "watchlist/WatchListPage.qml",
+        4: "download/DownloadPage.qml"
     }
 
     function gotoPage(index){
         if(currentPage!==index){
-            if(index===3){
+            if(index===2){
                 mpvPage.progressBar.peak(2000)
                 mpvPage.visible = true
                 mpvPage.forceActiveFocus()
@@ -83,7 +68,6 @@ Rectangle {
         onTriggered: {
             mpvPage.visible = false
         }
-
     }
     ColumnLayout {
         height: sideBar.height
@@ -112,20 +96,20 @@ Rectangle {
             selected: currentPage === 1
         }
         ImageButton {
-            image:"qrc:/resources/images/library.png"
-            hoverImage:"qrc:/resources/images/library.png"
-            Layout.preferredWidth: sideBar.width
-            Layout.preferredHeight: sideBar.width
-            HoverCursorArea{}
-            onClicked: gotoPage(2)
-            selected: currentPage === 2
-        }
-        ImageButton {
             image:"qrc:/resources/images/retro-tv.png"
             hoverImage:"qrc:/resources/images/retro-tv.png"
             HoverCursorArea{}
             Layout.preferredWidth: sideBar.width
             Layout.preferredHeight: sideBar.width
+            onClicked: gotoPage(2)
+            selected: currentPage === 2
+        }
+        ImageButton {
+            image:"qrc:/resources/images/library.png"
+            hoverImage:"qrc:/resources/images/library.png"
+            Layout.preferredWidth: sideBar.width
+            Layout.preferredHeight: sideBar.width
+            HoverCursorArea{}
             onClicked: gotoPage(3)
             selected: currentPage === 3
         }

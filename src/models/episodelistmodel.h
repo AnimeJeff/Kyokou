@@ -4,8 +4,9 @@
 #include <Global.h>
 #include <QAbstractListModel>
 
-#include <parsers/episode.h>
-
+#include "parsers/data/episode.h"
+//Todo list that holds episodes
+//connect signal from showparser to slot
 class EpisodeListModel : public QAbstractListModel
 {
     Q_OBJECT
@@ -14,12 +15,12 @@ class EpisodeListModel : public QAbstractListModel
     Q_PROPERTY(int continueIndex READ getContinueIndex NOTIFY continueIndexChanged);
     enum{
         TitleRole = Qt::UserRole,
-        NumberRole
+        NumberRole,
+        FullTitleRole
     };
     bool isReversed = false;
     QString continueEpisodeName;
     int continueIndex;
-
 
     QString getContinueEpisodeName(){
         return continueEpisodeName;
@@ -27,21 +28,8 @@ class EpisodeListModel : public QAbstractListModel
     int getContinueIndex(){
         return continueIndex;
     }
-
-    void updateLastEpisodeName(){
-        continueEpisodeName = "";
-        continueIndex = Global::instance().currentShowObject ()->lastWatchedIndex ();
-        int totalEpisodes = Global::instance().currentShowObject ()->episodes ().count ();
-        if(continueIndex >= 0 && continueIndex < totalEpisodes){
-            if(continueIndex==totalEpisodes-2)continueIndex++;
-            Episode lastWatchedEpisode = Global::instance().currentShowObject ()->episodes().at (continueIndex);
-            continueEpisodeName = QString::number (lastWatchedEpisode.number);
-            if(!(lastWatchedEpisode.title.isEmpty () || lastWatchedEpisode.title.toInt () == lastWatchedEpisode.number)){
-                continueEpisodeName += "\n" + lastWatchedEpisode.title;
-            }
-        }
-        emit continueIndexChanged();
-    }
+public slots:
+    void updateLastWatchedName();
 signals:
     void continueIndexChanged(void);
     void reversedChanged(void);
@@ -56,13 +44,7 @@ public:
     }
     explicit EpisodeListModel(QObject *parent = nullptr)
         : QAbstractListModel(parent){
-        connect(Global::instance ().currentShowObject (), &ShowResponseObject::showChanged,this, [&](){
-            updateLastEpisodeName();
-            emit layoutChanged();
-        });
-        connect(Global::instance ().currentShowObject (), &ShowResponseObject::lastWatchedIndexChanged,this, [&](){
-            updateLastEpisodeName();
-        });
+
     };
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;

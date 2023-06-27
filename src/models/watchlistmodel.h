@@ -5,14 +5,16 @@
 #include <fstream>
 #include <iostream>
 #include <QAbstractListModel>
-#include <parsers/showresponse.h>
+#include <QStandardItemModel>
+#include "parsers/data/mediadata.h"
 #include <nlohmann/json.hpp>
 
 
 class WatchListModel: public QAbstractListModel
 {
     Q_OBJECT
-    Q_PROPERTY(int listType READ getlistType WRITE setListType NOTIFY layoutChanged);
+    Q_PROPERTY(int listType READ getDisplayingListType WRITE setDisplayingListType NOTIFY layoutChanged);
+    Q_PROPERTY(bool loading READ isLoading NOTIFY loadingChanged);
 private:
     enum{
         WATCHING,
@@ -22,160 +24,113 @@ private:
         COMPLETED
     };
     nlohmann::json m_jsonList;
-    QVector<std::shared_ptr<ShowResponse>> m_list;
-    QVector<std::shared_ptr<ShowResponse>> m_watchingList;
-    QVector<std::shared_ptr<ShowResponse>> m_plannedList;
-    QVector<std::shared_ptr<ShowResponse>> m_onHoldList;
-    QVector<std::shared_ptr<ShowResponse>> m_droppedList;
-    QVector<std::shared_ptr<ShowResponse>> m_completedList;
-    QVector<std::shared_ptr<ShowResponse>>* m_currentList = &m_watchingList;
-
-    QMap<int,QVector<std::shared_ptr<ShowResponse>>*>listMap{
+    QVector<std::shared_ptr<MediaData>> m_watchingList;
+    QVector<std::shared_ptr<MediaData>> m_plannedList;
+    QVector<std::shared_ptr<MediaData>> m_onHoldList;
+    QVector<std::shared_ptr<MediaData>> m_droppedList;
+    QVector<std::shared_ptr<MediaData>> m_completedList;
+    QVector<std::shared_ptr<MediaData>>* m_currentList = &m_watchingList;
+    QMap<int,QVector<std::shared_ptr<MediaData>>*>listMap{
         {WATCHING, &m_watchingList},
         {PLANNED, &m_plannedList},
         {ON_HOLD, &m_onHoldList},
         {DROPPED, &m_droppedList},
         {COMPLETED,&m_completedList}
     };
-
-    int m_listType = WATCHING;
-    int getlistType(){
-        return m_listType;
+    int m_displayingListType = WATCHING;
+    int getDisplayingListType(){
+        return m_displayingListType;
     }
-    void setListType(int listType){
-        m_listType = listType;
+    void setDisplayingListType(int listType){
+        m_displayingListType = listType;
         m_currentList = listMap[listType];
         emit layoutChanged ();
     }
-    int m_currentShowListIndex = -1;
-public:
-    explicit WatchListModel(QObject *parent = nullptr): QAbstractListModel(parent){
-        std::ifstream infile(".watchlist");
+    const std::string watchListFileName = ".watchlist";
+private:
+    void readWatchListFile(){
+        std::ifstream infile(watchListFileName);
         if (!infile.good()) { // file doesn't exist or is corrupted
-            std::ofstream outfile(".watchlist"); // create new file
-            outfile << "[]"; // write [] to file
+            std::ofstream outfile(watchListFileName); // create new file
+            outfile << "[[],[],[],[],[]]"; // write [] to file
             outfile.close();
         }else if(infile.peek() == '['){
             infile>> m_jsonList;
         }else{
-            m_jsonList = nlohmann::json::array ();
-        }
+            //            m_jsonList = nlohmann::json::array ();
 
-        for (int i = 0; i < m_jsonList.size (); ++i) {
-            m_list.push_back(std::make_shared<ShowResponse>(ShowResponse(m_jsonList[i])));
-            switch(m_list.last ()->listType){
+        }
+    }
+    void parseWatchListFile(){
+        for (int i = 0;i<m_jsonList.size ();i++){
+            auto array = m_jsonList[i];
+            if(array.empty ())continue;
+            QVector<std::shared_ptr<MediaData>>* list;
+            switch(i){
             case WATCHING:
-                m_watchingList.push_back (m_list.last ());
+                list = &m_watchingList;
                 break;
             case PLANNED:
-                m_plannedList.push_back (m_list.last ());
+                list = &m_plannedList;
                 break;
             case ON_HOLD:
-                m_onHoldList.push_back (m_list.last ());
+                list = &m_onHoldList;
                 break;
             case DROPPED:
-                m_droppedList.push_back (m_list.last ());
+                list = &m_droppedList;
+                break;
+            case COMPLETED:
+                list = &m_completedList;
                 break;
             }
+            for(auto& item:array){
+                list->push_back(std::make_shared<MediaData>(MediaData(item)));
+                list->back ()->setListType (i);
+            }
         }
+    }
+public:
+    explicit WatchListModel(QObject *parent = nullptr): QAbstractListModel(parent){
+        readWatchListFile();
+        parseWatchListFile();
     };
     ~WatchListModel() {
-        for(const auto& item:m_list){
-
-        }
-        m_list.clear ();
         m_watchingList.clear ();
         m_plannedList.clear ();
         m_onHoldList.clear ();
         m_droppedList.clear ();
+        m_completedList.clear();
     }
 public:
-    Q_INVOKABLE void add(const ShowResponse& show, int listType = WATCHING){
-        //        if(show.isInWatchList || checkInList (show))return;
-
-
-        nlohmann::json showObj = nlohmann::json::object({
-                                                         {"title", show.title.toStdString ()},
-                                                         {"cover", show.coverUrl.toStdString ()},
-                                                         {"link",show.link.toStdString ()},
-                                                         {"provider",show.provider},
-                                                         {"listType",listType},
-                                                         {"lastWatchedIndex",show.lastWatchedIndex},
-                                                         });
-        m_jsonList.push_back (showObj);
-        //        qDebug()<<showObj.dump();
-        m_list.push_back (std::make_shared<ShowResponse>(ShowResponse(m_jsonList[m_jsonList.size()-1])));
-        //        qDebug()<<showObj.dump();
-        listMap[listType]->push_back (m_list.last ());
-        if(m_listType == listType)emit layoutChanged ();
+    Q_INVOKABLE void add(MediaData show, int listType = WATCHING){
+        m_jsonList[listType].push_back (show.toJson ());
+        show.setJsonObject(m_jsonList[listType].back ());
+        listMap[listType]->push_back (std::make_shared<MediaData>(show));
+        if(m_displayingListType == listType) emit layoutChanged ();
         save();
     }
 
-    Q_INVOKABLE void addCurrentShow(int listType = WATCHING){
-        if(Global::instance ().currentShowObject ()->isInWatchList ()){
-            changeListType (getShowInList (Global::instance ().currentShowObject ()->getShow ()),listType);
-            Global::instance ().currentShowObject ()->setListType (listType);
-            emit layoutChanged();
-            save();
-            return;
-        }
-        add(Global::instance ().currentShowObject ()->getShow (), listType);
-        Global::instance ().currentShowObject ()->setIsInWatchList (true);
-        Global::instance ().currentShowObject ()->setListType (listType);
-    }
+    Q_INVOKABLE void addCurrentShow(int listType = WATCHING);
 
-    void changeListType(std::shared_ptr<ShowResponse> show, const int& to){
-        if(!m_list.contains (show))return;
-        if(show->listType == to) return;
-
-        try{
-            listMap[show->listType]->removeOne(show);
-            show->setListType (to);
-            listMap[to]->push_back(show);
-
-            int index = m_list.indexOf (show);
-            m_list.move (index,m_list.count ()-1);
-
-            m_jsonList.push_back(m_jsonList[index]);
-            m_jsonList.erase(m_jsonList.begin() + index);
-            emit layoutChanged();
-        }catch(QException& e){
-            e.what ();
-        }
-
-
-    }
-
-    Q_INVOKABLE void remove(const ShowResponse& show){
-        for (int i = 0; i < m_list.size(); i++) {
-            if (m_list[i]->link == show.link) {
-                if(show.object){
-                    show.object->setIsInWatchList(false);
-                    show.object->setListType(-1);
-                }
-                listMap[show.listType]->removeOne (m_list[i]);
-                removeAtIndex (i);
+    Q_INVOKABLE void remove(const MediaData& show){
+        auto& list = m_jsonList[show.listType];
+        for(int i = 0;i<list.size ();i++){
+            if(list[i]["link"] == show.link.toStdString ()){
+                list.erase (list.begin() + i);
+                listMap[show.listType]->removeAt (i);
+                emit layoutChanged();
+                save();
                 break;
             }
         }
 
+
     }
 
-    Q_INVOKABLE void removeAtIndex(int index){
-        if (index < 0 || index >= m_list.size()) return;
-        m_jsonList.erase(m_jsonList.begin() + index);
-        //        delete m_list.at (index);
-        m_list.removeAt (index);
-        emit layoutChanged ();
-        save();
-    }
-
-    Q_INVOKABLE void removeCurrentShow(){
-        remove (Global::instance ().currentShowObject ()->getShow ());
-    }
+    Q_INVOKABLE void removeCurrentShow();
 
     Q_INVOKABLE void loadDetails(int index){
-        switch(m_listType){
+        switch(m_displayingListType){
         case WATCHING:
             emit detailsRequested(*m_watchingList[index]);
             break;
@@ -194,89 +149,66 @@ public:
     }
 
     Q_INVOKABLE void move(int from, int to){
-        int actualFrom = m_list.indexOf(m_currentList->at (from));
-        int actualTo = m_list.indexOf (m_currentList->at (to));
         m_currentList->move (from,to);
-        m_list.move(actualFrom,actualTo);
-        auto element_to_move = m_jsonList[actualFrom];
-        m_jsonList.erase(m_jsonList.begin() + actualFrom);
-        m_jsonList.insert(m_jsonList.begin() + actualTo, element_to_move);
+        auto& list = m_jsonList[m_displayingListType];
+        auto element_to_move = list[from];
+        list.erase(list.begin() + from);
+        list.insert(list.begin() + to, element_to_move);
     }
 
-    Q_INVOKABLE void moveEnded();;
+    Q_INVOKABLE void moveEnded();
 
-    void update(const ShowResponse& show){
-        if(!show.isInWatchList)return;
-        getShowInList (show)->setLastWatchedIndex (show.getLastWatchedIndex ());
-    }
-
-    void updateCurrentShow(){
-        update(Global::instance().currentShowObject ()->getShow ());
-    }
-
-    bool checkInList(const ShowResponse& show){
-        if(getShowInList (show)){
+    bool checkInList(const MediaData& show){
+        if(show.isInWatchList()){
+            return true;
+        }else if(getShowInList (show)){
             return true;
         }
         return false;
-
     }
 
-    int getIndex(const QString& link){
-        for (int i = 0; i < m_list.size(); i++) {
-            if (m_list[i]->link == link) {
-                return i;
+    std::shared_ptr<MediaData> getShowInList(const MediaData& show) {
+        for(int i = 0;i<m_jsonList.size ();i++){
+            nlohmann::json::array_t list = m_jsonList[i];
+            //                qDebug()<<list.;
+            for(int j = 0;j<list.size ();j++){
+                if(list[j]["link"] == show.link.toStdString ()){
+                    return listMap[i]->at (j);
+                }
             }
         }
-        return -1;
+        qDebug()<<"Unable to find" << show.title << "in watch list";
+        return nullptr;
     }
 
-    std::shared_ptr<ShowResponse> getShowInList(const ShowResponse& show) {
-        const auto iter = std::find_if(m_list.begin(), m_list.end(),
-                                       [&](const std::shared_ptr<ShowResponse> ptr) { return ptr->link == show.link; });
-        return iter == m_list.end() ? nullptr : *iter;
+    nlohmann::json* getShowJsonInList(const MediaData& show) {
+        for(int i = 0;i<m_jsonList.size ();i++){
+            nlohmann::json::array_t list = m_jsonList[i];
+            for(int j = 0;j<list.size ();j++){
+                if(list[j]["link"] == show.link.toStdString ()){
+                    return &m_jsonList[i][j];
+                }
+            }
+        }
+        qDebug()<<"Unable to find" << show.title << "json in watch list";
+        return nullptr;
     }
-
-
-public:
-    int currentShowListIndex(){
-        return m_currentShowListIndex;
+    inline bool isLoading(){
+        return loading;
     }
+    bool loading = false;
 signals:
-    void detailsRequested(ShowResponse show);
-    void indexMoved(int from,int to);
-
+    void detailsRequested(MediaData show);
+    void loadingChanged(void);
 public slots:
-    bool checkCurrentShowInList(){
-        auto link = Global::instance().currentShowObject ()->link ();
-        for(int i = 0;i<m_list.count ();i++){
-            const auto& item = m_list[i];
-            if(item->link==link){
-                Global::instance().currentShowObject()->setIsInWatchList(true);
-                Global::instance().currentShowObject()->setLastWatchedIndex(item->lastWatchedIndex);
-                Global::instance().currentShowObject()->setListType(item->listType);
-                //                Global::instance().currentShowObject()->setJsonObject(m_jsonList[i]);
-                m_currentShowListIndex = -1;
-                return true;
-            }
-        }
-        Global::instance().currentShowObject()->setIsInWatchList(false);
-        Global::instance().currentShowObject()->setListType(-1);
-        m_currentShowListIndex = -1;
-        //        Global::instance().currentShowObject()->setLastWatchedIndex(-1);
-        return false;
-    }
+    bool checkCurrentShowInList();
 
     void save(){
-        std::ofstream output_file(".watchlist");
+        std::ofstream output_file(watchListFileName);
         output_file << m_jsonList.dump (4);
         output_file.close();
+        qDebug()<<"saved";
     }
-
-
-
-
-
 
 private:
     enum{
