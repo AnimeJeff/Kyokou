@@ -60,8 +60,9 @@ Item{
             width: list.width
             height: 50 < (episodeStr.height + 10) ? (episodeStr.height + 10) : 50
             color: {
-                if(app.currentShowObject.lastWatchedIndex === -1)return "black"
-                let lastWatchedIndex = app.episodeListModel.reversed ? list.count -  app.currentShowObject.lastWatchedIndex - 1 : app.currentShowObject.lastWatchedIndex;
+                let lastWatchedIndex = showManager.currentShowLastWatchedIndex
+                if(lastWatchedIndex === -1)return "black"
+                lastWatchedIndex = app.episodeListModel.reversed ? list.count -  lastWatchedIndex - 1 : lastWatchedIndex;
                 return lastWatchedIndex === index ? "red":"black"
             }
             Text {
@@ -94,8 +95,8 @@ Item{
 
         }
         onCountChanged: {
-            if(app.currentShowObject.lastWatchedIndex>-1){
-                list.positionViewAtIndex(app.currentShowObject.lastWatchedIndex,ListView.Beginning)
+            if(showManager.currentShowLastWatchedIndex>-1){
+                list.positionViewAtIndex(showManager.currentShowLastWatchedIndex,ListView.Beginning)
             }
         }
     }

@@ -2,8 +2,8 @@
 #define SEARCHRESULTSMODEL_H
 
 #include <QAbstractListModel>
-#include "parsers/data/mediadata.h"
-#include "parsers/mediaprovider.h"
+#include "parsers/data/showdata.h"
+#include "showmanager.h"
 #include <global.h>
 #include <QtConcurrent>
 
@@ -18,30 +18,40 @@ class SearchResultsModel : public QAbstractListModel
     QTimer timeoutTimer;
     const int timeoutDuration = 500;
     bool loading = false;
-    QFutureWatcher<QVector<MediaData>> m_searchWatcher{};
-    QFutureWatcher<MediaData> m_detailLoadingWatcher{};
-    QVector<MediaData> m_list;
+    QFutureWatcher<QVector<ShowData>> m_searchWatcher{};
+    QFutureWatcher<ShowData> m_detailLoadingWatcher{};
+    QVector<ShowData> m_list;
 public:
     explicit SearchResultsModel(QObject *parent = nullptr)
         : QAbstractListModel(parent){
-        QObject::connect(&m_searchWatcher, &QFutureWatcher<QVector<MediaData>>::finished,this, [&]() {
-            QVector<MediaData> results = m_searchWatcher.future ().result ();
-            if(fetchingMore){
-                const int oldCount = m_list.count();
-                beginInsertRows(QModelIndex(), oldCount, oldCount + results.count() - 1);
-                m_list.reserve(oldCount + results.count());
-                m_list += std::move(results);
-                endInsertRows();
-                fetchingMore = false;
-            }else{
-                m_list.reserve(results.count());
-                m_list.swap(results);
-                emit layoutChanged ();
-            }
-            loading=false;
-            emit loadingChanged();
+        QObject::connect(&m_searchWatcher, &QFutureWatcher<QVector<ShowData>>::finished,this, [this]() {
+            setResults(m_searchWatcher.future ().result ());
         });
+        QObject::connect(&m_detailLoadingWatcher, &QFutureWatcher<ShowData>::finished,this, [this]() {
+            setCurrentShow(m_detailLoadingWatcher.future ().result ());
+        });
+    }
+    void setResults(QVector<ShowData> results){
+        if(fetchingMore){
+            const int oldCount = m_list.count();
+            beginInsertRows(QModelIndex(), oldCount, oldCount + results.count() - 1);
+            m_list.reserve(oldCount + results.count());
+            m_list += std::move(results);
+            endInsertRows();
+            fetchingMore = false;
+        }else{
+            m_list.reserve(results.count());
+            m_list.swap(results);
+            emit layoutChanged ();
+        }
+        loading=false;
+        emit loadingChanged();
+    }
 
+    void setCurrentShow(const ShowData& show){
+        ShowManager::instance ().setCurrentShow(show);
+        emit detailsLoaded();
+        setLoading(false);
     }
 
     Q_INVOKABLE void search(const QString& query,int page,int type);
@@ -56,8 +66,12 @@ public:
     inline bool isLoading(){
         return loading;
     }
+    void setLoading(bool b){
+        loading = b;
+        emit loadingChanged();
+    }
 public slots:
-    void getDetails(const MediaData& show);
+    void getDetails(const ShowData& show);
 
 
 public:

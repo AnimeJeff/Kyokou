@@ -9,9 +9,8 @@ Item{
     focus: true
 
 
-    Rectangle{
+    PlayListSideBar{
         id:playlistBar
-        visible: false
         anchors{
             right: parent.right
             top: parent.top
@@ -19,70 +18,12 @@ Item{
         }
         z:2
         width: 200
-        color: "white"
-        Text {
-            id:playlistNameText
-            text: app.playlistModel.showName
-            font.pixelSize: 16
-            font.bold: true
-            wrapMode:Text.Wrap
-            anchors{
-                top: parent.top
-                right: parent.right
-                left: parent.left
-            }
-            height: contentHeight
-        }
-        ListView {
-            id: listView
-            model: app.playlistModel
-            clip:true
-            anchors{
-                top: playlistNameText.bottom
-                right: parent.right
-                left: parent.left
-                bottom: parent.bottom
-            }
-            currentIndex: app.playlistModel.currentIndex
-
-            onCurrentIndexChanged: {
-                positionViewAtIndex(currentIndex, ListView.PositionAtCenter)
-            }
-            delegate: Rectangle {
-                width: listView.width
-                height: itemText.height + 10
-                radius: 4
-                clip: true
-                color: index === app.playlistModel.currentIndex ? 'red': index % 2 === 0 ? "gray" : "white"
-                Text  {
-                    id:itemText
-                    text: model.numberTitle
-                    font.pixelSize: 14
-                    wrapMode:Text.Wrap
-                    anchors{
-                        left: parent.left
-                        right: parent.right
-                    }
-                }
-                MouseArea {
-                    anchors.fill: parent
-                    acceptedButtons: Qt.LeftButton
-                    onDoubleClicked: {
-                        app.playlistModel.loadSource(index)
-                    }
-                }
-            }
-        }
         function toggle(){
             playlistBar.visible = !playlistBar.visible
-            if(playlistBar.visible){
-                if (mpv.state == MpvObject.VIDEO_PLAYING){
-                    mpv.pause()
-                }
-            }else{
-                if (mpv.state == MpvObject.VIDEO_PAUSED){
-                    mpv.play()
-                }
+            if(playlistBar.visible && mpv.state === MpvObject.VIDEO_PLAYING){
+                mpv.pause()
+            }else if (mpv.state === MpvObject.VIDEO_PAUSED){
+                mpv.play()
             }
         }
     }
@@ -120,7 +61,6 @@ Item{
 
 
                        }
-
         }
     }
 
@@ -239,7 +179,6 @@ Item{
             break;
         }
     }
-
 
     function handleKeyPress(event){
         if(event.modifiers & Qt.ControlModifier){

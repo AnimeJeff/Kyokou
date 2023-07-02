@@ -1,5 +1,5 @@
 #include "playlistmodel.h"
-#include "application.h"
+#include "showmanager.h"
 
 void PlaylistModel::loadFolder(const QUrl &path, bool play){
     QDir directory(path.toLocalFile()); // replace with the path to your folder
@@ -33,15 +33,15 @@ void PlaylistModel::loadFolder(const QUrl &path, bool play){
         QRegularExpressionMatch match = fileNameRegex.match (fileName);
         QString title = "";
         int number = i;
-        if (match.hasMatch()) {
-            if (!match.captured("title").isEmpty()) {
+        if (match.hasMatch())
+        {
+            if (!match.captured("title").isEmpty())
+            {
                 title = match.captured("title").trimmed ();
             }
             number = match.captured("number").toInt ();
         }
-        Episode playFile(number,"");
-        playFile.localPath = directory.absoluteFilePath(fileName);
-        m_playlist.emplace_back(std::move(playFile));
+        m_playlist.emplace_back(Episode(number,directory.absoluteFilePath(fileName),title));
     }
     std::sort(m_playlist.begin(), m_playlist.end(), [](const Episode &a, const Episode &b) {
         return a.number < b.number;
@@ -49,7 +49,7 @@ void PlaylistModel::loadFolder(const QUrl &path, bool play){
 
     if(lastWatched.length () != 0){
         for (int i = 0; i < m_playlist.size(); i++) {
-            if(m_playlist[i].localPath.split ("/").last () == lastWatched){
+            if(m_playlist[i].link.split ("/").last () == lastWatched){
                 loadIndex = i;
                 break;
             }
@@ -72,71 +72,76 @@ void PlaylistModel::loadSource(int index){
     if(!isValidIndex(index))return;
     setLoading(true);
 
-    emit currentIndexChanged();
-    if(online){
-        m_watcher.setFuture (QtConcurrent::run([&]() {
-            loadOnlineSource (index);
+    if(online)
+    {
+        m_watcher.setFuture (QtConcurrent::run([index,this]() {
+            try{
+                loadOnlineSource (index);
+                setLoading(false);
+            }catch(...){
+                //                qCritical() << e.what ();
+                //                emit encounteredError("Encountered error while extracting" + QString(e.what ()));
+                std::exception_ptr p = std::current_exception();
+                std::clog <<(p ? p.__cxa_exception_type()->name() : "null") << std::endl;
+                setLoading(false);
+            }
         }));
-
     }else{
+        loadLocalSource(index);
 
     }
 }
 
 void PlaylistModel::loadOnlineSource(int index){
-    try{
-        qDebug()<<"Fetching servers for" << m_playlist[index].number;
-        QVector<VideoServer> servers = currentProvider->loadServers (m_playlist[index]);
-        if(!servers.empty ()){
-            qDebug()<<"Successfully fetched servers for" << m_playlist[index].number;
-            QString source = currentProvider->extractSource(servers[0]);
-            emit sourceFetched(source);
-            if(m_watchListShowItem){
-                m_watchListShowItem->at("lastWatchedIndex")= index;
-                emit updatedLastWatchedIndex();
-            }
-            if(m_currentShowLink == Application::instance().currentShowObject.link ()){
-                Application::instance().currentShowObject.setLastWatchedIndex (index);
-                qDebug()<<"set index";
-            }
-            this->m_currentIndex = index;
+    qDebug()<<"Fetching servers for episode" << m_playlist[index].number;
+    qDebug()<<"Playlist index:" << index << "/" <<m_playlist.count ()-1;
+    QVector<VideoServer> servers = currentProvider->loadServers (m_playlist[index]);
+    if(!servers.empty ()){
+        qDebug()<<"Successfully fetched servers for" << m_playlist[index].number;
+        QString source = currentProvider->extractSource(servers[0]);
+        emit sourceFetched(source);
+        if(m_watchListShowItem){
+            m_watchListShowItem->at("lastWatchedIndex")= index;
+            emit updatedLastWatchedIndex();
         }
-        setLoading(false);
-    }catch(const QException& e){
-        qCritical() << e.what ();
-        emit encounteredError("Encountered error while extracting" + QString(e.what ()));
-        setLoading(false);
+        if(m_currentShowLink == ShowManager::instance().getCurrentShow ().link){
+            ShowManager::instance().setLastWatchedIndex (index);
+        }
+        this->m_currentIndex = index;
+        emit currentIndexChanged();
     }
+
 }
 
 void PlaylistModel::loadLocalSource(int index){
-    emit sourceFetched(m_playlist[index].localPath);
+    emit sourceFetched(m_playlist[index].link);
     if (m_historyFile->open(QIODevice::WriteOnly)) {
         QTextStream stream(m_historyFile);
-        stream<<m_playlist[index].localPath.split ("/").last ();
+        stream<<m_playlist[index].link.split ("/").last ();
         m_historyFile->close ();
     }
-    setLoading(false);
     this->m_currentIndex = index;
+    emit currentIndexChanged();
 }
 
 void PlaylistModel::syncList(){
-    if(Application::instance().currentShowObject.link ()==m_currentShow.link)return;
+    if(ShowManager::instance().getCurrentShow () == m_currentShow)return;
     online=true;
-    m_playlist = Application::instance().currentShowObject.episodes();
+    currentProvider = ShowManager::instance().getCurrentShowProvider ();
+    m_currentShow = ShowManager::instance().getCurrentShow ();
+    m_playlist = m_currentShow.episodes;
+    m_currentShowLink = m_currentShow.link;
+    m_currentShowName = m_currentShow.title;
     emit layoutChanged ();
-    currentProvider = Application::instance().getCurrentShowProvider ();
-    m_currentShowLink = Application::instance().currentShowObject.link ();
-    m_currentShowName = Application::instance().currentShowObject.title ();
-    m_currentShow = Application::instance().currentShowObject.getShow ();
     emit showNameChanged();
 }
 
 void PlaylistModel::loadOffset(int offset){
     auto newIndex = m_currentIndex+offset;
+
     if(isValidIndex(newIndex)){
-        m_currentIndex = newIndex;
-        loadSource(m_currentIndex);
+        qDebug()<<"loading offset "<<newIndex;
+        loadSource(newIndex);
     }
 }
 

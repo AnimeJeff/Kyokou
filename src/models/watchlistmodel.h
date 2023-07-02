@@ -6,8 +6,9 @@
 #include <iostream>
 #include <QAbstractListModel>
 #include <QStandardItemModel>
-#include "parsers/data/mediadata.h"
+#include "parsers/data/showdata.h"
 #include <nlohmann/json.hpp>
+#include "showmanager.h"
 
 
 class WatchListModel: public QAbstractListModel
@@ -24,13 +25,13 @@ private:
         COMPLETED
     };
     nlohmann::json m_jsonList;
-    QVector<std::shared_ptr<MediaData>> m_watchingList;
-    QVector<std::shared_ptr<MediaData>> m_plannedList;
-    QVector<std::shared_ptr<MediaData>> m_onHoldList;
-    QVector<std::shared_ptr<MediaData>> m_droppedList;
-    QVector<std::shared_ptr<MediaData>> m_completedList;
-    QVector<std::shared_ptr<MediaData>>* m_currentList = &m_watchingList;
-    QMap<int,QVector<std::shared_ptr<MediaData>>*>listMap{
+    QVector<std::shared_ptr<ShowData>> m_watchingList;
+    QVector<std::shared_ptr<ShowData>> m_plannedList;
+    QVector<std::shared_ptr<ShowData>> m_onHoldList;
+    QVector<std::shared_ptr<ShowData>> m_droppedList;
+    QVector<std::shared_ptr<ShowData>> m_completedList;
+    QVector<std::shared_ptr<ShowData>>* m_currentList = &m_watchingList;
+    QMap<int,QVector<std::shared_ptr<ShowData>>*>listMap{
         {WATCHING, &m_watchingList},
         {PLANNED, &m_plannedList},
         {ON_HOLD, &m_onHoldList},
@@ -58,14 +59,13 @@ private:
             infile>> m_jsonList;
         }else{
             //            m_jsonList = nlohmann::json::array ();
-
         }
     }
     void parseWatchListFile(){
         for (int i = 0;i<m_jsonList.size ();i++){
             auto array = m_jsonList[i];
             if(array.empty ())continue;
-            QVector<std::shared_ptr<MediaData>>* list;
+            QVector<std::shared_ptr<ShowData>>* list;
             switch(i){
             case WATCHING:
                 list = &m_watchingList;
@@ -84,11 +84,13 @@ private:
                 break;
             }
             for(auto& item:array){
-                list->push_back(std::make_shared<MediaData>(MediaData(item)));
+//                qDebug()<<QString::fromStdString (item["title"].dump ());
+                list->push_back(std::make_shared<ShowData>(ShowData(item)));
                 list->back ()->setListType (i);
             }
         }
     }
+    void changeListType(const ShowData& show,int listType);
 public:
     explicit WatchListModel(QObject *parent = nullptr): QAbstractListModel(parent){
         readWatchListFile();
@@ -102,17 +104,17 @@ public:
         m_completedList.clear();
     }
 public:
-    Q_INVOKABLE void add(MediaData show, int listType = WATCHING){
+    Q_INVOKABLE void add(ShowData show, int listType = WATCHING){
         m_jsonList[listType].push_back (show.toJson ());
         show.setJsonObject(m_jsonList[listType].back ());
-        listMap[listType]->push_back (std::make_shared<MediaData>(show));
+        listMap[listType]->push_back (std::make_shared<ShowData>(show));
         if(m_displayingListType == listType) emit layoutChanged ();
         save();
     }
 
     Q_INVOKABLE void addCurrentShow(int listType = WATCHING);
 
-    Q_INVOKABLE void remove(const MediaData& show){
+    Q_INVOKABLE void remove(const ShowData& show){
         auto& list = m_jsonList[show.listType];
         for(int i = 0;i<list.size ();i++){
             if(list[i]["link"] == show.link.toStdString ()){
@@ -158,7 +160,7 @@ public:
 
     Q_INVOKABLE void moveEnded();
 
-    bool checkInList(const MediaData& show){
+    bool checkInList(const ShowData& show){
         if(show.isInWatchList()){
             return true;
         }else if(getShowInList (show)){
@@ -167,7 +169,7 @@ public:
         return false;
     }
 
-    std::shared_ptr<MediaData> getShowInList(const MediaData& show) {
+    std::shared_ptr<ShowData> getShowInList(const ShowData& show) {
         for(int i = 0;i<m_jsonList.size ();i++){
             nlohmann::json::array_t list = m_jsonList[i];
             //                qDebug()<<list.;
@@ -181,7 +183,7 @@ public:
         return nullptr;
     }
 
-    nlohmann::json* getShowJsonInList(const MediaData& show) {
+    nlohmann::json* getShowJsonInList(const ShowData& show) {
         for(int i = 0;i<m_jsonList.size ();i++){
             nlohmann::json::array_t list = m_jsonList[i];
             for(int j = 0;j<list.size ();j++){
@@ -198,7 +200,7 @@ public:
     }
     bool loading = false;
 signals:
-    void detailsRequested(MediaData show);
+    void detailsRequested(ShowData show);
     void loadingChanged(void);
 public slots:
     bool checkCurrentShowInList();

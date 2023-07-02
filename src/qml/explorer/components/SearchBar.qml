@@ -15,7 +15,7 @@ Item {
             Layout.preferredWidth: searchBar.width/2
             placeholderText: qsTr("Enter query!")
             onAccepted: {
-                app.showExplorer.search(searchTextField.text,1,1)
+                app.showExplorer.search(searchTextField.text,1,4)
             }
         }
 
@@ -36,7 +36,7 @@ Item {
             text: "Latest"
             focusPolicy: Qt.NoFocus
             onClicked: {
-                app.showExplorer.latest(1,3)
+                app.showExplorer.latest(1,4)
             }
         }
 
@@ -46,7 +46,7 @@ Item {
             text: "Popular"
             focusPolicy: Qt.NoFocus
             onClicked: {
-                app.showExplorer.popular(1,3)
+                app.showExplorer.popular(1,4)
             }
         }
 
@@ -54,15 +54,10 @@ Item {
             id:providersComboBox
             Layout.fillWidth: true
             Layout.fillHeight: true
-            displayText: app.currentSearchProvider.name
-            model: ListModel{}
-            Component.onCompleted: {
-                app.providers.forEach(function(provider) {
-                    providersComboBox.model.append({text:provider.name,providerEnum:provider.providerEnum})
-                })
-            }
+            displayText: showManager.currentSearchProviderName
+            model: showManager
             onClickedFun:function(index,model){
-                app.changeSearchProvider(model.providerEnum)
+                showManager.changeSearchProvider(model.providerEnum)
                 providersComboBox.popup.close()
             }
         }

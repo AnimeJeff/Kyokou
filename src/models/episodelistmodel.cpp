@@ -5,17 +5,18 @@
 
 void EpisodeListModel::updateLastWatchedName(){
     continueEpisodeName = "";
-    continueIndex = Application::instance().currentShowObject.lastWatchedIndex ();
-    int totalEpisodes = Application::instance().currentShowObject.episodes ().count ();
-    qDebug()<<continueIndex <<totalEpisodes;
+    auto currentShow = ShowManager::instance ().getCurrentShow ();
+    continueIndex = currentShow.getLastWatchedIndex ();
+    int totalEpisodes = currentShow.episodes.count ();
+//    qDebug()<<continueIndex <<totalEpisodes;
     if(continueIndex >= 0 && continueIndex < totalEpisodes){
         if(continueIndex==totalEpisodes-2)continueIndex++;
-        Episode lastWatchedEpisode = Application::instance().currentShowObject.episodes().at (continueIndex);
+        Episode lastWatchedEpisode = currentShow.episodes[continueIndex];
         continueEpisodeName = QString::number (lastWatchedEpisode.number);
         if(!(lastWatchedEpisode.title.isEmpty () || lastWatchedEpisode.title.toInt () == lastWatchedEpisode.number)){
             continueEpisodeName += "\n" + lastWatchedEpisode.title;
         }
-        qDebug()<<"updated last watched index";
+
     }
     emit continueIndexChanged();
 }
@@ -25,7 +26,7 @@ int EpisodeListModel::rowCount(const QModelIndex &parent) const
     if (parent.isValid())
         return 0;
 
-    return Application::instance().currentShowObject.episodes().count ();
+    return ShowManager::instance().getCurrentShow ().episodes.count ();
 }
 
 QVariant EpisodeListModel::data(const QModelIndex &index, int role) const{
@@ -34,9 +35,9 @@ QVariant EpisodeListModel::data(const QModelIndex &index, int role) const{
         return QVariant();
     int i = index.row();
     if(isReversed){
-        i = Application::instance().currentShowObject.episodes().count () - i - 1;
+        i = ShowManager::instance().getCurrentShow ().episodes.count () - i - 1;
     }
-    const Episode& episode = Application::instance().currentShowObject.episodes().at (i);
+    const Episode& episode = ShowManager::instance().getCurrentShow ().episodes.at (i);
 
     switch (role) {
     case TitleRole:

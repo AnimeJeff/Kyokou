@@ -58,5 +58,6 @@
         <file>src/qml/info/components/EpisodeList.qml</file>
         <file>src/qml/watchlist/WatchListPage.qml</file>
         <file>src/qml/download/DownloadPage.qml</file>
+        <file>src/qml/player/PlayListSideBar.qml</file>
     </qresource>
 </RCC>

@@ -101,10 +101,8 @@ GridView {
             anchors.fill: coverImage
             z:parent.z+1
             onClicked: (mouse)=>{
-
                            //                               app.showExplorer.loadDetails(index)
                            if(list.contentY-list.originY>0)list.lastY = list.contentY-list.originY
-                           console.log(list.lastY)
                            app.showExplorer.loadMore()
                        }
             cursorShape: Qt.PointingHandCursor

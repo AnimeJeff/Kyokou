@@ -1,14 +1,11 @@
 #ifndef PLAYLISTMODEL_H
 #define PLAYLISTMODEL_H
 
-#include "parsers/mediaprovider.h"
+#include "parsers/showprovider.h"
 #include <QDir>
 #include <QAbstractListModel>
 #include "global.h"
 #include <QtConcurrent>
-
-
-
 
 class PlaylistModel : public QAbstractListModel
 {
@@ -26,29 +23,32 @@ public:
     void setOnLaunchFile(QString file){
         m_onLaunchFile = file;
     }
+
     QString getPlayOnLaunchFile(){
         return m_onLaunchFile;
     }
+
     void setOnLaunchPlaylist(QString playlist){
         loadFolder (QUrl::fromLocalFile(playlist),false);
         if(m_playlist.length () == 0){
-            qWarning() << "directory has no playable items.";
+            qWarning() << "Directory has no playable items.";
             return;
         }
-        m_onLaunchFile = m_playlist[this->m_currentIndex].localPath;
-
+        m_onLaunchFile = m_playlist[this->m_currentIndex].link;
     }
+
     inline QString getOnLaunchPlaylist(){
         return m_onLaunchPlaylist;
     }
+
     Q_INVOKABLE void loadFolder(const QUrl& path, bool play = true);
     Q_INVOKABLE void loadSource(int index);
-//Traversing the playlist
+    //  Traversing the playlist
     Q_INVOKABLE void loadOffset(int offset);
     //    bool hasNextItem(){return m_currentIndex < m_playlist.size ()-1;}
     //    bool hasPrecedingItem(){return m_currentIndex>0;}
-    void playNextItem(){loadOffset (1);}
-    void playPrecedingItem(){loadOffset (-1);}
+    void playNextItem(){ loadOffset (1); }
+    void playPrecedingItem(){ loadOffset(-1); }
     void setWatchListShowItem(nlohmann::json* json){
         m_watchListShowItem = json;
     }
@@ -57,10 +57,10 @@ private:
         return index >= 0 && index < m_playlist.size ();
     }
     QString currentItemName() const{
-        if(!isValidIndex(m_currentIndex))return "";
+        if(!isValidIndex(m_currentIndex)) return "";
         const Episode& currentItem = m_playlist[m_currentIndex];
-        QString itemName = "[%1/%2] %3";
-        itemName = itemName.arg (m_currentIndex+1).arg (m_playlist.size ()).arg (currentItem.number);
+        QString itemName = "%4\n[%1/%2] %3";
+        itemName = itemName.arg (m_currentIndex+1).arg (m_playlist.size ()).arg (currentItem.number).arg (m_currentShowName);
         if (currentItem.title.length () > 0) {
             itemName+=". "+ currentItem.title;
         }
@@ -81,11 +81,8 @@ private:
         loading = b;
         emit loadingChanged ();
     }
-
-public:
-
 private:
-    MediaProvider *currentProvider;
+    ShowProvider *currentProvider;
     QString m_currentShowLink;
     QString m_currentShowName;
     QVector<Episode> m_playlist;
@@ -97,9 +94,7 @@ private:
     QString m_onLaunchPlaylist;
     nlohmann::json* m_watchListShowItem;
     bool loading = false;
-    MediaData m_currentShow;
-
-
+    ShowData m_currentShow;
 signals:
     void loadingChanged(void);
     void sourceFetched(QString link);

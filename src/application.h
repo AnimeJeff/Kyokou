@@ -6,13 +6,10 @@
 #include "models/playlistmodel.h"
 #include "models/searchresultsmodel.h"
 #include "models/watchlistmodel.h"
+#include "showmanager.h"
 #include <QAbstractListModel>
 
-//#include "parsers/data/mediadataobject.h"
-#include "parsers/data/mediadataobject.h"
-#include "parsers/providers/mediaproviders/nivod.h"
-#include "parsers/providers/mediaproviders/gogoanime.h"
-#include "parsers/providers/mediaproviders/nineanimehq.h"
+
 class Application : public QObject
 {
     Q_OBJECT
@@ -21,38 +18,6 @@ class Application : public QObject
     Q_PROPERTY(SearchResultsModel* showExplorer READ searchResultsModel CONSTANT)
     Q_PROPERTY(WatchListModel* watchList READ watchListModel CONSTANT)
 private:
-    Q_PROPERTY(QList<MediaProvider*> providers READ providers CONSTANT)
-    Q_PROPERTY(MediaProvider* currentSearchProvider READ getCurrentSearchProvider NOTIFY currentSearchProviderChanged)
-    Q_PROPERTY(MediaDataObject* currentShowObject READ getCurrentShowObject CONSTANT)
-
-    MediaDataObject currentShowObject;
-    MediaDataObject* getCurrentShowObject(){
-        return &currentShowObject;
-    }
-    QMap<int,MediaProvider*> providersMap{{MediaProvider::Nivod,new Nivod},
-//                                         {Providers::e_HuaLe,new HuaLe},
-                                         {MediaProvider::Gogoanime,new Gogoanime},
-                                         //        {Providers::e_NtDongMan,new NtDongMan},
-                                         {MediaProvider::NineAnimeHQ,new NineanimeHQ},
-                                         };
-    MediaProvider* m_currentSearchProvider = providersMap[MediaProvider::Gogoanime] ;
-
-
-    inline MediaProvider* getProvider(int provider) const {
-        if(providersMap.contains(provider)) return providersMap[provider];
-        return nullptr;
-    }
-    inline MediaProvider* getCurrentShowProvider() {
-        return providersMap[currentShowObject.provider()];
-    }
-    inline MediaProvider* getCurrentSearchProvider() {
-        Q_ASSERT(m_currentSearchProvider!=nullptr);
-        return m_currentSearchProvider;
-    }
-    inline QList<MediaProvider*> providers() const {
-        return providersMap.values ();
-    }
-
     friend PlaylistModel;
     friend SearchResultsModel;
     friend EpisodeListModel;
@@ -69,14 +34,11 @@ public:
     inline SearchResultsModel* searchResultsModel(){return &m_searchResultsModel;}
     inline WatchListModel* watchListModel(){return &m_watchListModel;}
 public:
-    Q_INVOKABLE void changeSearchProvider(int providerEnum) {
-        m_currentSearchProvider = providersMap[providerEnum];
-        emit currentSearchProviderChanged();
-    }
     Q_INVOKABLE void loadSourceFromList(int index){
         m_playlistModel.syncList ();
-        if(currentShowObject.isInWatchList ()){
-            m_playlistModel.setWatchListShowItem (m_watchListModel.getShowJsonInList (currentShowObject.getShow ()));
+        auto currentShow = ShowManager::instance().getCurrentShow();
+        if(currentShow.isInWatchList ()){
+            m_playlistModel.setWatchListShowItem (m_watchListModel.getShowJsonInList (currentShow));
         }
         m_playlistModel.loadSource (index);
     }
@@ -94,14 +56,12 @@ private:
     explicit Application(QObject *parent = nullptr): QObject(parent){
         connect(&m_watchListModel,&WatchListModel::detailsRequested,&m_searchResultsModel,&SearchResultsModel::getDetails);
         connect(&m_playlistModel,&PlaylistModel::updatedLastWatchedIndex,&m_watchListModel,&WatchListModel::save);
-
-        connect(&currentShowObject, &MediaDataObject::showChanged,&m_watchListModel,&WatchListModel::checkCurrentShowInList);
-        connect(&currentShowObject, &MediaDataObject::showChanged,[&](){
+        connect(&ShowManager::instance (), &ShowManager::currentShowChanged,&m_watchListModel,&WatchListModel::checkCurrentShowInList);
+        connect(&ShowManager::instance (), &ShowManager::currentShowChanged,[&](){
             m_episodeListModel.setIsReversed(false);
             m_episodeListModel.updateLastWatchedName();
         });
-
-        connect(&currentShowObject, &MediaDataObject::lastWatchedIndexChanged,&m_episodeListModel,&EpisodeListModel::updateLastWatchedName);
+        connect(&ShowManager::instance (), &ShowManager::lastWatchedIndexChanged,&m_episodeListModel,&EpisodeListModel::updateLastWatchedName);
 
 
         //        m_searchResultsModel.latest (1,0);

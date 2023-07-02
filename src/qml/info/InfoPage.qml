@@ -14,6 +14,7 @@ Item{
 
     focus: false
     property real labelFontSize: Math.sqrt(window.width*window.height * 1/2000) //20
+    property var currentShow: showManager.currentShow
     ColumnLayout{
         anchors.fill: parent
         spacing: 0
@@ -25,7 +26,7 @@ Item{
             ColumnLayout{
                 Image {
                     id: posterImage
-                    source: app.currentShowObject.hasShow ? app.currentShowObject.coverUrl : "qrc:/resources/images/error_image.png"
+                    source: showManager.hasCurrentShow ? currentShow.coverUrl : "qrc:/resources/images/error_image.png"
                     onStatusChanged: if (posterImage.status === Image.Null) source = "qrc:/resources/images/error_image.png"
                     Layout.preferredWidth: window.width/5
                     Layout.preferredHeight: (window.width/5) * 432/305
@@ -35,12 +36,12 @@ Item{
                     id:libraryComboBox
                     Layout.preferredWidth: window.width/5
 //                        Layout.fillHeight: true
-                    currentIndex: app.currentShowObject.listType+1
-                    displayText: model.get(currentIndex).text.length !== 0 ? model.get(currentIndex).text : app.currentShowObject.isInWatchList ? "Remove from library" : "Add to library"
+                    currentIndex: showManager.currentShowListType+1
+                    displayText: model.get(currentIndex).text.length !== 0 ? model.get(currentIndex).text : showManager.currentShow.isInWatchList ? "Remove from library" : "Add to library"
                     delegate: ItemDelegate {
                         width: libraryComboBox.width
-                        //        enabled: !(root.popup.opened && index === 0 && !app.currentShowObject.isInWatchList) || index !== 0
-                        //        visible: !(root.popup.opened && index === 0 && !app.currentShowObject.isInWatchList) || index !== 0
+                        //        enabled: !(root.popup.opened && index === 0 && !showManager.currentShow.isInWatchList) || index !== 0
+                        //        visible: !(root.popup.opened && index === 0 && !showManager.currentShow.isInWatchList) || index !== 0
                         MouseArea {
                             anchors.fill: parent
                             hoverEnabled: true
@@ -48,7 +49,7 @@ Item{
                                 if(index!==0){
                                     app.watchList.addCurrentShow(index-1)
                                 }else{
-                                    if(app.currentShowObject.isInWatchList){
+                                    if(showManager.currentShowIsInWatchList){
                                         app.watchList.removeCurrentShow()
                                     }
                                 }
@@ -56,7 +57,7 @@ Item{
                             }
                         }
                         contentItem: Text {
-                            text: model.text.length !== 0 ? model.text : app.currentShowObject.isInWatchList ? "Remove from library" : "Add to library"
+                            text: model.text.length !== 0 ? model.text : showManager.currentShowIsInWatchList ? "Remove from library" : "Add to library"
                             color: libraryComboBox.highlightedIndex === index ? "white" : "black"
                             font.family: "Arial"
                             elide: Text.ElideRight
@@ -70,7 +71,7 @@ Item{
                             color: libraryComboBox.highlightedIndex === index ? libraryComboBox.checkedColor : "#F3F4F5"
                         }
                     }
-                    visible: app.currentShowObject.hasShow
+                    visible: showManager.hasCurrentShow
                     model: ListModel{
                         ListElement { text: "" }
                         ListElement { text: "Watching" }
@@ -93,7 +94,7 @@ Item{
                     Layout.fillWidth: true
                     Layout.preferredHeight: font.pixelSize * 2
                     id:titleText
-                    text: app.currentShowObject.title
+                    text: currentShow.title
                     font.pixelSize: Math.sqrt(window.width*window.height * 1/1300) //24
                     color: "white"
                     wrapMode: Text.Wrap
@@ -119,7 +120,7 @@ Item{
                     Label {
                         property alias fontSize : descriptionLabel.font.pixelSize
                         id:descriptionLabel
-                        text: app.currentShowObject.desc
+                        text: currentShow.description
                         anchors.fill: parent
                         height: contentHeight
                         color: "white"
@@ -132,7 +133,7 @@ Item{
                     id:ratingViewsText
                     Label {
                         id:scoresText
-                        text: "<b>Scores:</b> " + app.currentShowObject.rating + "/10"
+                        text: "<b>Scores:</b> " + currentShow.rating + "/10"
                         font.pixelSize: labelFontSize
                         Layout.fillWidth: true
                         color: "white"
@@ -140,7 +141,7 @@ Item{
 
                     Label {
                         id:viewsText
-                        text: "<b>Views:</b> " + app.currentShowObject.views
+                        text: "<b>Views:</b> " + currentShow.views
                         font.pixelSize: labelFontSize
                         Layout.fillWidth: true
                         color: "white"
@@ -149,7 +150,7 @@ Item{
                 Label {
                     id:statusText
                     Layout.fillWidth: true
-                    text: "<b>Status:</b> " + app.currentShowObject.status
+                    text: "<b>Status:</b> " + currentShow.status
                     font.pixelSize: labelFontSize
                     color: "white"
                 }
@@ -158,14 +159,14 @@ Item{
                     Label {
                         id:dateAiredText
                         Layout.fillWidth: true
-                        text: "<b>Date aired:</b> " + app.currentShowObject.year
+                        text: "<b>Date aired:</b> " + currentShow.releaseDate
                         font.pixelSize: labelFontSize
                         color: "white"
                     }
                     Label {
                         id:updateTimeText
                         Layout.fillWidth: true
-                        text: "<b>Update Time:</b> " + app.currentShowObject.updateTime
+                        text: "<b>Update Time:</b> " + currentShow.updateTime
                         font.pixelSize: labelFontSize
                         color: "white"
                     }
@@ -181,19 +182,19 @@ Item{
 
                 Label {
                     Layout.fillWidth: true
-                    text: app.currentShowObject.genresString
+                    text: currentShow.genresString
                     font.pixelSize: descriptionLabel.fontSize
                     color: "white"
                 }
 
                 CustomButton{
                     id:continueWatchingButton
-                    visible: app.currentShowObject.lastWatchedIndex !== -1
+                    visible: showManager.currentShowLastWatchedIndex !== -1
                     text:"Continue from " + app.episodeListModel.continueEpisodeName
                     onClicked: {
                         app.loadSourceFromList(app.episodeListModel.reversed ? episodeList.count - app.episodeListModel.continueIndex - 1 : app.episodeListModel.continueIndex)
                     }
-//                    enabled:episodeList.count >= app.currentShowObject.lastWatchedIndex;
+//                    enabled:episodeList.count >= showManager.currentShow.lastWatchedIndex;
                     Layout.preferredHeight: 60
                     Layout.preferredWidth: 60*3
                 }

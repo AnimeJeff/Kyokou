@@ -1,5 +1,5 @@
 #include "searchresultsmodel.h"
-#include "application.h"
+
 //Model implementations
 int SearchResultsModel::rowCount(const QModelIndex &parent) const{
     if (parent.isValid())
@@ -28,44 +28,47 @@ QVariant SearchResultsModel::data(const QModelIndex &index, int role) const{
 
 //load results
 void SearchResultsModel::search(const QString &query, int page, int type){
-    loading=true;
-    emit loadingChanged();
-    m_searchWatcher.setFuture(QtConcurrent::run ([&](){
+    if(m_searchWatcher.isRunning ())return;
+    setLoading (true);
+    m_searchWatcher.setFuture(QtConcurrent::run ([query,page,type](){
         try{
-            //                return Global::instance ().getCurrentSearchProvider ()->search (query,page,type);
-            return Application::instance().getCurrentSearchProvider ()->search (query,page,type);
+            return ShowManager::instance().getCurrentSearchProvider ()->search (query,page,type);
         }catch(const std::exception& e){
             qCritical() << e.what ();
+        }catch(...){
+            qCritical() << "Uncaught exception while searching";
         }
-        return QVector<MediaData>();
+
+        return QVector<ShowData>();
     }));
 }
 
 void SearchResultsModel::latest(int page, int type){
-    loading = true;
-    emit loadingChanged();
-    //        m_searchWatcher.setFuture (QtConcurrent::run (&MediaProvider::latest,Global::instance ().getCurrentSearchProvider (),page,type));
-    m_searchWatcher.setFuture(QtConcurrent::run ([&](){
+    if(m_searchWatcher.isRunning ())return;
+    setLoading(true);
+    m_searchWatcher.setFuture(QtConcurrent::run ([page,type](){
         try{
-            return Application::instance().getCurrentSearchProvider ()->latest (page,type);
+            return ShowManager::instance().getCurrentSearchProvider ()->latest (page,type);
         }catch(const std::exception& e){
             qCritical() << e.what ();
         }
-        return QVector<MediaData>();
+        return QVector<ShowData>();
     }));
 }
 
 void SearchResultsModel::popular(int page, int type){
-    loading=true;
-    emit loadingChanged();
+    if(m_searchWatcher.isRunning ())return;
+    setLoading (true);
     fetchingMore = false;
-    m_searchWatcher.setFuture(QtConcurrent::run ([&](){
+    m_searchWatcher.setFuture(QtConcurrent::run ([page,type](){
         try{
-            return Application::instance().getCurrentSearchProvider ()->popular (page,type);
+            return ShowManager::instance().getCurrentSearchProvider ()->popular (page,type);
         }catch(const std::exception& e){
             qCritical() << e.what ();
+        }catch(...){
+            qCritical() << "uncaught exception";
         }
-        return QVector<MediaData>();
+        return QVector<ShowData>();
     }));
 }
 
@@ -73,46 +76,45 @@ void SearchResultsModel::loadMore(){
     loading=true;
     emit loadingChanged();
     fetchingMore = true;
-    m_searchWatcher.setFuture(QtConcurrent::run ([&](){
+    m_searchWatcher.setFuture(QtConcurrent::run ([](){
         try{
-            return Application::instance().getCurrentSearchProvider ()->fetchMore ();
+            return ShowManager::instance().getCurrentSearchProvider ()->fetchMore ();
         }catch(const std::exception& e){
             qCritical() << e.what ();
+        }catch(...){
+            qCritical() << "uncaught exception";
         }
-        return QVector<MediaData>();
+        return QVector<ShowData>();
     }));
 }
 
 bool SearchResultsModel::canLoadMore() const{
     if(loading)return false;
-    return Application::instance().getCurrentSearchProvider ()->canFetchMore ();
+    return ShowManager::instance().getCurrentSearchProvider ()->canFetchMore ();
 }
 
 //
-void SearchResultsModel::getDetails(const MediaData &show){
-    if(Application::instance ().currentShowObject.title() == show.title){
+void SearchResultsModel::getDetails(const ShowData &show){
+    if(ShowManager::instance ().getCurrentShow () == show){
         emit detailsLoaded();
         return;
     }
-    loading=true;
-    emit loadingChanged();
-    m_detailLoadingWatcher.setFuture(QtConcurrent::run ([&](){
-
-        auto provider = Application::instance().providersMap[show.provider];//Global::instance().getProvider(show.provider);
-        if(provider){
-            try{
-                qDebug()<<"Loading details for" << show.title << "with" << provider->name () << "using the link:" << show.link;
-                auto d = provider->loadDetails (show);
-                qDebug()<<"Successfully loaded details for" << d.title;
-                Application::instance ().currentShowObject.setShow (d);
-                emit detailsLoaded();             
-            }catch(const QException& e){
-                qDebug()<<e.what ();
-            }
-            loading = false;
-            emit loadingChanged();
-        }else{
+    setLoading(true);
+    m_detailLoadingWatcher.setFuture(QtConcurrent::run ([show,this](){
+        auto provider = ShowManager::instance ().getProvider (show.provider);
+        if(!provider) {
             qDebug()<<"Unable to find a provider for provider enum" << show.provider;
+            return show;
+        }
+        try{
+            qDebug()<<"Loading details for" << show.title << "with" << provider->name () << "using the link:" << show.link;
+            auto loadedShow = provider->loadDetails (show);
+            qDebug()<<"Successfully loaded details for" << loadedShow.title;
+            return loadedShow;
+        }catch(const QException& e){
+            qDebug()<<e.what ();
+        }catch(...){
+            qDebug()<<"Failed to load" << show.title;
         }
         return show;
     }));
