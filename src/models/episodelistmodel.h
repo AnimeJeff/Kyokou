@@ -1,12 +1,8 @@
 #ifndef EPISODELISTMODEL_H
 #define EPISODELISTMODEL_H
 
-#include <Global.h>
 #include <QAbstractListModel>
 
-//#include "parsers/data/episode.h"
-//Todo list that holds episodes
-//connect signal from showparser to slot
 class EpisodeListModel : public QAbstractListModel
 {
     Q_OBJECT

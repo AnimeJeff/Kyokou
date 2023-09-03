@@ -1,11 +1,5 @@
-#include "client.h"
-#include <QEventLoop>
-#include <QPixmap>
-#include <iostream>
 
-
-
-
+//#include "client.h"
 
 
 

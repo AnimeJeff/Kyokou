@@ -23,7 +23,12 @@
 #include <filesystem>
 #include <QException>
 #define QS(str) QString::fromStdString(str)
-
+//void print(const QString& str){
+//    qDebug()<<str;
+//}
+//void print(const std::string& str){
+//    print(QString::fromStdString (str));
+//}
 
 namespace Functions{
 inline void httpsIfy(std::string& text) {
@@ -31,6 +36,7 @@ inline void httpsIfy(std::string& text) {
         text = "https:" + text;
     }
 }
+
 inline bool containsSubstring(const std::string& str, const std::string& substr) {
     return str.find(substr) != std::string::npos;
 }

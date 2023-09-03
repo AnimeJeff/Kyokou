@@ -23,7 +23,7 @@
 #include <QSettings>
 #include <QStandardPaths>
 #include <QMetaType>
-
+#include "application.h"
 
 #if QT_VERSION_MAJOR >= 6
 #include <QtOpenGL/QOpenGLFramebufferObject>
@@ -38,22 +38,10 @@
 class MpvRenderer : public QQuickFramebufferObject::Renderer
 {
     MpvObject *m_obj;
-    QTimer timer;
+    QTimer* timer;
 public:
     MpvRenderer(MpvObject *obj) : m_obj(obj)
-    {
-        timer.setInterval(1000);
-
-        QObject::connect(&timer, &QTimer::timeout, [&](){
-//            qDebug() << ApplicationModel::instance ().playlistModel ()->getPlayOnLaunchFile ();
-            m_obj->open(Application::instance ().playlistModel ()->getPlayOnLaunchFile ());
-            timer.stop ();
-        });
-        if(Application::instance ().playlistModel ()->getPlayOnLaunchFile ().length () > 0){
-            timer.start ();
-        }
-
-    }
+    {}
 
     // This function is called when a new FBO is needed.
     // This happens on the initial frame.
@@ -130,7 +118,6 @@ public:
     }
 };
 
-
 MpvObject* MpvObject::s_instance = nullptr;
 
 MpvObject::MpvObject(QQuickItem * parent) : QQuickFramebufferObject(parent)
@@ -149,19 +136,18 @@ MpvObject::MpvObject(QQuickItem * parent) : QQuickFramebufferObject(parent)
     m_mpv.set_option("pause", false);          // Always play when a new file is opened
     m_mpv.set_option("softvol", true);         // mpv handles the volume
     m_mpv.set_option("vo", "libmpv");          // Force to use libmpv
+    m_mpv.set_option( "keep-open", true);      // Keeps the video open after EOF
     m_mpv.set_option("screenshot-directory", QStandardPaths::writableLocation(QStandardPaths::PicturesLocation).toUtf8().constData());
-    m_mpv.set_option("reset-on-next-file", "video-aspect-override,af,sub-visibility,audio-delay,pause");
-    m_mpv.set_option( "hwdec", "auto");
+    m_mpv.set_option("reset-on-next-file", "video-aspect-override,af,audio-delay,pause");
+    m_mpv.set_option( "hwdec", "auto");        // Hardware acceleration
 
     char* appdata = getenv("APPDATA");
     if(appdata){
-        std::string mpvDirectory =std::string(appdata)+"\\mpv";
+        std::string mpvDirectory = std::string(appdata)+"\\mpv";
         std::string inputPath = mpvDirectory + "\\input.conf";
         m_mpv.set_option( "config-dir", mpvDirectory.c_str ());
         m_mpv.set_option( "input-conf", inputPath.c_str ());
     }
-
-
     m_mpv.observe_property("duration");
     m_mpv.observe_property("playback-time");
     m_mpv.observe_property("paused-for-cache");
@@ -226,7 +212,6 @@ MpvObject::MpvObject(QQuickItem * parent) : QQuickFramebufferObject(parent)
     m_mpv.set_wakeup_callback([](void *ctx) {
         MpvObject *obj = static_cast<MpvObject *>(ctx);
         QMetaObject::invokeMethod(obj, "onMpvEvent", Qt::QueuedConnection);
-
     }, this);
 
     loadAnime4K (4);
@@ -246,7 +231,6 @@ void MpvObject::open(const QUrl& fileUrl, const QUrl& danmakuUrl, const QUrl& au
 
     //        // set user-agent
     //        m_mpv.set_option("user-agent", NetworkAccessManager::instance()->userAgentOf(fileUrl).constData());
-
     //        /* Some websites does not allow "Range" option in http request header.
     //         * To hack these websites, we force ffmpeg/libav to set the stream unseekable.
     //         * Then we make the video seekable again by enabling seeking in cache.
@@ -271,8 +255,16 @@ void MpvObject::open(const QUrl& fileUrl, const QUrl& danmakuUrl, const QUrl& au
     QByteArray fileuri_str = (fileUrl.isLocalFile() ? fileUrl.toLocalFile() : fileUrl.toString()).toUtf8();
     const char *args[] = {"loadfile", fileuri_str.constData(), nullptr};
     m_mpv.command_async(args);
-    m_danmakuUrl = danmakuUrl;
-    m_audioToBeAdded = audioTrack;
+//    std::string uri_str {"https://cc.2cdns.com/58/b1/58b108555cd2fc6c93dfeafc08b5e657/58b108555cd2fc6c93dfeafc08b5e657.vtt"};
+
+//    const char *subargs[] = {"sub-add", uri_str.data (), "select", nullptr};
+//    m_mpv.command_async(subargs);
+//      m_mpv.set_property_async("sub-file", uri_str);
+//    setProperty("sub-file", uri_str);
+//    setSubVisible(true);
+
+//    m_danmakuUrl = danmakuUrl;
+//    m_audioToBeAdded = audioTrack;
 }
 
 
@@ -334,6 +326,7 @@ void MpvObject::setSubVisible(bool subVisible)
         return;
     m_subVisible = subVisible;
     m_mpv.set_property_async("sub-visibility", m_subVisible);
+
     emit subVisibleChanged();
 }
 
@@ -351,8 +344,8 @@ void MpvObject::addAudioTrack(const QUrl& url)
 // Add subtitle
 void MpvObject::addSubtitle(const QUrl& url)
 {
-    if (m_state == STOPPED)
-        return;
+//    if (m_state == STOPPED)
+//        return;
     QByteArray uri_str = (url.isLocalFile() ? url.toLocalFile() : url.toString()).toUtf8();
     const char *args[] = {"sub-add", uri_str.constData(), "select", nullptr};
     m_mpv.command_async(args);
@@ -644,7 +637,9 @@ void MpvObject::handleMpvError (int code)
 {
     if (code < 0)
     {
-        qDebug() << "MPV Error: " << mpv_error_string(code);
+        QString errorString = mpv_error_string(code);
+        qDebug() << "MPV Error: " << errorString;
+        ErrorHandler::instance ().show (errorString);
     }
 }
 

@@ -30,6 +30,7 @@ QVariant SearchResultsModel::data(const QModelIndex &index, int role) const{
 void SearchResultsModel::search(const QString &query, int page, int type){
     if(m_searchWatcher.isRunning ())return;
     setLoading (true);
+
     m_searchWatcher.setFuture(QtConcurrent::run ([query,page,type](){
         try{
             return ShowManager::instance().getCurrentSearchProvider ()->search (query,page,type);
@@ -46,7 +47,7 @@ void SearchResultsModel::search(const QString &query, int page, int type){
 void SearchResultsModel::latest(int page, int type){
     if(m_searchWatcher.isRunning ())return;
     setLoading(true);
-    m_searchWatcher.setFuture(QtConcurrent::run ([page,type](){
+        m_searchWatcher.setFuture(QtConcurrent::run ([page,type](){
         try{
             return ShowManager::instance().getCurrentSearchProvider ()->latest (page,type);
         }catch(const std::exception& e){
@@ -73,8 +74,8 @@ void SearchResultsModel::popular(int page, int type){
 }
 
 void SearchResultsModel::loadMore(){
-    loading=true;
-    emit loadingChanged();
+    if(m_searchWatcher.isRunning ())return;
+    setLoading (true);
     fetchingMore = true;
     m_searchWatcher.setFuture(QtConcurrent::run ([](){
         try{
@@ -101,22 +102,7 @@ void SearchResultsModel::getDetails(const ShowData &show){
     }
     setLoading(true);
     m_detailLoadingWatcher.setFuture(QtConcurrent::run ([show,this](){
-        auto provider = ShowManager::instance ().getProvider (show.provider);
-        if(!provider) {
-            qDebug()<<"Unable to find a provider for provider enum" << show.provider;
-            return show;
-        }
-        try{
-            qDebug()<<"Loading details for" << show.title << "with" << provider->name () << "using the link:" << show.link;
-            auto loadedShow = provider->loadDetails (show);
-            qDebug()<<"Successfully loaded details for" << loadedShow.title;
-            return loadedShow;
-        }catch(const QException& e){
-            qDebug()<<e.what ();
-        }catch(...){
-            qDebug()<<"Failed to load" << show.title;
-        }
-        return show;
+        return ShowManager::instance ().loadDetails (show);
     }));
 }
 

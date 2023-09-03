@@ -27,8 +27,7 @@ public:
     };
 
     QString extract(std::string link)override{
-        NetworkClient client;
-        auto response = client.get(link);
+        auto response = NetworkClient::get(link);
         if (Functions::containsSubstring (link,"streaming.php")){
             std::string it =response.document().selectFirst("//script[@data-name='episode']").attr("data-value").as_string ();
             std::string decrypted = decrypt (it, keysAndIv.key, keysAndIv.iv);
@@ -37,7 +36,7 @@ public:
             std::string end = Functions::substringAfter(decrypted,id);
             std::string encryptedId = encrypt(id, keysAndIv.key, keysAndIv.iv);
             std::string encryptedUrl = "https://" + getHostFromUrl(link)+ "/encrypt-ajax.php?id=" + encryptedId + end + "&alias=" + id;
-            std::string encrypted = client.get(encryptedUrl, {{"X-Requested-With", "XMLHttpRequest"}}).body;
+            std::string encrypted = NetworkClient::get(encryptedUrl, {{"X-Requested-With", "XMLHttpRequest"}}).body;
             std::string dataEncrypted = Functions::findBetween(encrypted, "{\"data\":\"", "\"}");
             std::string jumbledJson = decrypt(dataEncrypted, keysAndIv.secondKey, keysAndIv.iv);
             Functions::replaceAll(jumbledJson,R"(o"<P{#meme="")",R"({"e":[{"file":")");

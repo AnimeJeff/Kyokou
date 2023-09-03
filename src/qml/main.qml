@@ -22,20 +22,31 @@ Window {
     property bool maximised: window.visibility === Window.FullScreen
     property var mpv : mpvPage.mpv
     property real lastScrollY:0
-    function setMaximised(shouldFullscreen){
-        if(shouldFullscreen){
+    property string lastSearch:""
+    property bool playerIsFullScreen:false
+
+    function setMaximised(fullscreen){
+        if(fullscreen){
             window.visibility = Window.FullScreen;
         }else{
             window.visibility = Window.AutomaticVisibility;
         }
     }
 
-    function setPlayerFullscreen(shouldFullscreen){
-        setMaximised(shouldFullscreen)
-        playerIsFullScreen = shouldFullscreen
+    function setPlayerFullscreen(fullscreen){
+        setMaximised(fullscreen)
+        playerIsFullScreen = fullscreen
     }
 
-    property bool playerIsFullScreen:false
+    Connections{
+        target: app.playlist
+        function onSourceFetched(link){
+            mpvPage.mpv.open(link)
+            mpvPage.mpv.addSubtitle("https://cc.2cdns.com/58/b1/58b108555cd2fc6c93dfeafc08b5e657/58b108555cd2fc6c93dfeafc08b5e657.vtt")
+            mpvPage.mpv.subVisible = true
+            sideBar.gotoPage(2)
+        }
+    }
 
     Rectangle{
         id:viewRect
@@ -44,7 +55,6 @@ Window {
             id:titleBar
             focus: false
         }
-
         SideBar{
             id:sideBar
             anchors{
@@ -74,6 +84,53 @@ Window {
             id:mpvPage
             visible: false
             anchors.fill: stackView
+
+        }
+
+
+        Dialog {
+            Connections{
+                target: errorHandler
+                function onShowWarning(msg){
+                    errorMessage.text = msg
+                    errorPopup.open()
+                }
+            }
+
+            anchors.centerIn: parent
+            id: errorPopup
+            modal: true
+            width: 400
+            height: 150
+            contentItem: Rectangle {
+                color: "#f2f2f2"
+                border.color: "#c2c2c2"
+                border.width: 1
+                radius: 10
+                anchors.centerIn: parent
+                Text {
+                    text: "Error"
+                    font.pointSize: 16
+                    font.bold: true
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.top: parent.top
+                    anchors.topMargin: 20
+                }
+                Text {
+                    id: errorMessage
+                    text: "An error has occurred."
+                    font.pointSize: 14
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+                Button {
+                    text: "OK"
+                    anchors.bottom: parent.bottom
+                    anchors.bottomMargin: 10
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    onClicked: errorPopup.close()
+                }
+            }
         }
 
     }
@@ -93,44 +150,52 @@ Window {
                    }
     }
 
-    Dialog {
-        id: errorPopup
-        modal: true
-        width: 400
-        height: 150
-        contentItem: Rectangle {
-            color: "#f2f2f2"
-            border.color: "#c2c2c2"
-            border.width: 1
-            radius: 10
-            anchors.centerIn: parent
-            Text {
-                text: "Error"
-                font.pointSize: 16
-                font.bold: true
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.top: parent.top
-                anchors.topMargin: 20
-            }
-            Text {
-                id: errorMessage
-                text: "An error has occurred."
-                font.pointSize: 14
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.verticalCenter: parent.verticalCenter
-            }
-            Button {
-                text: "OK"
-                anchors.bottom: parent.bottom
-                anchors.bottomMargin: 10
-                anchors.horizontalCenter: parent.horizontalCenter
-                onClicked: errorPopup.close()
-            }
+    Component.onCompleted: {
+        if(app.playlist.onLaunchFile){
+            timer.start()
         }
     }
+    Timer {
+            id: timer
+            interval: 1000
+            running: false
+            repeat: false
+            onTriggered: {
+                mpv.open(app.playlist.onLaunchFile)
+                sideBar.gotoPage(2)
+            }
+        }
 
 
 
 
 
+    Shortcut {
+        sequence: "Ctrl+W"
+        onActivated: Qt.quit()
+    }
+    Shortcut {
+        sequence: "1"
+        onActivated: sideBar.gotoPage(0)
+    }
+    Shortcut {
+        sequence: "2"
+        onActivated: sideBar.gotoPage(1)
+    }
+    Shortcut {
+        sequence: "3"
+        onActivated: sideBar.gotoPage(2)
+    }
+    Shortcut {
+        sequence: "4"
+        onActivated: sideBar.gotoPage(3)
+    }
+    Shortcut {
+        sequence: "5"
+        onActivated: sideBar.gotoPage(4)
+    }
+    Shortcut {
+        sequence: "0"
+        onActivated: errorPopup.open()
+    }
 }

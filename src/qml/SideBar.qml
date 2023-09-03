@@ -32,19 +32,14 @@ Rectangle {
         }
     }
 
-    Connections{
-        target: app.playlistModel
-        function onSourceFetched(link){
-            mpv.open(link)
-            gotoPage(2)
-        }
-    }
+
     property var pages: {
         0: "explorer/SearchPage.qml", //todo keep track of location of last scroll and scroll to
         1: "info/InfoPage.qml",
         2: mpvPage,
         3: "watchlist/WatchListPage.qml",
-        4: "download/DownloadPage.qml"
+        4: "download/DownloadPage.qml",
+        5: "settings.qml"
     }
 
     function gotoPage(index){
@@ -61,6 +56,7 @@ Rectangle {
             currentPage = index
         }
     }
+
     Timer{
         id:timer
         repeat: false
@@ -142,6 +138,8 @@ Rectangle {
             Layout.preferredWidth: sideBar.width
             Layout.preferredHeight: sideBar.width
             HoverCursorArea{}
+            onClicked: gotoPage(5)
+            selected: currentPage === 4
         }
     }
 }

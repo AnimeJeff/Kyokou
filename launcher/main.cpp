@@ -13,11 +13,11 @@ void open(std::string args = "")
     si.cb = sizeof(si);
     ZeroMemory( &pi, sizeof(pi) );
 
-    auto commandline = "kyokou.exe "+args;
+    auto commandline = "kyokou.exe "+ args;
 
     TCHAR commandLine[commandline.length ()+1];
     strcpy(commandLine, commandline.c_str());
-    printf(commandLine);
+//    printf(commandLine);
 
     if (!CreateProcess(NULL, // No module name (use command line)
                        commandLine, // Command line
@@ -43,53 +43,52 @@ void open(std::string args = "")
     CloseHandle( pi.hThread );
 }
 
-bool cleanPath(std::string& pathStr,bool& isDir){
-    auto path = std::filesystem::path(pathStr).make_preferred ();
-    if(path.is_relative ()){
-        path = (std::filesystem::current_path()/std::filesystem::path(path));
-    }
-    if (!std::filesystem::exists(path)) {
-        printf("Invalid path \"%s\"",path.c_str ());
+bool isValidFile(const std::filesystem::path& path){
+    std::set<std::string> validExtensions{".mp4", ".mkv", ".avi", ".mp3", ".flac", ".wav", ".ogg", ".webm"};
+    if (!validExtensions.count(path.extension().string())){
+        printf("File %s does not have a valid extension",path.c_str ());
         return false;
-    }
-
-    pathStr = "\""+path.string()+"\"";
-    isDir = std::filesystem::is_directory(path);
-
-    if(!isDir){
-        std::set<std::string> validExtensions{".mp4", ".mkv", ".avi", ".mp3", ".flac", ".wav", ".ogg", ".webm"};
-        if (!validExtensions.count(path.extension().string())){
-            printf("File %s does not have a valid extension",path.c_str ());
-            return false;
-        }
     }
     return true;
 }
 
+std::string cleanPath(std::string& pathStr,bool& isDir){
+    std::filesystem::path path = std::filesystem::path(pathStr).make_preferred ();
+    if(path.is_relative ()) //handles relative path
+        path = (std::filesystem::current_path()/std::filesystem::path(path));
+    if (!std::filesystem::exists(path))
+    {std::cout << "Invalid path" << path << std::endl; return "";}
+    isDir = std::filesystem::is_directory(path);
+    if(!isDir && !isValidFile(path))return "";
+    return pathStr;
+}
 
 int main(int argc, char *argv[]){
-    if(argc==1){
+    if(argc == 1){
         open();
         return 0;
-    }else if(argc!=2){
+    }else if(argc != 2){
         std::cout << "Usage: -d/--dir path/to/directory/to/load\n"
                   << "       -p/--play path/to/file/to/play\n";
         return -1;
     }
-    bool isDir = false;
     std::string path = argv[1];
+    if(path.starts_with ("http")){     // is an url
+        open("--play " + path);
+        return 0;
+    }
 
-    if(!cleanPath(path,isDir)){
-
+    bool isDir = false;
+    std::string cleanedPath = cleanPath(path,isDir);
+    cleanedPath = "\"" + cleanedPath + "\"";
+    if(cleanedPath.empty ())
         return -1;
-    }
-
     if (isDir) {
-        printf("Opening directory %s\n",path.c_str ());
-        open("--dir "+path);
+        printf("Opening directory %s\n",cleanedPath.c_str ());
+        open("--dir " + cleanedPath);
     }else{
-        printf("Opening file %s\n",path.c_str ());
-        open("--play "+path);
+        printf("Opening file %s\n",cleanedPath.c_str ());
+        open("--play " + cleanedPath);
     }
-    return 1;
+    return -1;
 }

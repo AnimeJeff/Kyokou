@@ -14,25 +14,27 @@
 
 
 
-enum class Status {
-    Ongoing,
-    Completed
-};
+
 
 
 
 struct ShowData
 {
-//    template <typename E>
-//    constexpr typename std::underlying_type<E>::type to_underlying(E e) noexcept {
-//        return static_cast<typename std::underlying_type<E>::type>(e);
-//    }
+    //    template <typename E>
+    //    constexpr typename std::underlying_type<E>::type to_underlying(E e) noexcept {
+    //        return static_cast<typename std::underlying_type<E>::type>(e);
+    //    }
     enum ShowType {
         MOVIE = 1,
         TVSERIES,
         VARIETY,
         ANIME,
-        DOCUMENTARY
+        DOCUMENTARY,
+        NONE
+    };
+    enum Status {
+        Ongoing,
+        Completed
     };
     Q_GADGET
     Q_PROPERTY(QString title READ getTitle);
@@ -55,15 +57,17 @@ struct ShowData
     QString getViews() const {return views;}
     QString getStatus() const {return status;}
 public:
-    ShowData(QString title,QString link,QString coverUrl,int provider){
+    ShowData(QString title, std::string link, QString coverUrl, int provider, QString latestTxt = "", int type = 0){
         this->title=title;
         this->link=link;
         this->coverUrl=coverUrl;
         this->provider=provider;
+        this->latestTxt = latestTxt;
+        this->type = type;
     };
     ShowData(nlohmann::json& jsonObject){
         this->jsonObject = &jsonObject;
-        this->link = QString::fromStdString(jsonObject["link"].get<std::string>());
+        this->link = jsonObject["link"].get<std::string>();
         this->title = QString::fromStdString(jsonObject["title"].get<std::string>());
         this->coverUrl = QString::fromStdString(jsonObject["cover"].get<std::string>());
         this->provider = jsonObject["provider"].get<int>();
@@ -71,7 +75,7 @@ public:
     };
     ShowData(){};
     QString title = "";
-    QString link = "";
+    std::string link = "";
     QString coverUrl = "";
     int provider = 0;
     QString latestTxt = "";
@@ -84,6 +88,7 @@ public:
     QString updateTime = "Unknown";
     QString rating = "Unknown";
     QString views = 0;
+    int totalEpisodes = 0;
 
     int getLastWatchedIndex() const {return lastWatchedIndex;}
     void setLastWatchedIndex(int index) {
@@ -100,7 +105,8 @@ public:
         return listType>-1;
     }
 
-    friend class ShowDataObject;
+
+
     friend class WatchListModel;
     bool operator==(const ShowData& other) const {
         return ( (title == other.title) && (link == other.link) );
@@ -113,13 +119,13 @@ public:
     nlohmann::json* jsonObject = nullptr;
     nlohmann::json toJson() const{
         return nlohmann::json::object({
-             {"title", title.toStdString ()},
-             {"cover", coverUrl.toStdString ()},
-             {"link", link.toStdString ()},
-             {"provider", provider},
-             {"listType",listType},
-             {"lastWatchedIndex", lastWatchedIndex},
-             });
+                                       {"title", title.toStdString ()},
+                                       {"cover", coverUrl.toStdString ()},
+                                       {"link", link},
+                                       {"provider", provider},
+                                       {"listType",listType},
+                                       {"lastWatchedIndex", lastWatchedIndex},
+                                       });
     }
     void setJsonObject(nlohmann::json& jsonobj){
         this->jsonObject = &jsonobj;
@@ -143,10 +149,10 @@ public:
               << "Views: " << show.views << Qt::endl;
         return debug;
     }
-    friend QDebug operator<<(QDebug debug, const ShowData* show){
-        debug << *show;
-        return debug;
-    }
+//    friend QDebug operator<<(QDebug debug, const ShowData* show){
+//        debug << *show;
+//        return debug;
+//    }
 private:
     int lastWatchedIndex = -1;
     int listType = -1;

@@ -14,7 +14,7 @@ Item{
         anchors{
             right: parent.right
             top: parent.top
-            bottom: controlBar.top
+            bottom: parent.bottom
         }
         z:2
         width: 200
@@ -28,40 +28,121 @@ Item{
         }
     }
 
-
-    MpvObject{
-        id:mpvObject
-        z:0
-        volume: volumeSlider.value
-        anchors.fill: parent
-        MouseArea{
-            id:mouseArea
-            anchors.fill: mpvObject
-            hoverEnabled: true
-            onMouseXChanged: {
-                mouseArea.cursorShape = Qt.ArrowCursor;
-                controlBar.peak()
-            }
-            Timer{
-                id:doubleClickTimer
-                interval: 300
-            }
-            acceptedButtons: Qt.LeftButton
-            onClicked: (mouse)=>{
-                           if(doubleClickTimer.running)
-                           {
-                               setPlayerFullscreen(!playerIsFullScreen)
-                               if(mpv.state == MpvObject.VIDEO_PLAYING) {mpv.pause() }else {mpv.play()}
-                               doubleClickTimer.stop()
-                           }
-                           else{
-                               if(mpv.state == MpvObject.VIDEO_PLAYING) {mpv.pause() }else {mpv.play()}
-                               doubleClickTimer.restart()
-                           }
-
-
-                       }
+    Rectangle{
+        anchors{
+            left:parent.left
+            right: playlistBar.left
+            top: parent.top
+            bottom: parent.bottom
         }
+        MpvObject{
+            id:mpvObject
+            z:0
+            volume: volumeSlider.value
+            property var lastPos
+            anchors.fill: parent
+            MouseArea{
+                id:mouseArea
+                anchors.fill: mpvObject
+                hoverEnabled: true
+                onMouseXChanged: {
+                    mouseArea.cursorShape = Qt.ArrowCursor;
+                    controlBar.peak()
+                }
+                Timer{
+                    id:doubleClickTimer
+                    interval: 300
+                }
+                Timer{
+                    id:inactivityTimer
+                    interval: 2000
+                    onTriggered: {
+                        let newPos = cursor.pos()
+                        if(newPos === mpvObject.lastPos){
+                            cursor.setCursorShape(Qt.BlankCursor)
+                        }else{
+                            mpvObject.lastPos = cursor.pos()
+                            inactivityTimer.restart()
+                        }
+                    }
+                }
+                onPositionChanged: {
+                    cursor.setCursorShape(Qt.ArrowCursor)
+                    mpvObject.lastPos = cursor.pos()
+                    inactivityTimer.start()
+                }
+                acceptedButtons: Qt.LeftButton
+                onClicked: (mouse)=>{
+                               if(doubleClickTimer.running)
+                               {
+                                   setPlayerFullscreen(!playerIsFullScreen)
+                                   if(mpv.state == MpvObject.VIDEO_PLAYING) {mpv.pause() }else {mpv.play()}
+                                   doubleClickTimer.stop()
+                               }
+                               else{
+                                   if(mpv.state == MpvObject.VIDEO_PLAYING) {mpv.pause() }else {mpv.play()}
+                                   doubleClickTimer.restart()
+                               }
+
+
+                           }
+            }
+            ControlBar{
+                id:controlBar
+                z:1000
+                anchors{
+                    bottom: parent.bottom
+                    left: parent.left
+                    right: parent.right
+                }
+                visible: false
+                height: 30
+                isPlaying: mpv.state === MpvObject.VIDEO_PLAYING || mpv.state === MpvObject.TV_PLAYING
+                time: mpv.time
+                duration: mpv.duration
+                onPlayPauseButtonClicked: mpv.state === MpvObject.VIDEO_PLAYING ? mpv.pause() : mpv.play()
+                onStopButtonClicked: mpv.stop()
+                onSeekRequested: (time)=>mpv.seek(time);
+                onVolumeButtonClicked: {
+                    volumePopup.x = mpv.mapFromItem(volumeButton, 0, 0).x;
+                    volumePopup.y = mpv.mapFromItem(volumeButton, 0, 0).y - volumePopup.height;
+                    volumePopup.visible = true;
+                }
+                onSidebarButtonClicked: playlistBar.toggle()
+                onFolderButtonClicked: folderDialog.open()
+                function peak(time){
+                    controlBar.visible=true
+                    if(time){
+                        timer.interval = time
+                    }else{
+                        timer.interval = 1000
+                    }
+
+                    if (autoHideBars) {
+                        timer.restart();
+                    }
+                }
+                property bool autoHideBars: true
+
+                Timer {
+                    id: timer
+                    interval: 1000
+                    onTriggered: {
+                        if (mouseArea.pressed === true) {
+                            return;
+                        }
+                        if (!controlBar.contains(controlBar.mapFromItem(mouseArea, mouseArea.mouseX, mouseArea.mouseY)))
+                        {
+                            mouseArea.cursorShape = Qt.BlankCursor;
+                            controlBar.visible = false;
+                        }
+                    }
+                }
+
+            }
+
+        }
+
     }
 
     Popup {
@@ -82,66 +163,14 @@ Item{
     FolderDialog{
         id:folderDialog
         currentFolder: "file:///D:/TV/"
-    }
-    Connections{
-        target: folderDialog
-        function onAccepted(){
-            app.playlistModel.loadFolder(folderDialog.selectedFolder)
-        }
-    }
-    ControlBar{
-        id:controlBar
-        z:1000
-        anchors{
-            bottom: parent.bottom
-            left: parent.left
-            right: parent.right
-        }
-        visible: false
-        height: 30
-        isPlaying: mpv.state === MpvObject.VIDEO_PLAYING || mpv.state === MpvObject.TV_PLAYING
-        time: mpv.time
-        duration: mpv.duration
-        onPlayPauseButtonClicked: mpv.state === MpvObject.VIDEO_PLAYING ? mpv.pause() : mpv.play()
-        onStopButtonClicked: mpv.stop()
-        onSeekRequested: (time)=>mpv.seek(time);
-        onVolumeButtonClicked: {
-            volumePopup.x = mpv.mapFromItem(volumeButton, 0, 0).x;
-            volumePopup.y = mpv.mapFromItem(volumeButton, 0, 0).y - volumePopup.height;
-            volumePopup.visible = true;
-        }
-        onSidebarButtonClicked: playlistBar.toggle()
-        onFolderButtonClicked: folderDialog.open()
-        function peak(time){
-            controlBar.visible=true
-            if(time){
-                timer.interval = time
-            }else{
-                timer.interval = 1000
-            }
-
-            if (autoHideBars) {
-                timer.restart();
+        Connections{
+            target: folderDialog
+            function onAccepted(){
+                app.playlist.loadFolder(folderDialog.selectedFolder)
             }
         }
-        property bool autoHideBars: true
-
-        Timer {
-            id: timer
-            interval: 1000
-            onTriggered: {
-                if (mouseArea.pressed === true) {
-                    return;
-                }
-                if (!controlBar.contains(controlBar.mapFromItem(mouseArea, mouseArea.mouseX, mouseArea.mouseY)))
-                {
-                    mouseArea.cursorShape = Qt.BlankCursor;
-                    controlBar.visible = false;
-                }
-            }
-        }
-
     }
+
 
     Keys.enabled: true
     Keys.onPressed: event => handleKeyPress(event)
@@ -172,16 +201,17 @@ Item{
             mpv.seek(mpv.time + 90)
             break;
         case Qt.Key_S:
-            mpv.playPrecedingItem()
+            app.playlist.playPrecedingItem()
             break;
         case Qt.Key_D:
-            mpv.playNextItem()
+            app.playlist.playNextItem()
             break;
         }
     }
 
     function handleKeyPress(event){
         if(event.modifiers & Qt.ControlModifier){
+            if(event.key === Qt.Key_W) return
             handleCtrlModifiedKeyPress(event.key)
         }else{
             switch (event.key) {
@@ -217,10 +247,10 @@ Item{
                 }
                 break;
             case Qt.Key_PageUp:
-                mpv.playNextItem();
+                app.playlist.playNextItem();
                 break;
             case Qt.Key_Home:
-                mpv.playPrecedingItem();
+                app.playlist.playPrecedingItem();
                 break;
             case Qt.Key_PageDown:
                 mpv.seek(mpv.time + 90);
@@ -238,7 +268,7 @@ Item{
                 break;
             case Qt.Key_R:
                 // @disable-check M127
-                mpv.speed > 1.0 ? mpv.setSpeed(1.0):mpv.setSpeed(2.0)
+                mpv.speed > 1.0 ? mpv.setSpeed(1.0) : mpv.setSpeed(2.0)
                 break;
             case Qt.Key_F:
                 setPlayerFullscreen(!playerIsFullScreen);
@@ -256,14 +286,18 @@ Item{
                 break;
             case Qt.Key_Tab:
             case Qt.Key_Asterisk:
-                mpv.showText(app.playlistModel.currentItemName);
+                mpv.showText(app.playlist.currentItemName);
                 break;
             case Qt.Key_Slash:
-                mouseArea.peak();
+                controlBar.peak()
+                break;
+            case Qt.Key_C:
+                mpv.addSubtitle("https://cc.2cdns.com/58/b1/58b108555cd2fc6c93dfeafc08b5e657/58b108555cd2fc6c93dfeafc08b5e657.vtt")
                 break;
             }
         }
     }
+
     KeyNavigation.tab:mpvPage
 }
 

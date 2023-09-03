@@ -1,0 +1,115 @@
+	
+#ifndef NEWPROVIDER_H
+#define NEWPROVIDER_H
+
+#include "parsers/showprovider.h"
+
+class NewProvider : public ShowProvider
+{
+public:
+    explicit NewProvider(QObject *parent = nullptr) : ShowProvider{parent} {
+
+    };
+public:
+    int providerEnum() { return 1; }
+    QString name() { return ""; }
+    std::string hostUrl() { return ""; }
+
+    QVector<ShowData> search(QString query, int page, int type){
+        if(query.isEmpty ()){
+            m_canFetchMore = false;
+            return animes;
+        }
+        QVector<ShowData> shows;
+        std::string url = hostUrl() + "/search.html?keyword=" + Functions::urlEncode (query.toStdString ())+ "&page="+ std::to_string (page);
+        auto showNodes = client.get(url).document().select("//ul[@class='items']/li");
+
+        if(showNodes.empty ()){
+            m_canFetchMore = false;
+            return shows;
+        }
+
+        for (pugi::xpath_node_set::const_iterator it = showNodes.begin(); it != showNodes.end(); ++it)
+        {
+            auto anchor = it.selectFirst(".//ul[@class='items']/a");
+            QString title = anchor.attr("title").as_string();
+            QString coverUrl = it->selectFirst(".//img").attr("src").as_string();
+            std::string link = anchor.attr ("href").as_string ();
+            shows.emplaceBack(ShowData(title,link,coverUrl,Providers::NEWPROVIDER));
+        }
+        m_canFetchMore = true;
+        m_currentPage = page;
+        lastSearch = [query,this,type]{
+            return search(query,++m_currentPage);
+        };
+        return shows;
+    }
+
+    QVector<ShowData> popular(int page, int type){
+        QVector<ShowData> shows;
+        std::string url = "";
+        auto showNodes = client.get(url).document().select("//ul[@class='items']/li");
+        
+        if(showNodes.empty ()){
+            m_canFetchMore = false;
+            return shows;
+        }
+
+        for (pugi::xpath_node_set::const_iterator it = showNodes.begin(); it != showNodes.end(); ++it)
+        {
+            auto anchor = it.selectFirst(".//ul[@class='items']/a");
+            QString title = anchor.attr("title").as_string();
+            QString coverUrl = it->selectFirst(".//img").attr("src").as_string();
+            std::string link = anchor.attr ("href").as_string ();
+            shows.emplaceBack(ShowData(title,link,coverUrl,Providers::NEWPROVIDER));
+        }
+        m_canFetchMore = true;
+        m_currentPage = page;
+        lastSearch = [this,type]{
+            return popular(++m_currentPage,type);
+        };
+        return shows;
+    }
+    QVector<ShowData> latest(int page, int type){
+        QVector<ShowData> shows;
+        std::string url = "";
+        auto showNodes = client.get(url).document().select("//ul[@class='items']/li");
+        if(showNodes.empty ()){
+            m_canFetchMore = false;
+            return shows;
+        }
+
+        for (pugi::xpath_node_set::const_iterator it = showNodes.begin(); it != showNodes.end(); ++it)
+        {
+            auto anchor = it.selectFirst(".//ul[@class='items']/a");
+            QString title = anchor.attr("title").as_string();
+            QString coverUrl = it->selectFirst(".//img").attr("src").as_string();
+            std::string link = anchor.attr ("href").as_string ();
+            shows.emplaceBack(ShowData(title,link,coverUrl,Providers::NEWPROVIDER));
+        }
+        m_canFetchMore = true;
+        m_currentPage = page;
+        lastSearch = [this,type]{
+            return latest(++m_currentPage,type);
+        };
+
+        return shows;
+    }
+    ShowData loadDetails(ShowData show){
+        client.get(show.link).document();
+        return show;
+    }
+    int getTotalEpisodes(const ShowData &show){
+        return 0;
+    }
+    QVector<VideoServer> loadServers(const Episode &episode){
+        QVector<VideoServer> servers;
+        client.get(episode.link).document();
+        return servers;
+    }
+    QString extractSource(VideoServer &server){
+        return "";
+    }
+};
+
+#endif // NEWPROVIDER_H

@@ -10,35 +10,39 @@
 
 class Gogoanime : public ShowProvider
 {
-
-
 public:
     int providerEnum() override{
-        return Providers::Gogoanime;
+        return Providers::GOGOANIME;
     }
     Gogoanime() = default;
     QString name() override{
         return "Gogoanime";
     }
-    std::string hostUrl() override{
-        return "https://gogoanime.hu";
+    std::string hostUrl() override {
+        return "https://gogoanimehd.to";
     }
+
     QVector<ShowData> search(QString query, int page, int type=0) override{
         QVector<ShowData> animes;
-        if(query.isEmpty ())return animes;
-        std::string url = hostUrl()+"/search.html?keyword=" + QUrl::toPercentEncoding(query).toStdString () + "&page="+std::to_string(page);
-        client.get(url).document().select("//ul[@class='items']/li").forEach ([&](pugi::xpath_node node) {
-            ShowData anime;
-            auto anchor = node.selectFirst(".//p[@class=\"name\"]/a");
-            anime.title = anchor.attr("title").as_string();
-            anime.coverUrl = node.selectFirst(".//img").attr("src").as_string();
-            anime.link = anchor.attr ("href").as_string ();
-            anime.provider = Providers::Gogoanime;
-            anime.releaseDate = node.selectText (".//p[@class=\"released\"]"); //TODO remove released
-            anime.releaseDate.remove (0,10);
-            animes.append (std::move(anime));
-        });
-        m_canFetchMore=!animes.empty ();
+        if(query.isEmpty ()){
+            m_canFetchMore = false;
+            return animes;
+        }
+        std::string url = hostUrl() + "/search.html?keyword=" + Functions::urlEncode (query.toStdString ())+ "&page="+ std::to_string (page);
+        auto animeNodes = NetworkClient::get(url).document().select("//ul[@class='items']/li");
+        if(animeNodes.empty ()){
+            m_canFetchMore = false;
+            return animes;
+        }
+        for (pugi::xpath_node_set::const_iterator it = animeNodes.begin(); it != animeNodes.end(); ++it)
+        {
+            auto anchor = it->selectFirst(".//p[@class=\"name\"]/a");
+            auto title = anchor.attr("title").as_string();
+            auto coverUrl = it->selectFirst(".//img").attr("src").as_string();
+            auto link = anchor.attr ("href").as_string ();
+            animes.emplaceBack(ShowData(title,link,coverUrl,Providers::GOGOANIME));
+        }
+        m_canFetchMore = true;
         m_currentPage = page;
         lastSearch = [query,this]{
             return search(query,++m_currentPage);
@@ -48,75 +52,83 @@ public:
 
     QVector<ShowData> popular(int page, int type=0) override{
         QVector<ShowData> animes;
-        client.get ("https://ajax.gogo-load.com/ajax/page-recent-release-ongoing.html?page="+std::to_string (page)).document ()
-            .select ("//div[@class='added_series_body popular']/ul/li").forEach([&](pugi::xpath_node element){
-                ShowData anime;
-                pugi::xpath_node anchor = element.selectFirst ("a");
-                anime.link = anchor.attr("href").as_string ();
-                anime.coverUrl = QString(anchor.selectFirst(".//div[@class='thumbnail-popular']").attr ("style").as_string ()).split ("'").at (1);
-                anime.provider = Providers::Gogoanime;
-                anime.latestTxt = element.selectText (".//p[last()]/a");
-                anime.title = QString(anchor.attr ("title").as_string ());
-                animes.push_back (std::move(anime));
-            });
+        auto animeNodes = NetworkClient::get ("https://ajax.gogo-load.com/ajax/page-recent-release-ongoing.html?page=" + std::to_string (page)).document ()
+            .select ("//div[@class='added_series_body popular']/ul/li");
+        if(animeNodes.empty ()){
+            m_canFetchMore = false;
+            return animes;
+        }
+        for (pugi::xpath_node_set::const_iterator it = animeNodes.begin(); it != animeNodes.end(); ++it)
+        {
+            pugi::xpath_node anchor = it->selectFirst ("a");
+            auto link = anchor.attr("href").as_string ();
+            auto coverUrl = QString(anchor.selectFirst(".//div[@class='thumbnail-popular']").attr ("style").as_string ()).split ("'").at (1);
+            auto title = anchor.attr ("title").as_string ();
+            animes.push_back (ShowData{ title,link,coverUrl,Providers::GOGOANIME });
+            animes.last ().latestTxt = it->selectText (".//p[last()]/a");
+        }
+        m_canFetchMore = true;
         m_currentPage = page;
         lastSearch = [this]{
             return popular(++m_currentPage);
         };
-        m_canFetchMore = !animes.empty ();
         return animes;
     }
 
     QVector<ShowData> latest(int page, int type=0) override{
         QVector<ShowData> animes;
-        std::string url = "https://ajax.gogo-load.com/ajax/page-recent-release.html?page=" + std::to_string(page) + "&type=1";
-        pugi::xpath_node_set results=
-            client.get(url).document().select("//ul[@class='items']/li");
-        if (results.empty()) {
-            QString errorMessage = QString::fromStdString(
-                "Unable to fetch latest animes from '" + url + "'");
-            MyException(errorMessage).raise();
+        std::string url = "https://ajax.gogo-load.com/ajax/page-recent-release.html?page=" + std::to_string (page) + "&type=1";
+        pugi::xpath_node_set animeNodes = NetworkClient::get(url).document().select("//ul[@class='items']/li");
+        if (animeNodes.empty()) {
+            qDebug() << "Unable to fetch latest animes from" << url;
+            m_canFetchMore = false;
+            return animes;
         }
-        for(const auto& element:results){
-            ShowData anime;
-            anime.coverUrl = element.selectFirst(".//img").attr("src").as_string();
+
+        for (pugi::xpath_node_set::const_iterator it = animeNodes.begin(); it != animeNodes.end(); ++it)
+        {
+            QString coverUrl = it->selectFirst(".//img").attr("src").as_string();
             static QRegularExpression re{R"(([\w-]*?)(?:-\d{10})?\.)"};
-            auto lastSlashIndex =  anime.coverUrl.lastIndexOf("/");
-            auto id = re.match (anime.coverUrl.mid(lastSlashIndex+1));
+            auto lastSlashIndex =  coverUrl.lastIndexOf("/");
+            auto id = re.match (coverUrl.mid(lastSlashIndex+1));
             if(!id.hasMatch ()){
-                qDebug() << "Unable to extract Id from" << anime.coverUrl.mid(lastSlashIndex+1);
+                qDebug() << "Unable to extract Id from" << coverUrl.mid(lastSlashIndex+1);
                 continue;
             }
-            anime.title = QString(element.selectFirst (".//p[@class='name']/a").node ().child_value ()).trimmed ().replace("\n"," ");
-            anime.link = "/category/" + id.captured (1);
-            anime.latestTxt = element.selectText(".//p[@class='episode']");
-            anime.provider = Providers::Gogoanime;
-            animes.push_back(std::move(anime));
+            QString title = QString(it->selectFirst (".//p[@class='name']/a").node ().child_value ()).trimmed ().replace("\n"," ");
+            std::string link = "/category/" + id.captured (1).toStdString ();
+            animes.emplaceBack (ShowData{ title,link,coverUrl,Providers::GOGOANIME });
+            animes.last ().latestTxt = it->selectText (".//p[@class='episode']");
         }
+
+        m_canFetchMore = true;
         m_currentPage = page;
         lastSearch = [this]{
             return latest(++m_currentPage);
         };
-        m_canFetchMore = !animes.empty ();
+        emit fetchedResults (animes);
         return animes;
     }
 
     ShowData loadDetails(ShowData anime) override{
-        CSoup doc = getInfoPage(anime);
-        anime.episodes = getEpisodes(getEpisodesLink(doc));
+        CSoup doc = getInfoPage (anime);
+        anime.episodes = getEpisodes (getEpisodesLink(doc));
         anime.description = QString(doc.selectFirst ("//span[contains(text() ,'Plot Summary')]").parent ().text ().as_string ()).replace ("\n"," ").trimmed ();
         anime.status = doc.selectFirst ("//span[contains(text(),'Status')]/following-sibling::a").node ().child_value ();
-        doc.select ("//span[contains(text(),'Genre')]/following-sibling::a").forEach ([&](pugi::xpath_node node){
-            QString genre = QString(node.attr ("title").as_string ()).replace ("\n"," ");
+        pugi::xpath_node_set genreNodes = doc.select ("//span[contains(text(),'Genre')]/following-sibling::a");
+        for (pugi::xpath_node_set::const_iterator it = genreNodes.begin(); it != genreNodes.end(); ++it)
+        {
+            QString genre = QString(it->attr ("title").as_string ()).replace ("\n"," ");
             anime.genres.push_back (genre);
-        });
+        }
+        anime.totalEpisodes = anime.episodes.count ();
         return anime;
     };
 
     CSoup getInfoPage(const ShowData& anime){
-        auto response = client.get(hostUrl() + anime.link.toStdString());
+        auto response = NetworkClient::get(hostUrl() + anime.link);
         if(response.code == 404){
-            QString errorMessage = QString::fromStdString ("Invalid URL: '" + hostUrl() + anime.link.toStdString()+"'");
+            QString errorMessage = "Invalid URL: '" + QString::fromStdString (hostUrl() + anime.link +"'");
             MyException(errorMessage).raise();
         }
         return response.document ();
@@ -129,38 +141,40 @@ public:
     }
 
     QVector<Episode> getEpisodes(const std::string& episodesLink){
-        auto epList = client.get(episodesLink).document ()
-            .select("//ul/li/a").map<Episode>([&](pugi::xpath_node node) {
-                int number = std::stoi (node.selectText ("div[@class=\"name\"]"));
-                QString link = node.attr ("href").value ();
-                return Episode(number,link);
-            });
-        std::reverse(epList.begin(), epList.end());
-        return QVector<Episode>(epList.begin (),epList.end ());
+        auto episodeNodes = NetworkClient::get(episodesLink).document ().select("//ul/li/a");
+        QVector<Episode> episodes;
+        episodes.reserve (episodeNodes.size ());
+        for (pugi::xpath_node_set::const_iterator it = episodeNodes.begin (); it != episodeNodes.end(); ++it)
+        {
+            int number = std::stoi (it->selectText ("div[@class='name']"));
+            std::string link = it->attr ("href").value ();
+            episodes.emplaceFront ( Episode { number,link } );
+        }
+        return episodes;
     }
 
-    int getEpisodeCount(const ShowData &anime){
+    int getTotalEpisodes(const ShowData &anime) override{
         auto doc = getInfoPage (anime);
-        return client.get(getEpisodesLink(doc)).document ().select("//ul/li/a").size ();
+        return NetworkClient::get(getEpisodesLink(doc)).document ().select("//ul/li/a").size ();
     }
 
     QVector<VideoServer> loadServers(const Episode& episode) override{
         QVector<VideoServer> servers;
-        client.get(hostUrl () + episode.link.toStdString ()).document ().select("//div[@class='anime_muti_link']/ul/li/a").forEach ([&](pugi::xpath_node node){
-            std::string link = node.attr("data-video").as_string ();
-            VideoServer server;
-            server.name = QString(node.node().child_value ()).trimmed ();
+        pugi::xpath_node_set serverNodes = NetworkClient::get(hostUrl () + episode.link).document ().select("//div[@class='anime_muti_link']/ul/li/a");
+        for (pugi::xpath_node_set::const_iterator it = serverNodes.begin (); it != serverNodes.end(); ++it)
+        {
+            std::string link = it->attr("data-video").as_string ();
+            QString name = QString(it->node().child_value ()).trimmed ();
             Functions::httpsIfy(link);
-            server.link = link;
             //            server.headers["referer"] = QS(hostUrl ());
-            qDebug()<<server.name<<server.link;
-            servers.push_back (std::move (server));
-
-        });
-        return QVector<VideoServer>(servers.begin (),servers.end ());
+            qDebug() << name << link;
+            servers.emplaceBack (VideoServer(name,link));
+        }
+        return servers;
     };
 
     QString extractSource(VideoServer& server) override{
+
         if (Functions::containsSubstring(server.link, "gogo")
             || Functions::containsSubstring(server.link, "goload")
             || Functions::containsSubstring(server.link, "playgo")
@@ -181,9 +195,6 @@ public:
         return "";
     };
 
-    QVector<ShowData> fetchMore() override {
-        return lastSearch();
-    }
 };
 
 #endif // GOGOANIME_H

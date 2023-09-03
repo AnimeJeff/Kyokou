@@ -17,13 +17,13 @@
 //    QString name(){
 //        return "NT动漫";
 //    };
-//    std::string hostUrl() {
+//    QString hostUrl() {
 //        return "http://www.ntdm8.com/";
 //    };
 //    QVector<ShowResponse> filterSearch(int page, std::string sortBy,std::string channel,std::string regionId = "0",std::string langId="0",std::string yearRange=" ") {
 //        QVector<ShowResponse> animes;
 
-//        //        client.get("http://www.ntdm8.com"/show/riben---%E6%90%9E%E7%AC%91--------2023.html")
+//        //        NetworkClient::get("http://www.ntdm8.com"/show/riben---%E6%90%9E%E7%AC%91--------2023.html")
 
 
 //        return animes;
@@ -43,7 +43,7 @@
 //    };
 //    QVector<ShowResponse> latest(int page, int type){
 //        QVector<ShowResponse> animes;
-//        client.get ("http://www.ntdm8.com/label/new/page/"+std::to_string (page)+".html").document ().select ("//li[@class='anime_icon2']").forEach([&](pugi::xpath_node element){
+//        NetworkClient::get ("http://www.ntdm8.com/label/new/page/"+std::to_string (page)+".html").document ().select ("//li[@class='anime_icon2']").forEach([&](pugi::xpath_node element){
 //            ShowResponse anime;
 //            pugi::xpath_node anchor = element.selectFirst (".//a");
 //            pugi::xpath_node img = anchor.selectFirst (".//img");
@@ -64,7 +64,7 @@
 //    };
 
 //    ShowResponse loadDetails(ShowResponse show){
-//        auto doc = client.get (show.link.toStdString ()).document ();
+//        auto doc = NetworkClient::get (show.link.toStdString ()).document ();
 //        show.description = doc.selectText ("//div[@class=detail_imform_desc_pre]/p");
 //        auto count = 1;
 //        doc.select ("//div[@id='main0']/div[1]/ul/li/a").forEach ([&](pugi::xpath_node element){
@@ -82,7 +82,7 @@
 //    QVector<VideoServer> loadServers(const Episode &episode){
 //        VideoServer server;
 //        server.name = "danmu";
-//        server.link = client.get (episode.link).document ().selectText ("//*[@id='ageframediv']/script[1]");
+//        server.link = NetworkClient::get (episode.link).document ().selectText ("//*[@id='ageframediv']/script[1]");
 //        return QVector<VideoServer>{server};
 //    };
 

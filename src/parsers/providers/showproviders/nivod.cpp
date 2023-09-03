@@ -1,19 +1,39 @@
 #include "nivod.h"
 
-std::string Nivod::createSign(const std::map<std::string, std::string> &bodyMap,
-                              const std::string &secretKey) {
-    std::stringstream ss;
+QVector<ShowData> Nivod::search(QString query, int page, int type){
+    if(query.isEmpty ())return QVector<ShowData>();
+    std::map<std::string, std::string> data = {
+        {"keyword", query.toStdString ()},
+        {"start", std::to_string((page - 1) * 20)},
+        {"cat_id", "1"},
+        {"keyword_type", "0"}
+    };
+    filterSearched=false;
+    std::string response = callAPI("https://api.nivodz.com/show/search/WEB/3.2", data);
+
+    auto results = showsFromJsonArray (nlohmann::json::parse(response)["list"]);
+    m_currentPage = page;
+    lastSearch = [query,type,this]{
+        return search(query,++m_currentPage,type);
+    };
+    return results;
+}
+
+std::string Nivod::createSign(const std::map<std::string, std::string>& bodyMap,
+                          const std::string& secretKey) {
+
     std::string signQuery = _QUERY_PREFIX;
-    for (auto const &[key, value] : queryMap) {
-        signQuery += key + "=" + value + "&";
+    for (auto it = queryMap.begin(); it != queryMap.end(); ++it) {
+        signQuery += it->first + "=" + it->second + "&";
     }
-    
-    ss << _BODY_PREFIX;
-    for (const auto &[key, value] : bodyMap) {
-        ss << key << '=' << value << '&';
+
+    signQuery += _BODY_PREFIX;
+    for (auto it = bodyMap.begin(); it != bodyMap.end(); ++it) {
+        signQuery += it->first + "=" + it->second + "&";
     }
-    
-    std::string input = signQuery + ss.str() + _SECRET_PREFIX + secretKey;
+
+    std::string input = signQuery + _SECRET_PREFIX + secretKey;
+    qDebug() << input;
     return Functions::MD5(input);
 }
 

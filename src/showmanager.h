@@ -3,11 +3,14 @@
 #define SHOWMANAGER_H
 
 #include "parsers/providers/showproviders/tangrenjie.h"
-#include "parsers/showprovider.h"
 #include "parsers/providers/showproviders/gogoanime.h"
 #include "parsers/providers/showproviders/nineanimehq.h"
 #include "parsers/providers/showproviders/nivod.h"
+#include "parsers/providers/showproviders/haitu.h"
+
+#include <QAbstractListModel>
 #include <QObject>
+
 
 class ShowManager: public QAbstractListModel
 {
@@ -22,20 +25,46 @@ class ShowManager: public QAbstractListModel
     Q_PROPERTY(bool currentShowIsInWatchList READ isInWatchList NOTIFY listTypeChanged)
 
     QMap<int,ShowProvider*> providersMap{
-                                           {ShowProvider::Nivod,new Nivod},
-                                           {ShowProvider::Gogoanime,new Gogoanime},
-                                           {ShowProvider::Tangrenjie,new Tangrenjie},
-                                           //{Providers::e_HuaLe,new HuaLe},
-                                           // {Providers::e_NtDongMan,new NtDongMan},
-                                           {ShowProvider::NineAnimeHQ,new NineanimeHQ},
+                                           {ShowProvider::NIVOD,new Nivod},
+                                           {ShowProvider::GOGOANIME,new Gogoanime},
+                                           {ShowProvider::TANGRENJIE,new Tangrenjie},
+                                           {ShowProvider::HAITU,new Haitu},
                                            };
     QVector<ShowProvider*> providers = providersMap.values ();
-    ShowProvider* m_currentSearchProvider = providersMap[ShowProvider::Tangrenjie];
+    ShowProvider* m_currentSearchProvider = providersMap[ShowProvider::GOGOANIME];
     ShowData currentShow;
     QString currentSearchProviderName(){
         return m_currentSearchProvider->name ();
     }
+
 public:
+    ShowData loadDetails(const ShowData& show){
+        if(show.provider==-1){
+            //lazy show
+            ShowData loadedShow {show};
+            loadedShow.episodes.emplaceBack (Episode{ 1,show.link,show.title });
+            return loadedShow;
+        }
+        auto provider = getProvider (show.provider);
+        if(provider) {
+            qDebug()<<"Loading details for" << show.title << "with" << provider->name () << "using the link:" << show.link;
+            try{
+                auto loadedShow = provider->loadDetails (show);
+                qDebug()<<"Successfully loaded details for" << loadedShow.title;
+                return loadedShow;
+            }catch(const QException& e){
+                qDebug() << e.what ();
+            }catch(std::exception& e){
+                qDebug()<<e.what ();
+                std::cout << e.what();
+            }catch(...){
+                qDebug()<<"Failed to load" << show.title;
+            }
+            return show;
+        }
+        qDebug()<<"Unable to find a provider for provider enum" << show.provider;
+        return show;
+    }
     bool hasCurrentShow(){
         return !currentShow.title.isEmpty ();
     }
@@ -61,8 +90,10 @@ public:
         Q_ASSERT(m_currentSearchProvider!=nullptr);
         return m_currentSearchProvider;
     }
+
     Q_INVOKABLE void changeSearchProvider(int providerEnum) {
         m_currentSearchProvider = providersMap[providerEnum];
+        providers.move (providers.indexOf (m_currentSearchProvider),0);
         emit currentSearchProviderChanged();
     }
     void setLastWatchedIndex(int index){
@@ -85,7 +116,9 @@ signals:
     void lastWatchedIndexChanged();
     void listTypeChanged();
 public:
-    explicit ShowManager() {}
+    explicit ShowManager() {
+        providers.move (providers.indexOf (m_currentSearchProvider),0);
+    }
     static ShowManager& instance()
     {
         static ShowManager instance;

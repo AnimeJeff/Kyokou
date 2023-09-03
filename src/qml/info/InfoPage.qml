@@ -9,7 +9,7 @@ Item{
         id:loadingScreen
         z:10
         anchors.fill: parent
-        loading: app.playlistModel.loading
+        loading: app.playlist.loading
     }
 
     focus: false
@@ -30,13 +30,14 @@ Item{
                     onStatusChanged: if (posterImage.status === Image.Null) source = "qrc:/resources/images/error_image.png"
                     Layout.preferredWidth: window.width/5
                     Layout.preferredHeight: (window.width/5) * 432/305
+                    Layout.alignment: Qt.AlignTop
                 }
                 Layout.preferredWidth: window.width/5
                 CustomComboBox{
                     id:libraryComboBox
                     Layout.preferredWidth: window.width/5
 //                        Layout.fillHeight: true
-                    currentIndex: showManager.currentShowListType+1
+                    currentIndex: showManager.currentShowListType + 1
                     displayText: model.get(currentIndex).text.length !== 0 ? model.get(currentIndex).text : showManager.currentShow.isInWatchList ? "Remove from library" : "Add to library"
                     delegate: ItemDelegate {
                         width: libraryComboBox.width

@@ -7,7 +7,7 @@ find_package(Qt6 REQUIRED COMPONENTS QuickControls2)
 find_package(Qt6 REQUIRED COMPONENTS Qml)
 find_package(Qt6 REQUIRED COMPONENTS Concurrent)
 #find_package(Qt6 REQUIRED COMPONENTS Webp)
-
+set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 20)
@@ -17,7 +17,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake;C:/msys64/mingw64
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Og")
 
 FILE(GLOB_RECURSE FILES ${PROJECT_SOURCE_DIR}/src/*.cpp  ${PROJECT_SOURCE_DIR}/src/*.h ${PROJECT_SOURCE_DIR}/src/*.hpp)
-#FILE(GLOB_RECURSE QML ${PROJECT_SOURCE_DIR}/src/qml/*.qml)
+FILE(GLOB_RECURSE QML ${PROJECT_SOURCE_DIR}/src/qml/*.qml)
 set(app_icon_resource_windows kyokou.rc)
 
 qt_add_executable(kyokou
@@ -47,17 +47,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE ${TIDY_LIBRARIES})
 message("** Found Tidy ${TIDY_INCLUDE_DIRS} ${TIDY_LIBRARIES}")
 ENDIF()
 
-#find_package(WebP REQUIRED)
-#IF(WebP_FOUND)
-#include_directories(${WebP_INCLUDE_DIRS})
-#target_link_libraries(${PROJECT_NAME} PRIVATE ${WebP_LIBRARIES})
-#message("** Found Webp ${WebP_INCLUDE_DIRS} ${WebP_LIBRARIES}")
-#ENDIF()
-#find_library(WEBP_LIBRARIES webp)
-#IF(WEBP_LIBRARIES_FOUND)
-#target_link_libraries (${PROJECT_NAME} ${WEBP_LIBRARIES})
-#ENDIF()
-
 find_package(CURL REQUIRED)
 IF(CURL_FOUND)
 include_directories(${CURL_INCLUDE_DIRS})
@@ -77,22 +66,22 @@ set_target_properties(kyokou PROPERTIES
     MACOSX_BUNDLE TRUE
     WIN32_EXECUTABLE TRUE
 )
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set_target_properties(kyokou PROPERTIES
-        WIN32_EXECUTABLE FALSE
-    )
-else ()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O1")
-endif()
 
 
+#if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+#    set_target_properties(kyokou PROPERTIES
+#        WIN32_EXECUTABLE FALSE
+#    )
+#    set(CMAKE_BUILD_TYPE Release)
+#else ()
+#    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O1")
+#endif()
 
 add_executable(launcher
     launcher/main.cpp
     #    ${app_icon_resource_windows}
 )
 add_subdirectory(${PROJECT_SOURCE_DIR}/launcher/)
-
 
 target_link_libraries(kyokou
     PRIVATE Qt6::Quick
@@ -105,8 +94,9 @@ if (Qt6_FOUND)
     qt6_add_qml_module(${PROJECT_NAME}
         URI kyokou_qml
         VERSION 1.0
-        #        NO_GENERATE_QMLDIR
-        #        NO_GENERATE_QMLTYPES
+        NO_GENERATE_QMLDIR
+        NO_GENERATE_QMLTYPES
+        SOURCES ${QML}
     )
 endif()
 

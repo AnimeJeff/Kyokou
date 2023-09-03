@@ -13,17 +13,36 @@ Rectangle{
             required property string title
             required property string cover
             required property int index
-
+            required property int unwatchedEpisodes
             id: content
             color: "black"
             Image {
                 id:coverImage
                 source: cover
                 width: watchListView.cellWidth
+                cache: true // Cache the image
                 height: coverImage.width * aspectRatio
                 anchors{
                     left: parent.left
                     top: parent.top
+                }
+                Rectangle {
+                    visible: unwatchedEpisodes !== 0
+                    width: height*1.5
+                    height: parent.height/10
+                    color: "red"
+                    radius: 1
+                    anchors{
+                        right: parent.right
+                        top: parent.top
+                    }
+
+                    Text {
+//                        anchor.fill: parent
+                        color: "white"
+                        text: unwatchedEpisodes
+                        font.pixelSize: 16
+                    }
                 }
             }
 
@@ -37,7 +56,6 @@ Rectangle{
                 font.pixelSize: 12
                 height: contentHeight
                 color: "white"
-
             }
 
             width: watchListView.cellWidth
@@ -53,7 +71,7 @@ Rectangle{
                     fill: parent
                 }
                 onClicked: {
-//                    console.log(dragArea.DelegateModel.itemsIndex)
+                    //                    console.log(dragArea.DelegateModel.itemsIndex)
                     app.watchList.loadDetails(dragArea.DelegateModel.itemsIndex)
                 }
 
@@ -89,7 +107,7 @@ Rectangle{
                                    }
                                    let diff = Math.abs(newIndex-oldIndex)
                                    if(diff === 1 || diff === itemPerRow){
-//                                       console.log(oldIndex,newIndex)
+                                       //                                       console.log(oldIndex,newIndex)
                                        app.watchList.move(oldIndex,newIndex)
                                        visualModel.items.move(oldIndex,newIndex)
                                    }

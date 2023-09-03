@@ -4,8 +4,8 @@
 #include <QAbstractListModel>
 #include "parsers/data/showdata.h"
 #include "showmanager.h"
-#include <global.h>
 #include <QtConcurrent>
+#include <tools/ErrorHandler.h>
 
 
 class Application;
@@ -21,16 +21,76 @@ class SearchResultsModel : public QAbstractListModel
     QFutureWatcher<QVector<ShowData>> m_searchWatcher{};
     QFutureWatcher<ShowData> m_detailLoadingWatcher{};
     QVector<ShowData> m_list;
+    QThread thread;
 public:
     explicit SearchResultsModel(QObject *parent = nullptr)
         : QAbstractListModel(parent){
+
         QObject::connect(&m_searchWatcher, &QFutureWatcher<QVector<ShowData>>::finished,this, [this]() {
-            setResults(m_searchWatcher.future ().result ());
+            setResults (m_searchWatcher.future ().result ());
         });
+
+        QObject::connect(&ShowManager::instance(), &ShowManager::currentSearchProviderChanged,this, [this]() {
+            ShowManager::instance().getCurrentSearchProvider ()->disconnect ();
+            connect(ShowManager::instance().getCurrentSearchProvider (), &ShowProvider::fetchedResults, this, &SearchResultsModel::setResults);
+            ShowManager::instance().getCurrentSearchProvider ()->moveToThread (&thread);
+        });
+
         QObject::connect(&m_detailLoadingWatcher, &QFutureWatcher<ShowData>::finished,this, [this]() {
-            setCurrentShow(m_detailLoadingWatcher.future ().result ());
+            try {
+                ShowManager::instance ().setCurrentShow(m_detailLoadingWatcher.future ().result ());
+                emit detailsLoaded();
+            } catch (...) {
+                ErrorHandler::instance().show("Failed to load details for show");
+            }
+
+
+            setLoading(false);
         });
     }
+
+    Q_INVOKABLE void search(const QString& query,int page,int type);
+
+    Q_INVOKABLE void latest(int page,int type);
+
+    Q_INVOKABLE void popular(int page,int type);
+
+    Q_INVOKABLE void loadDetails(int index){
+        //        getDetails(m_list[index]);
+        auto show = m_list[index];
+        if(ShowManager::instance ().getCurrentShow () == show){
+            emit detailsLoaded();
+            return;
+        }
+        setLoading(true);
+        m_detailLoadingWatcher.setFuture(QtConcurrent::run ([show,this](){
+            return ShowManager::instance ().loadDetails (show);
+        }));
+    }
+
+    inline bool isLoading(){
+        return loading;
+    }
+
+    void setLoading(bool b){
+        loading = b;
+        emit loadingChanged();
+    }
+public slots:
+    void getDetails(const ShowData& show);
+
+
+public:
+    Q_INVOKABLE void loadMore();;
+    Q_INVOKABLE bool canLoadMore()const;
+signals:
+
+    void fetchMoreResults(void);
+    void detailsLoaded(void);
+    void sourceFetched(QString link);
+    void postItemsAppended(void);
+    void loadingChanged(void);
+private slots:
     void setResults(QVector<ShowData> results){
         if(fetchingMore){
             const int oldCount = m_list.count();
@@ -47,42 +107,6 @@ public:
         loading=false;
         emit loadingChanged();
     }
-
-    void setCurrentShow(const ShowData& show){
-        ShowManager::instance ().setCurrentShow(show);
-        emit detailsLoaded();
-        setLoading(false);
-    }
-
-    Q_INVOKABLE void search(const QString& query,int page,int type);
-
-    Q_INVOKABLE void latest(int page,int type);
-
-    Q_INVOKABLE void popular(int page,int type);
-
-    Q_INVOKABLE void loadDetails(int index){
-        getDetails(m_list[index]);
-    }
-    inline bool isLoading(){
-        return loading;
-    }
-    void setLoading(bool b){
-        loading = b;
-        emit loadingChanged();
-    }
-public slots:
-    void getDetails(const ShowData& show);
-
-
-public:
-    Q_INVOKABLE void loadMore();;
-    Q_INVOKABLE bool canLoadMore()const;
-signals:
-    void fetchMoreResults(void);
-    void detailsLoaded(void);
-    void sourceFetched(QString link);
-    void postItemsAppended(void);
-    void loadingChanged(void);
 
     // QAbstractItemModel interface
 private:

@@ -33,6 +33,7 @@ public:
     ~CursorPosProvider() {} // Private destructor to prevent external deletion.
     CursorPosProvider(const CursorPosProvider&) = delete; // Disable copy constructor.
     CursorPosProvider& operator=(const CursorPosProvider&) = delete; // Disable copy assignment.
+
 };
 
 #endif // UTILS_H

@@ -26,7 +26,7 @@
 
 //public:
 //    void getKeys(){
-//        std::string decrypted = Functions::rc4 ("ANIMEJEFF",Functions::base64Decode (client.get("https://raw.githubusercontent.com/AnimeJeff/Overflow/main/syek").body));
+//        std::string decrypted = Functions::rc4 ("ANIMEJEFF",Functions::base64Decode (NetworkClient::get("https://raw.githubusercontent.com/AnimeJeff/Overflow/main/syek").body));
 //        //        qDebug()<<QString::fromStdString (decrypted);
 //        while(decrypted.back ()!='}'){
 //            decrypted.pop_back ();
@@ -106,7 +106,7 @@
 
 //public:
 //    QString name() override {return "9anime";};
-//    std::string hostUrl() override {return "https://9anime.id";};
+//    QString hostUrl() override {return "https://9anime.id";};
 
 //    QVector<ShowResponse> search(QString query, int page, int type) override{
 //        Q_UNUSED(type);
@@ -117,9 +117,9 @@
 //    QVector<ShowResponse> search(std::string query, int page){
 //        m_widgetSearched=false;
 //        m_lastSearch = query;
-//        std::string url = "https://9anime.pl/filter?keyword="+m_lastSearch+"&page="+std::to_string (page);
+//        QString url = "https://9anime.pl/filter?keyword="+m_lastSearch+"&page="+std:QString::numberge);
 //        QVector<ShowResponse> animes;
-//        client.get(url).document()
+//        NetworkClient::get(url).document()
 //            .select("//div[@id='list-items']/div[@class='item']").forEach ([&](pugi::xpath_node item) {
 //                ShowResponse anime;
 //                auto anchor = item.selectFirst(".//div[@class='ani poster tip']/a");
@@ -150,13 +150,13 @@
 //        m_widgetSearched = true;
 //        m_currentPage = page;
 //        m_lastSearch = path;
-//        std::string url = "https://9anime.id/ajax/home/widget/" + path +"?page=" + std::to_string(page);
+//        std::string url = "https://9anime.id/ajax/home/widget/" + path +"?page=" + QString::number (page);
 //        QVector<ShowResponse> animes = parseAnimes (url);
 //        return animes;
 //    };
 
 //    ShowResponse loadDetails(ShowResponse show) override {
-//        CSoup document = client.get(hostUrl() + show.link.toStdString ()).document();
+//        CSoup document = NetworkClient::get(hostUrl() + show.link.toStdString ()).document();
 //        std::string dataId = document.selectFirst("//div[@id='watch-main']").attr("data-id").as_string ();
 //        auto episodesUrl=hostUrl()+ "/ajax/episode/list/" + dataId+"?vrf="+encodeVrf (dataId,keys);
 //        loadEpisodes(&show,episodesUrl);
@@ -180,7 +180,7 @@
 //    };
 
 //    void loadEpisodes(ShowResponse *show,std::string episodeLink){
-//        NetworkClient::Response episodeData = client.get(episodeLink);
+//        NetworkClient::Response episodeData = NetworkClient::get(episodeLink);
 //        if (episodeData.body[0] != '{')return;
 //        //emit error
 //        std::string resultJson = episodeData.json()["result"].get<std::string>();
@@ -209,7 +209,7 @@
 
 //    std::string getServerData(VideoServer* server, std::string sourceID){
 //        std::string serverDataUrl =hostUrl ()+"/ajax/server/"+sourceID+"?vrf="+encodeVrf(sourceID, keys);
-//        auto episodeBody= client.get (serverDataUrl).json ()["result"];//todo add headers
+//        auto episodeBody= NetworkClient::get (serverDataUrl).json ()["result"];//todo add headers
 //        nlohmann::json skip_data = episodeBody["skip_data"];
 //        if(!skip_data.empty ()){
 //            server->skipData = new VideoServer::SkipData;
@@ -224,7 +224,7 @@
 
 //private:
 //    QVector<ShowResponse> parseAnimes(std::string url){
-//        CSoup document(client.get(url).json ()["result"]);
+//        CSoup document(NetworkClient::get(url).json ()["result"]);
 //        QVector<ShowResponse> animes;
 //        auto items =document.select("//div[@class='item']");
 //        items.forEach ([&](pugi::xpath_node node){
@@ -249,7 +249,7 @@
 //    }
 //public:
 //    QVector<VideoServer> loadServers(Episode *episode) override{
-//        CSoup document(client.get(episode->link).json ()["result"]);
+//        CSoup document(NetworkClient::get(episode->link).json ()["result"]);
 //        QVector<VideoServer> servers;
 //        document.select("//ul/li").forEach ([&](pugi::xpath_node element){
 //            VideoServer server;
@@ -286,10 +286,10 @@
 //        if(server->name.compare ("vidstream") == 0){
 //            auto url = "https://api.consumet.org/anime/9anime/watch/"+server->link+"?server=vizcloud";
 //            qDebug()<<url;
-//            auto json = nlohmann::json::parse(client.get ("https://api.consumet.org/anime/9anime/watch/"+server->link+"?server=vizcloud").body);
+//            auto json = nlohmann::json::parse(NetworkClient::get ("https://api.consumet.org/anime/9anime/watch/"+server->link+"?server=vizcloud").body);
 //            server->source=QString::fromStdString (json["sources"][0].get <std::string>());
 //            //            server->headers={"Referer",json["headers"]["Referer"].get <std::string>(),"User-Agent",json["headers"]["User-Agent"].get <std::string>()};
-//            //            client.get (json["sources"][0].get <std::string>(),{{"Referer",json["headers"]["Referer"].get <std::string>()},{"User-Agent",json["headers"]["User-Agent"].get <std::string>()}});
+//            //            NetworkClient::get (json["sources"][0].get <std::string>(),{{"Referer",json["headers"]["Referer"].get <std::string>()},{"User-Agent",json["headers"]["User-Agent"].get <std::string>()}});
 //        }
 //    }
 //public:

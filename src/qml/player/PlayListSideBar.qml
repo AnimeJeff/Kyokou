@@ -1,60 +1,82 @@
-import QtQuick 2.15
-
+import QtQuick
+import "./../components"
 Rectangle{
     id:playlistBar
     visible: false
-    color: "white"
-    Text {
-        id:playlistNameText
-        text: app.playlistModel.showName
-        font.pixelSize: 16
-        font.bold: true
-        wrapMode:Text.Wrap
+    color: '#d0303030'
+    CustomComboBox{
+        id:playlistComboBox
         anchors{
-            top: parent.top
-            right: parent.right
             left: parent.left
+            right: parent.right
+            top: parent.top
         }
-        height: contentHeight
+        height: 30
+        displayText: app.playlist.showName
+        //        model: showManager
+        onClickedFun:function(index,model){
+
+        }
     }
+    CustomTextField{
+        checkedColor: "#727CF5"
+        id:playlistSearch
+        color: "white"
+        anchors{
+            top:playlistComboBox.bottom
+            left: parent.left
+            right: parent.right
+        }
+        height: 30
+        placeholderText: qsTr("Enter query!")
+        text: window.lastSearch
+        onAccepted: search()
+    }
+
     ListView {
         id: listView
-        model: app.playlistModel
+        model: app.playlist
         clip:true
+        boundsMovement: Flickable.StopAtBounds
+        boundsBehavior: Flickable.StopAtBounds
+
+        cacheBuffer : 100
         anchors{
-            top: playlistNameText.bottom
+            top: playlistSearch.bottom
             right: parent.right
             left: parent.left
-            bottom: parent.bottom
+            bottom: bottomBar.top
         }
-        currentIndex: app.playlistModel.currentIndex
+        currentIndex: app.playlist.currentIndex
 
         onCurrentIndexChanged: {
             positionViewAtIndex(currentIndex, ListView.PositionAtCenter)
         }
-        delegate: Rectangle {
-            width: listView.width
-            height: itemText.height + 10
-            radius: 4
-            clip: true
-            color: index === app.playlistModel.currentIndex ? 'red': index % 2 === 0 ? "gray" : "white"
-            Text  {
-                id:itemText
-                text: model.numberTitle
-                font.pixelSize: 14
-                wrapMode:Text.Wrap
-                anchors{
-                    left: parent.left
-                    right: parent.right
-                }
-            }
+        spacing : 5
+        delegate: Text  {
+            id:itemText
+            text: model.numberTitle
+            color: index === app.playlist.currentIndex ? 'red':"white"
+            font.pixelSize: 18
+            wrapMode:Text.Wrap
             MouseArea {
                 anchors.fill: parent
                 acceptedButtons: Qt.LeftButton
                 onDoubleClicked: {
-                    app.playlistModel.loadSource(index)
+                    app.playlist.loadSource(index)
                 }
             }
         }
+    }
+
+    Rectangle{
+        id:bottomBar
+        anchors{
+            bottom:parent.bottom
+            left: parent.left
+            right: parent.right
+        }
+        color: "#3C4144"
+        height: 40
     }
 }

@@ -1464,29 +1464,6 @@ namespace pugi
 		// Check if collection is empty
 		bool empty() const;
 
-
-        //Custom Functions
-        template<typename T> std::vector<T> map(std::function<T(xpath_node)> fun) const {
-            std::vector<T> ret;
-            for(xpath_node_set::const_iterator node = _begin; node != _end; ++node)
-            {
-                ret.push_back (fun(node->node ()));
-            }
-            return ret;
-        };
-        void forEach(std::function<void(xpath_node)> fun) const {
-            for(xpath_node_set::const_iterator node = _begin; node != _end; ++node)
-            {
-                fun(node->node ());
-            }
-        };
-        ////////////////////////
-
-
-
-
-
-
 	private:
 		type_t _type;
 

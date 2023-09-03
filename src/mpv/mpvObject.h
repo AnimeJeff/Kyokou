@@ -3,10 +3,8 @@
 
 #include <QtQuick/QQuickFramebufferObject>
 #include <QQuickWindow>
-#include "application.h"
+//#include "application.h"
 #include "mpv.hpp"
-
-
 
 class MpvRenderer;
 
@@ -54,7 +52,6 @@ public:
 
 
 public slots:
-
     void open(const QUrl& fileUrl, const QUrl& danmakuUrl = QUrl(), const QUrl& audioTrackUrl = QUrl());
     void play(void);
     void pause(void);
@@ -82,7 +79,6 @@ public slots:
     void setProperty(const QString& name, const QVariant& value);
     void showText(const QByteArray &text);
 
-
     void loadAnime4K(int n){
         std::string cmd = "CTRL+"+std::to_string (n);
         sendKeyPress (cmd.data());
@@ -90,12 +86,6 @@ public slots:
     void sendKeyPress(const char* cmd){
         const char *args[] = {"keypress",cmd, nullptr};
         m_mpv.command_async(args);
-    }
-    void playPrecedingItem(void){
-        Application::instance().playlistModel()->playPrecedingItem();
-    }
-    void playNextItem(void){
-        Application::instance().playlistModel()->playNextItem();
     }
 
 signals:
@@ -108,7 +98,6 @@ signals:
     void volumeChanged(void);
     void speedChanged(void);
     void videoSizeChanged(void);
-
     void initialised(void);
 
 
@@ -121,7 +110,7 @@ private:
 
     State m_state = STOPPED;
     mpv_end_file_reason m_endFileReason = MPV_END_FILE_REASON_STOP;
-    bool m_subVisible = true;
+    bool m_subVisible = false;
     float m_speed = 1.0;
     int m_volume = 50;
     int m_lastVolume=0;

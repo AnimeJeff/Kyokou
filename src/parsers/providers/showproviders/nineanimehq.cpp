@@ -1,8 +1,8 @@
 
-#include "nineanimehq.h"
+//#include "nineanimehq.h"
 
-NineanimeHQ::NineanimeHQ()
-{
+//NineanimeHQ::NineanimeHQ()
+//{
 
-}
+//}
 

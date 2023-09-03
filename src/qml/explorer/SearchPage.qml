@@ -23,6 +23,7 @@ Item {
     }
     Component.onCompleted: {
         list.contentY=lastScrollY
+        forceActiveFocus()
     }
 
     GridView {
@@ -82,9 +83,9 @@ Item {
             //            if(Math.ceil(list.count/list.itemPerRow)*cellHeight<height && count>0){
             //                app.showExplorer.loadMore();
             //            }
-//            if(list.count<30){
-//                app.showExplorer.loadMore();
-//            }
+            //            if(list.count<30){
+            //                app.showExplorer.loadMore();
+            //            }
         }
         //        onContentHeightChanged: {
         //            if( Math.ceil(list.count/list.itemPerRow)*cellHeight<height && count>0){
@@ -145,4 +146,36 @@ Item {
         }
     }
 
+    Keys.enabled: true
+    Keys.onPressed: event => handleKeyPress(event)
+    function handleKeyPress(event){
+
+        switch (event.key) {
+        case Qt.Key_Escape:
+        case Qt.Key_Alt:
+            if(searchBar.textField.activeFocus)
+                searchPage.forceActiveFocus()
+            break;
+        case Qt.Key_Enter:
+            searchBar.search()
+            break;
+        case Qt.Key_Slash:
+            searchBar.textField.forceActiveFocus()
+            break;
+        case Qt.Key_P:
+            app.showExplorer.popular(1,4)
+            break;
+        case Qt.Key_L:
+            app.showExplorer.latest(1,4)
+            break;
+        case Qt.Key_Up:
+            list.flick(0,500)
+            break;
+        case Qt.Key_Down:
+            list.flick(0,-500)
+            break;
+
+        }
+
+    }
 }

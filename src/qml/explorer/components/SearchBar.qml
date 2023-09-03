@@ -4,6 +4,12 @@ import "../../components"
 import QtQuick.Layouts 1.15
 Item {
     id:searchBar
+    property alias textField: searchTextField
+    function search(){
+        app.showExplorer.search(searchTextField.text,1,4)
+        window.lastSearch = searchTextField.text
+        parent.forceActiveFocus()
+    }
 
     RowLayout{
         anchors.fill: parent
@@ -14,9 +20,8 @@ Item {
             Layout.fillHeight: true
             Layout.preferredWidth: searchBar.width/2
             placeholderText: qsTr("Enter query!")
-            onAccepted: {
-                app.showExplorer.search(searchTextField.text,1,4)
-            }
+            text: window.lastSearch
+            onAccepted: search()
         }
 
         CustomButton{
@@ -24,9 +29,7 @@ Item {
             HoverCursorArea{}
             text: "Search"
             focusPolicy: Qt.NoFocus
-            onClicked: {
-                app.showExplorer.search(searchTextField.text,1,1)
-            }
+            onClicked: search()
         }
 
         CustomButton{

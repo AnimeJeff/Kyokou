@@ -18,7 +18,7 @@
 //    QString name(){
 //        return "华乐";
 //    };
-//    std::string hostUrl() {
+//    QString hostUrl() {
 //        return "https://www.huale.org";
 //    };
 //    QVector<ShowResponse> filterSearch(int page, QString sortBy = "time",int type = 1,QString subType = "", QString region = "",QString genre = "",QString language = "",QString letter= "",QString year= "" ) {
@@ -33,7 +33,7 @@
 //        // time
 //        auto url = QString("https://www.huale.org/vodshow/%1%2-%3-%4-%5-%6-%7---%8---%9.html").arg(QString::number (type),subType,region,sortBy,genre,language,letter,QString::number (page),year).toStdString ();
 
-//        client.get(url).document ().select ("//div[@class='module-list']/div[@class='module-items']/div").forEach ([&](pugi::xpath_node node){
+//        NetworkClient::get(url).document ().select ("//div[@class='module-list']/div[@class='module-items']/div").forEach ([&](pugi::xpath_node node){
 //            ShowResponse show;
 //            auto anchor = node.selectFirst (".//div[@class='module-item-pic']/a");
 //            show.title = anchor.attr ("title").as_string ();
@@ -70,7 +70,7 @@
 
 //    ShowResponse loadDetails(ShowResponse show){
 //        qDebug()<<show.link;
-//        auto doc = client.get (show.link.toStdString ()).document ();
+//        auto doc = NetworkClient::get (show.link.toStdString ()).document ();
 //        auto count = 1;
 //        auto infoItem = doc.selectFirst("//div[@class='video-info-main']/div[@class='video-info-items'][7]");
 //        show.description = infoItem.selectFirst (".//div/span").node ().child_value ();
@@ -88,7 +88,7 @@
 //    QVector<VideoServer> loadServers(const Episode &episode){
 //        VideoServer server;
 //        server.name = "danmu";
-//        server.link = client.get (episode.link).document ().selectText ("//*[@id='ageframediv']/script[1]");
+//        server.link = NetworkClient::get (episode.link).document ().selectText ("//*[@id='ageframediv']/script[1]");
 //        return QVector<VideoServer>{server};
 //    };
 
