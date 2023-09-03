@@ -63,7 +63,7 @@ Rectangle{
                 anchors.fill: parent
                 acceptedButtons: Qt.LeftButton
                 onDoubleClicked: {
-                    app.playlist.loadSource(index)
+                    app.playlist.play(index)
                 }
             }
         }

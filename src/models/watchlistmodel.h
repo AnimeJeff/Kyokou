@@ -70,9 +70,7 @@ public:
     bool checkInList(const ShowData &show);
     std::shared_ptr<ShowData> getShowInList(const ShowData& show);
     nlohmann::json* getShowJsonInList(const ShowData& show);
-
     Q_INVOKABLE void loadDetails(int index);
-
 
 signals:
     void detailsRequested(ShowData show);
@@ -81,9 +79,12 @@ public slots:
     bool checkCurrentShowInList();
 
     void save(){
+        static std::mutex mutex;
+        mutex.lock ();
         std::ofstream output_file(watchListFileName.toStdString ());
         output_file << m_jsonList.dump (4);
         output_file.close();
+        mutex.unlock ();
         qDebug()<<"Saved";
     }
 

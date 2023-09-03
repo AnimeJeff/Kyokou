@@ -23,7 +23,6 @@
 #include <QSettings>
 #include <QStandardPaths>
 #include <QMetaType>
-#include "application.h"
 
 #if QT_VERSION_MAJOR >= 6
 #include <QtOpenGL/QOpenGLFramebufferObject>
@@ -40,8 +39,7 @@ class MpvRenderer : public QQuickFramebufferObject::Renderer
     MpvObject *m_obj;
     QTimer* timer;
 public:
-    MpvRenderer(MpvObject *obj) : m_obj(obj)
-    {}
+    MpvRenderer(MpvObject *obj) : m_obj(obj){}
 
     // This function is called when a new FBO is needed.
     // This happens on the initial frame.
@@ -402,7 +400,7 @@ void MpvObject::onMpvEvent()
         {
             //            Q_ASSERT(playlistModel != nullptr);
             if (m_endFileReason == MPV_END_FILE_REASON_EOF){
-                Application::instance().playlistModel()->playNextItem();
+                emit playNext();
             }else{
                 m_state = STOPPED;
                 emit stateChanged();

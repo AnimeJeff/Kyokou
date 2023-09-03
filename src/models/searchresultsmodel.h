@@ -87,7 +87,6 @@ signals:
 
     void fetchMoreResults(void);
     void detailsLoaded(void);
-    void sourceFetched(QString link);
     void postItemsAppended(void);
     void loadingChanged(void);
 private slots:

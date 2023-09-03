@@ -17,7 +17,7 @@ Item{
             bottom: parent.bottom
         }
         z:2
-        width: 200
+        width: playlistBar.visible ? 200 : 0
         function toggle(){
             playlistBar.visible = !playlistBar.visible
             if(playlistBar.visible && mpv.state === MpvObject.VIDEO_PLAYING){
@@ -57,6 +57,7 @@ Item{
                     id:inactivityTimer
                     interval: 2000
                     onTriggered: {
+                        if(!mpvPage.visible) return
                         let newPos = cursor.pos()
                         if(newPos === mpvObject.lastPos){
                             cursor.setCursorShape(Qt.BlankCursor)
@@ -140,7 +141,12 @@ Item{
                 }
 
             }
-
+            Connections{
+                target: mpvObject
+                function onPlayNext(){
+                    app.playlist.playNextItem()
+                }
+            }
         }
 
     }
@@ -167,6 +173,7 @@ Item{
             target: folderDialog
             function onAccepted(){
                 app.playlist.loadFolder(folderDialog.selectedFolder)
+//todo autoplay
             }
         }
     }

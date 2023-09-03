@@ -3,7 +3,6 @@
 
 #include <QtQuick/QQuickFramebufferObject>
 #include <QQuickWindow>
-//#include "application.h"
 #include "mpv.hpp"
 
 class MpvRenderer;
@@ -98,7 +97,10 @@ signals:
     void volumeChanged(void);
     void speedChanged(void);
     void videoSizeChanged(void);
+
     void initialised(void);
+
+    void playNext(void);
 
 
 private:
@@ -128,6 +130,7 @@ private:
     std::vector<std::string> m_blockWords;
 
     static MpvObject* s_instance;
+
 };
 
 #endif

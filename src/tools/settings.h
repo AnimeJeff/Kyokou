@@ -21,6 +21,10 @@ public:
         QNetworkProxyFactory::setUseSystemConfiguration( false );
         //NetworkClient::
     }
+    void lol(){
+
+    }
+
 
 
 signals:

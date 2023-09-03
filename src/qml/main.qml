@@ -40,8 +40,7 @@ Window {
 
     Connections{
         target: app.playlist
-        function onSourceFetched(link){
-            mpvPage.mpv.open(link)
+        function onSourceFetched(){
             mpvPage.mpv.addSubtitle("https://cc.2cdns.com/58/b1/58b108555cd2fc6c93dfeafc08b5e657/58b108555cd2fc6c93dfeafc08b5e657.vtt")
             mpvPage.mpv.subVisible = true
             sideBar.gotoPage(2)

@@ -35,12 +35,15 @@ public:
     inline WatchListModel* watchListModel(){return &m_watchListModel;}
 public:
     Q_INVOKABLE void loadSourceFromList(int index){
-        m_playlistModel.syncList ();
-        auto currentShow = ShowManager::instance().getCurrentShow();
-        if(currentShow.isInWatchList ()){
-            m_playlistModel.setWatchListShowItem (m_watchListModel.getShowJsonInList (currentShow));
+        try{
+            auto currentShow = ShowManager::instance().getCurrentShow();
+            auto watchListShowItem = m_watchListModel.getShowJsonInList (currentShow);
+            m_playlistModel.syncList (currentShow,watchListShowItem);
+
+            m_playlistModel.play (index);
+        }catch(QException& e){
+            qDebug() << e.what ();
         }
-        m_playlistModel.loadSource (index);
     }
     int parseArgs(int argc, char *argv[]);
 public:
