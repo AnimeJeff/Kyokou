@@ -8,7 +8,6 @@ Item{
     property alias progressBar:controlBar
     focus: true
 
-
     PlayListSideBar{
         id:playlistBar
         anchors{
