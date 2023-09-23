@@ -26,7 +26,7 @@ public:
         NIVOD,
         NINEANIME,
         GOGOANIME,
-        NtDongMan,
+        ALLANIME,
         TANGRENJIE,
         ANIMEDAO,
         ANIMEPAHE,
@@ -37,7 +37,7 @@ public:
 
     virtual QString name() = 0;
 
-    virtual std::string hostUrl() = 0;
+    std::string hostUrl = "";
 
     virtual QVector<ShowData> search(QString query,int page,int type) = 0;
 

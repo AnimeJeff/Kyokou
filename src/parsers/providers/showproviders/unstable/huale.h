@@ -18,7 +18,7 @@
 //    QString name(){
 //        return "华乐";
 //    };
-//    QString hostUrl() {
+//    QString hostUrl {
 //        return "https://www.huale.org";
 //    };
 //    QVector<ShowResponse> filterSearch(int page, QString sortBy = "time",int type = 1,QString subType = "", QString region = "",QString genre = "",QString language = "",QString letter= "",QString year= "" ) {
@@ -40,7 +40,7 @@
 //            show.coverUrl = node.selectFirst (".//div[@class='module-item-pic']/img").attr ("data-src").as_string ();
 //            show.releaseDate = node.selectFirst (".//div[@class='module-item-caption']/span").toString ().c_str ();
 //            show.latestTxt = node.selectFirst (".//div[@class='module-item-pic']/a").toString ().c_str ();
-//            show.link = QString::fromStdString (hostUrl()) + anchor.attr ("href").as_string ();
+//            show.link = QString::fromStdString (hostUrl) + anchor.attr ("href").as_string ();
 //            show.provider = Providers::e_HuaLe;
 //            shows.push_back(std::move(show));
 //        });
@@ -78,7 +78,7 @@
 //            Episode episode;
 //            episode.title = element.attr ("title").as_string ();
 //            episode.title = episode.title.remove (0,2+show.title.length ());
-//            episode.link = hostUrl()+element.attr ("href").as_string ();
+//            episode.link = hostUrl+element.attr ("href").as_string ();
 //            episode.number = count++;
 //            show.episodes.append (std::move(episode));
 //        });

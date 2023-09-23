@@ -15,13 +15,13 @@ Rectangle {
                        clickPos  = Qt.point(mouse.x,mouse.y)
                    }
         onPositionChanged: (mouse)=> {
-                               if(!window.maximised && clickPos !== null){
-                                   window.x = cursor.pos().x - clickPos.x
-                                   window.y = cursor.pos().y - clickPos.y
+                               if(!root.maximised && clickPos !== null){
+                                   root.x = cursor.pos().x - clickPos.x
+                                   root.y = cursor.pos().y - clickPos.y
                                }
                            }
         onDoubleClicked: {
-            setMaximised(!window.maximised)
+            root.maximised = !root.maximised
             clickPos = null
         }
 
@@ -35,7 +35,7 @@ Rectangle {
         anchors.right: parent.right
         anchors.rightMargin: 8
         background: Rectangle { color:  "#fa564d"; radius: 7; anchors.fill: parent }
-        onClicked: window.close()
+        onClicked: root.close()
         focusPolicy: Qt.NoFocus
 
 
@@ -49,7 +49,7 @@ Rectangle {
         anchors.right: closeButton.left
         anchors.rightMargin: 6
         background: Rectangle { color: "#ffbf39"; radius: 7; anchors.fill: parent }
-        onClicked: setMaximised(!window.maximised)
+        onClicked: root.maximised = !root.maximised
         focusPolicy: Qt.NoFocus
 
     }
@@ -63,7 +63,7 @@ Rectangle {
         anchors.rightMargin: 6
         background: Rectangle { color: "#53cb43"; radius: 7; anchors.fill: parent }
         onClicked: {
-            window.showMinimized()
+            root.showMinimized()
         }
         focusPolicy: Qt.NoFocus
     }

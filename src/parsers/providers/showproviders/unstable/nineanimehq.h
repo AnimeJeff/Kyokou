@@ -17,7 +17,7 @@
 //public:
 //    int providerEnum()override{return Providers::NINEANIME;};
 //    QString name() override {return "9anime";} ;
-//    QString hostUrl()override{return "https://9anime.ph";};
+//    QString hostUrloverride{return "https://9anime.ph";};
 
 //    QVector<ShowData> search(QString query, int page, int type) override {
 //        Q_UNUSED (type);
@@ -62,10 +62,10 @@
 //        return animes;
 //    };
 //    ShowData loadDetails(ShowData anime) override {
-//        CSoup document = NetworkClient::get(hostUrl() + anime.link).document();
+//        CSoup document = NetworkClient::get(hostUrl + anime.link).document();
 //        std::string dataId = document.selectFirst("//div[@class='container watch-wrap']").attr("data-id").as_string ();
 //        qDebug()<<QS (dataId);
-//        auto episodesUrl = hostUrl()+ "/ajax/episode/list/" + dataId+"?vrf="+encodeVrf (dataId);
+//        auto episodesUrl = hostUrl+ "/ajax/episode/list/" + dataId+"?vrf="+encodeVrf (dataId);
 //        auto loadEpisodeJob = QtConcurrent::run ([&](){
 //            loadEpisodes(anime,episodesUrl);
 //        });
@@ -77,9 +77,9 @@
 //        return 0;
 //    }
 //    //        ShowData loadDetails(ShowData anime) override {
-//    //            CSoup document = NetworkClient::get(hostUrl() + anime.link.toStdString ()).document();
+//    //            CSoup document = NetworkClient::get(hostUrl + anime.link.toStdString ()).document();
 //    //            std::string dataId = document.selectFirst("//div[@class='container watch-wrap']").attr("data-id").as_string ();
-//    //            auto episodesUrl = hostUrl()+ "/ajax/episode/list/" + dataId+"?vrf="+encodeVrf (dataId);
+//    //            auto episodesUrl = hostUrl+ "/ajax/episode/list/" + dataId+"?vrf="+encodeVrf (dataId);
 //    //            auto loadEpisodeJob = QtConcurrent::run ([&anime,episodesUrl,this](){
 //    //                loadEpisodes(anime,episodesUrl);
 //    //            });
@@ -131,7 +131,7 @@
 
 //    QVector<VideoServer> loadServers(const Episode &episode)override{
 //        QVector<VideoServer> servers;
-//        auto link = hostUrl() + "/ajax/server/list/" + episode.link.toStdString () + "?vrf=" + encodeVrf(episode.link);
+//        auto link = hostUrl + "/ajax/server/list/" + episode.link.toStdString () + "?vrf=" + encodeVrf(episode.link);
 //        auto body = NetworkClient::get(link).json ()["result"].get <std::string>();
 //        auto document = CSoup(body);
 //        auto serverNodes = document.select("//li");
@@ -147,7 +147,7 @@
 
 //    QString extractSource(VideoServer &server)override{
 //        if(server.name == "Vidstream"|| server.name == "MyCloud"){
-//            nlohmann::json result = NetworkClient::get(hostUrl ()+"/ajax/server/" + QString::fromStdString(server.link) + "?vrf="+encodeVrf (server.link)).json ()["result"];
+//            nlohmann::json result = NetworkClient::get(hostUrl+"/ajax/server/" + QString::fromStdString(server.link) + "?vrf="+encodeVrf (server.link)).json ()["result"];
 //            //            auto skipData = decodeVrf (result["skip_data"].get<std::string>());
 //            std::string serverUrl = decodeVrf (result["url"].get<std::string>());
 //            std::string slug = Functions::findBetween (serverUrl,"e/","?");

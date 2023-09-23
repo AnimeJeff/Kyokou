@@ -13,7 +13,7 @@ Item{
     }
 
     focus: false
-    property real labelFontSize: Math.sqrt(window.width*window.height * 1/2000) //20
+    property real labelFontSize: Math.sqrt(root.width*root.height * 1/2000) //20
     property var currentShow: showManager.currentShow
     ColumnLayout{
         anchors.fill: parent
@@ -28,14 +28,15 @@ Item{
                     id: posterImage
                     source: showManager.hasCurrentShow ? currentShow.coverUrl : "qrc:/resources/images/error_image.png"
                     onStatusChanged: if (posterImage.status === Image.Null) source = "qrc:/resources/images/error_image.png"
-                    Layout.preferredWidth: window.width/5
-                    Layout.preferredHeight: (window.width/5) * 432/305
+                    Layout.preferredWidth: root.width/5
+                    Layout.preferredHeight: (root.width/5) * 432/305
                     Layout.alignment: Qt.AlignTop
                 }
-                Layout.preferredWidth: window.width/5
+                Layout.preferredWidth: root.width/5
+
                 CustomComboBox{
                     id:libraryComboBox
-                    Layout.preferredWidth: window.width/5
+                    Layout.preferredWidth: root.width/5
 //                        Layout.fillHeight: true
                     currentIndex: showManager.currentShowListType + 1
                     displayText: model.get(currentIndex).text.length !== 0 ? model.get(currentIndex).text : showManager.currentShow.isInWatchList ? "Remove from library" : "Add to library"
@@ -47,7 +48,7 @@ Item{
                             anchors.fill: parent
                             hoverEnabled: true
                             onClicked: {
-                                if(index!==0){
+                                if(index !== 0){
                                     app.watchList.addCurrentShow(index-1)
                                 }else{
                                     if(showManager.currentShowIsInWatchList){
@@ -89,14 +90,14 @@ Item{
                 id: infoColumnLayout
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                spacing: window.height/72
+                spacing: root.height/72
                 Layout.alignment: Qt.AlignTop
                 Label {
                     Layout.fillWidth: true
                     Layout.preferredHeight: font.pixelSize * 2
                     id:titleText
                     text: currentShow.title
-                    font.pixelSize: Math.sqrt(window.width*window.height * 1/1300) //24
+                    font.pixelSize: Math.sqrt(root.width*root.height * 1/1300) //24
                     color: "white"
                     wrapMode: Text.Wrap
                 }
@@ -126,7 +127,7 @@ Item{
                         height: contentHeight
                         color: "white"
                         wrapMode: Text.Wrap
-                        font.pixelSize: Math.sqrt(window.width*window.height * 1/3000) //16
+                        font.pixelSize: Math.sqrt(root.width*root.height * 1/3000) //16
                     }
                 }
 

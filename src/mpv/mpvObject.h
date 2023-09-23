@@ -2,9 +2,10 @@
 #define MPVRENDERER_H_
 
 #include <QtQuick/QQuickFramebufferObject>
+#include <QGuiApplication>
 #include <QQuickWindow>
 #include "mpv.hpp"
-
+#include <QClipboard>
 class MpvRenderer;
 
 class MpvObject : public QQuickFramebufferObject
@@ -21,6 +22,7 @@ class MpvObject : public QQuickFramebufferObject
     Q_PROPERTY(QStringList audioTracks  READ audioTracks                      NOTIFY audioTracksChanged)
     Q_PROPERTY(QStringList subtitles    READ subtitles                        NOTIFY subtitlesChanged)
     friend class MpvRenderer;
+
 public:
     enum State {STOPPED, VIDEO_PLAYING, VIDEO_PAUSED, TV_PLAYING};
     enum Hwdec {AUTO, VAAPI, VDPAU, NVDEC};
@@ -86,6 +88,23 @@ public slots:
         const char *args[] = {"keypress",cmd, nullptr};
         m_mpv.command_async(args);
     }
+    void pasteOpen()
+    {
+        QClipboard *clipboard = QGuiApplication::clipboard();
+        QString clipboardText = clipboard->text();
+        qDebug() << clipboardText;
+        open(clipboardText);
+    }
+    void copyVideoLink()
+    {
+        QClipboard *clipboard = QGuiApplication::clipboard();
+        clipboard->setText (currentVideoLink);
+    }
+    void reload()
+    {
+        open(currentVideoLink);
+    }
+
 
 signals:
     void audioTracksChanged(void);
@@ -99,7 +118,6 @@ signals:
     void videoSizeChanged(void);
 
     void initialised(void);
-
     void playNext(void);
 
 
@@ -109,6 +127,8 @@ private:
     void handleMpvError(int code);
 
     Mpv::Handle m_mpv;
+
+    QString currentVideoLink;
 
     State m_state = STOPPED;
     mpv_end_file_reason m_endFileReason = MPV_END_FILE_REASON_STOP;

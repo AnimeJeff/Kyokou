@@ -29,7 +29,7 @@ Item {
     GridView {
         id: list
         property real aspectRatio:319/225
-        property real itemPerRow: Math.floor(window.width/200)
+        property real itemPerRow: Math.floor(root.width/200)
         property real spacing: 10
 
 

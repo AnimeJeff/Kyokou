@@ -51,20 +51,12 @@ Rectangle {
             }else{
                 stackView.replace(pages[index])
                 stackView.forceActiveFocus()
-                timer.start();
+                setTimeout(()=>{mpvPage.visible = false},100)
             }
             currentPage = index
         }
     }
 
-    Timer{
-        id:timer
-        repeat: false
-        interval: 100
-        onTriggered: {
-            mpvPage.visible = false
-        }
-    }
     ColumnLayout {
         height: sideBar.height
         spacing: 0

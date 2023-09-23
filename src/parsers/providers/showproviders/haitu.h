@@ -14,28 +14,28 @@ public:
 public:
     int providerEnum(){ return Providers::HAITU; }
     QString name(){ return "海兔影院"; }
-    std::string hostUrl(){ return "https://www.haitu.tv"; }
+    std::string hostUrl = "https://www.haitu.tv";
 
     QVector<ShowData> search(QString query, int page, int type){
         QVector<ShowData> shows;
-        std::string url = hostUrl() + "/vod/search/page/"+std::to_string (page)+"/wd/"+query.toStdString ()+".html";
+        std::string url = hostUrl + "/vod/search/page/"+std::to_string (page)+"/wd/"+query.toStdString ()+".html";
         auto showNodes = NetworkClient::get(url).document().select("//div[@class='module-search-item']");
         for (pugi::xpath_node_set::const_iterator it = showNodes.begin(); it != showNodes.end(); ++it)
         {
             auto img = it->selectFirst(".//img");
             QString title = img.attr("alt").as_string();
-            QString coverUrl = QString::fromStdString (hostUrl()) + img.attr("data-src").as_string();
+            QString coverUrl = QString::fromStdString (hostUrl) + img.attr("data-src").as_string();
             std::string link = it->selectFirst(".//div[@class='module-item-pic']/a").attr ("href").as_string ();
             shows.emplaceBack(ShowData(title,link,coverUrl,Providers::HAITU));
         }
         return shows;
     }
     QVector<ShowData> popular(int page, int type){
-        std::string url = hostUrl() + "/vod/show/by/hits/id/4/page/" + std::to_string(page) + ".html";
+        std::string url = hostUrl + "/vod/show/by/hits/id/4/page/" + std::to_string(page) + ".html";
         return filterSearch (url);
     }
     QVector<ShowData> latest(int page, int type){
-        std::string url = hostUrl() + "/vod/show/by/time/id/4/page/" + std::to_string(page) + ".html";
+        std::string url = hostUrl + "/vod/show/by/time/id/4/page/" + std::to_string(page) + ".html";
         return filterSearch (url);
     }
     QVector<ShowData> filterSearch(const std::string& url){
@@ -45,7 +45,7 @@ public:
         {
             auto img = it->selectFirst(".//div[@class='module-item-pic']/img");
             QString title = img.attr("alt").as_string();
-            QString coverUrl = QString::fromStdString (hostUrl()) + img.attr("data-src").as_string();
+            QString coverUrl = QString::fromStdString (hostUrl) + img.attr("data-src").as_string();
             qDebug() << title <<coverUrl;
             std::string link = it->selectFirst (".//div[@class='module-item-pic']/a").attr ("href").as_string ();
             QString latestText = it->selectFirst (".//div[@class='module-item-text']").node ().child_value ();
@@ -56,9 +56,9 @@ public:
     }
 
     ShowData loadDetails(ShowData show){
-        auto doc = NetworkClient::get(hostUrl() + show.link).document ();
+        auto doc = NetworkClient::get(hostUrl + show.link).document ();
 //        show.episodes = getEpisodes (getEpisodesLink(doc));
-//        qDebug()<<NetworkClient::get(hostUrl() + show.link);
+//        qDebug()<<NetworkClient::get(hostUrl + show.link);
         auto episodeNodes = doc.select ("//div[@class='scroll-content']/a");
         for (pugi::xpath_node_set::const_iterator it = episodeNodes.begin(); it != episodeNodes.end(); ++it)
         {
@@ -88,7 +88,7 @@ public:
         return servers;
     }
     QString extractSource(VideoServer &server){
-        std::string response = NetworkClient::get(hostUrl() + server.link).body;
+        std::string response = NetworkClient::get(hostUrl + server.link).body;
         std::smatch match;
         if (!std::regex_search(response, match, player_aaaa_regex))
             throw "Failed to extract m3u8";

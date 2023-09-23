@@ -9,7 +9,8 @@ class VideoExtractor
 public:
     VideoExtractor(){};
     ~VideoExtractor(){};
-    virtual QString extract(std::string link) = 0;
+
+    virtual QString extractLink(std::string link) = 0;
 };
 
 #endif // VIDEOEXTRACTOR_H

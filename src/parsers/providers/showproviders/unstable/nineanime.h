@@ -106,7 +106,7 @@
 
 //public:
 //    QString name() override {return "9anime";};
-//    QString hostUrl() override {return "https://9anime.id";};
+//    QString hostUrl override {return "https://9anime.id";};
 
 //    QVector<ShowResponse> search(QString query, int page, int type) override{
 //        Q_UNUSED(type);
@@ -156,9 +156,9 @@
 //    };
 
 //    ShowResponse loadDetails(ShowResponse show) override {
-//        CSoup document = NetworkClient::get(hostUrl() + show.link.toStdString ()).document();
+//        CSoup document = NetworkClient::get(hostUrl + show.link.toStdString ()).document();
 //        std::string dataId = document.selectFirst("//div[@id='watch-main']").attr("data-id").as_string ();
-//        auto episodesUrl=hostUrl()+ "/ajax/episode/list/" + dataId+"?vrf="+encodeVrf (dataId,keys);
+//        auto episodesUrl=hostUrl+ "/ajax/episode/list/" + dataId+"?vrf="+encodeVrf (dataId,keys);
 //        loadEpisodes(&show,episodesUrl);
 //        pugi::xpath_node element = document.selectFirst("//div[@class='info']");
 //        show.title = QString::fromStdString(element.selectFirst (".//h1[@class='title d-title']").attr ("data-jp").as_string ());
@@ -198,7 +198,7 @@
 //            } else {
 //                episode.title = namePrefix;
 //            }
-//            episode.link = hostUrl()+ "/ajax/server/list/" + ids + "?vrf=" + encodeVrf(ids,keys);
+//            episode.link = hostUrl+ "/ajax/server/list/" + ids + "?vrf=" + encodeVrf(ids,keys);
 //            //            episode.link = QString::fromStdString (ids);
 //            //            qDebug()<<episode.link;
 //            show->episodes.append(episode);
@@ -208,7 +208,7 @@
 
 
 //    std::string getServerData(VideoServer* server, std::string sourceID){
-//        std::string serverDataUrl =hostUrl ()+"/ajax/server/"+sourceID+"?vrf="+encodeVrf(sourceID, keys);
+//        std::string serverDataUrl =hostUrl+"/ajax/server/"+sourceID+"?vrf="+encodeVrf(sourceID, keys);
 //        auto episodeBody= NetworkClient::get (serverDataUrl).json ()["result"];//todo add headers
 //        nlohmann::json skip_data = episodeBody["skip_data"];
 //        if(!skip_data.empty ()){

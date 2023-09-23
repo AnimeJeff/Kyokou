@@ -14,7 +14,7 @@ QVector<ShowData> Tangrenjie::selectShow(const std::string& url){
         std::string link = it->attr ("href").as_string ();
         QString coverUrl = it->attr("data-original").as_string ();
         if(coverUrl.startsWith ("/")){
-            coverUrl = QString::fromStdString (hostUrl()) + coverUrl;
+            coverUrl = QString::fromStdString (hostUrl) + coverUrl;
         }
         auto latestTxt = it->selectFirst (".//span[@class='pic_text text_right']").node ().child_value ();
         shows.emplace_back(ShowData(title,link,coverUrl,Providers::TANGRENJIE,latestTxt));
@@ -69,7 +69,7 @@ QVector<ShowData> Tangrenjie::filterSearch(int page, int type, const std::string
 }
 
 ShowData Tangrenjie::loadDetails(ShowData show) {
-    CSoup doc = NetworkClient::get(hostUrl() + show.link ).document ();
+    CSoup doc = NetworkClient::get(hostUrl + show.link ).document ();
     show.description = doc.selectText("//div[@class='content']");
     int count = 1;
     for (const auto& element:doc.select("//ul[@class='content_playlist list_scroll clearfix']/li/a")){
@@ -90,7 +90,7 @@ ShowData Tangrenjie::loadDetails(ShowData show) {
 }
 
 int Tangrenjie::getTotalEpisodes(const ShowData &show) {
-    CSoup doc = NetworkClient::get(hostUrl() + show.link).document ();
+    CSoup doc = NetworkClient::get(hostUrl + show.link).document ();
     return doc.select("//ul[@class='content_playlist list_scroll clearfix']/li/a").size ();
 }
 
@@ -102,8 +102,8 @@ QVector<VideoServer> Tangrenjie::loadServers(const Episode &episode) {
 }
 
 QString Tangrenjie::extractSource(VideoServer &server) {
-    //qDebug()<<QString::fromStdString (hostUrl()+server.link);
-    std::string response = NetworkClient::get(hostUrl() + server.link).body;
+    //qDebug()<<QString::fromStdString (hostUrl+server.link);
+    std::string response = NetworkClient::get(hostUrl + server.link).body;
     std::smatch match;
     if (!std::regex_search(response, match, player_aaaa_regex))
         throw "Failed to extract m3u8";

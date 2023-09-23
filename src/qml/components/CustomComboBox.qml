@@ -12,6 +12,13 @@ ComboBox {
     delegate: ItemDelegate {
         width: root.width
 
+//        MouseArea{
+//            anchors.fill: parent
+//            onClicked: {
+//                popup.close()
+//                root.currentIndex = index
+//            }
+//        }
         contentItem: Text {
             text: model.text
             color: root.highlightedIndex === index ? "white" : "black"
@@ -20,11 +27,6 @@ ComboBox {
             font.pixelSize: fontSize
             verticalAlignment: Text.AlignVCenter
         }
-        MouseArea{
-            anchors.fill: parent
-            onClicked: onClickedFun(index,model)
-        }
-
 
         background: Rectangle {
              width: parent.width

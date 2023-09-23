@@ -23,7 +23,6 @@ void setOneInstance();void testNetwork();
 int main(int argc, char *argv[]){
 //    setOneInstance ();
 
-
     QQuickWindow::setGraphicsApi(QSGRendererInterface::OpenGLRhi);
     QGuiApplication app(argc, argv);
     const char* dllPath = (QCoreApplication::applicationDirPath() + "/dll").toStdString ().data ();
@@ -44,15 +43,17 @@ int main(int argc, char *argv[]){
 
     // setting up the environment
     qputenv("LC_NUMERIC", QByteArrayLiteral("C"));
-    qputenv("http_proxy", "http://127.0.0.1:1080");
-    qputenv("https_proxy", "http://127.0.0.1:1080");
+//    qputenv("http_proxy", "http://127.0.0.1:1080");
+//    qputenv("https_proxy", "http://127.0.0.1:1080");
 
     QQuickStyle::setStyle("Universal");
 
+
+
     curl_global_init(CURL_GLOBAL_ALL);
     qmlRegisterType<MpvObject>("MpvPlayer", 1, 0, "MpvObject");
-    engine.rootContext ()->setContextProperty("app",&Application::instance ());
     engine.rootContext ()->setContextProperty("showManager",&ShowManager::instance ());
+    engine.rootContext ()->setContextProperty("app", &Application::instance ()); //remove singleton?
     engine.rootContext ()->setContextProperty("cursor",&CursorPosProvider::instance ());
     engine.rootContext ()->setContextProperty("errorHandler",&ErrorHandler::instance ());
 

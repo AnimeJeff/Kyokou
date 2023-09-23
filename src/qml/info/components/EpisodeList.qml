@@ -67,7 +67,7 @@ Item{
             }
             Text {
                 id:episodeStr
-                text:  "Episode " + model.number.toString() + (model.title === undefined || parseInt(model.title) === model.number ? "" : "\n" + model.title)
+                text:  model.fullTitle
                 font.pixelSize: 16
 
                 anchors{
@@ -91,6 +91,23 @@ Item{
                 onClicked: (mouse)=>{
                                app.loadSourceFromList(app.episodeListModel.reversed ? list.count - index - 1 : index)
                            }
+            }
+            Button{
+                text: "Download"
+                background: Rectangle {
+                            border.color: "#14191D"
+                            color: "white"
+                        }
+                onClicked: {
+                    console.log("downloading " + index)
+                    app.downloader.downloadCurrentShow(index)
+                }
+                width: 100
+                anchors{
+                    right: parent.right
+                    top: parent.top
+                    bottom: parent.bottom
+                }
             }
 
         }

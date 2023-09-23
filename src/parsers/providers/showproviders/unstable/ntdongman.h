@@ -17,7 +17,7 @@
 //    QString name(){
 //        return "NT动漫";
 //    };
-//    QString hostUrl() {
+//    QString hostUrl {
 //        return "http://www.ntdm8.com/";
 //    };
 //    QVector<ShowResponse> filterSearch(int page, std::string sortBy,std::string channel,std::string regionId = "0",std::string langId="0",std::string yearRange=" ") {
@@ -47,7 +47,7 @@
 //            ShowResponse anime;
 //            pugi::xpath_node anchor = element.selectFirst (".//a");
 //            pugi::xpath_node img = anchor.selectFirst (".//img");
-//            anime.link = QString::fromStdString (hostUrl()+anchor.attr("href").as_string ());
+//            anime.link = QString::fromStdString (hostUrl+anchor.attr("href").as_string ());
 //            anime.coverUrl = QString::fromStdString (img.attr ("src").as_string ());
 //            anime.provider = Providers::e_NtDongMan;
 //            anime.latestTxt = QString::fromStdString (anchor.attr("title").as_string ());
@@ -70,7 +70,7 @@
 //        doc.select ("//div[@id='main0']/div[1]/ul/li/a").forEach ([&](pugi::xpath_node element){
 //            Episode episode;
 //            episode.title = element.attr ("title").as_string ();
-//            episode.link = hostUrl()+element.attr ("href").as_string ();
+//            episode.link = hostUrl+element.attr ("href").as_string ();
 //            episode.number = count++;
 //            show.episodes.append (std::move(episode));
 //        });

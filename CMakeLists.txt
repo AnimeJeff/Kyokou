@@ -6,8 +6,9 @@ find_package(Qt6 6.5 COMPONENTS Quick REQUIRED)
 find_package(Qt6 REQUIRED COMPONENTS QuickControls2)
 find_package(Qt6 REQUIRED COMPONENTS Qml)
 find_package(Qt6 REQUIRED COMPONENTS Concurrent)
-#find_package(Qt6 REQUIRED COMPONENTS Webp)
-#set(CMAKE_BUILD_TYPE Debug)
+
+set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 20)
@@ -58,6 +59,13 @@ find_package(CryptoPP REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE cryptopp-static)
 message("** Found CryptoPP ${cryptopp-static}")
 
+find_package(OpenSSL  REQUIRED)
+
+IF(OPENSSL_FOUND)
+include_directories(${OPENSSL_INCLUDE_DIR})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${OPENSSL_LIBRARIES})
+message("** Found OpenSSL ${OPENSSL_SSL_LIBRARY}")
+ENDIF()
 
 set_target_properties(kyokou PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER my.example.com

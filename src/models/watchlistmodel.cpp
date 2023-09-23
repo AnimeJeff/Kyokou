@@ -119,8 +119,12 @@ void WatchListModel::removeCurrentShow(){
     ShowManager::instance ().setListType(-1);
 }
 
-void WatchListModel::move(int from, int to){
+void WatchListModel::move(int from, int to)
+{
+
+    //beginMoveRows(QModelIndex(), from, from, QModelIndex(), to);
     m_list[m_displayingListType].move (from,to);
+    //endMoveRows ();
     auto& list = m_jsonList[m_displayingListType];
     auto element_to_move = list[from];
     list.erase(list.begin() + from);

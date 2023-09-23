@@ -57,7 +57,7 @@ Rectangle{
                 height: contentHeight
                 color: "white"
             }
-
+            property var list: watchListView
             width: watchListView.cellWidth
             height: watchListView.cellHeight
 
@@ -71,7 +71,6 @@ Rectangle{
                     fill: parent
                 }
                 onClicked: {
-                    //                    console.log(dragArea.DelegateModel.itemsIndex)
                     app.watchList.loadDetails(dragArea.DelegateModel.itemsIndex)
                 }
 
@@ -82,14 +81,17 @@ Rectangle{
                 drag.axis: Drag.XAndYAxis
 
                 drag.onActiveChanged: {
-                    if(drag.active){
+                    if(drag.active)
+                    {
                         lastZ = content.z
                         content.z = 10000000
-
-                    }else{
+                        content.list.lastY = content.list.contentY
+                    }
+                    else
+                    {
                         content.z = lastZ
                         app.watchList.moveEnded()
-
+                        content.list.contentY = content.list.lastY
                     }
                 }
 
@@ -105,12 +107,11 @@ Rectangle{
                                    if(watchListView.lastLoadedIndex === oldIndex){
                                        watchListView.lastLoadedIndex = newIndex
                                    }
-                                   let diff = Math.abs(newIndex-oldIndex)
-                                   if(diff === 1 || diff === itemPerRow){
-                                       //                                       console.log(oldIndex,newIndex)
+                                   if(Math.abs(newIndex-oldIndex) < itemPerRow * 2){
                                        app.watchList.move(oldIndex,newIndex)
                                        visualModel.items.move(oldIndex,newIndex)
                                    }
+
                                }
                 }
             }
@@ -166,6 +167,7 @@ Rectangle{
     GridView{
         ScrollBar.vertical: ScrollBar {}
         id:watchListView
+        property int lastY:0
         clip: true
         anchors{
             left: parent.left

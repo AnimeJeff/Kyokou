@@ -60,5 +60,6 @@
         <file>src/qml/download/DownloadPage.qml</file>
         <file>src/qml/player/PlayListSideBar.qml</file>
         <file>src/qml/settings.qml</file>
+        <file>src/qml/Global.qml</file>
     </qresource>
 </RCC>

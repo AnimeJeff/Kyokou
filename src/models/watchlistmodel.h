@@ -97,6 +97,20 @@ private:
     int rowCount(const QModelIndex &parent) const override ;
     QVariant data(const QModelIndex &index, int role) const override ;
     QHash<int, QByteArray> roleNames() const override ;
+
+    // QAbstractItemModel interface
+public:
+    bool moveRows(const QModelIndex &sourceParent, int sourceRow, int count, const QModelIndex &destinationParent, int destinationChild)
+    {
+        beginMoveRows(sourceParent, sourceRow, sourceRow + count - 1, destinationParent, destinationChild);
+        m_list[m_displayingListType].move (sourceRow,destinationChild);
+        //endMoveRows ();
+        auto& list = m_jsonList[m_displayingListType];
+        auto element_to_move = list[sourceRow];
+        list.erase(list.begin() + sourceRow);
+        list.insert(list.begin() + destinationChild, element_to_move);
+
+    }
 };
 
 #endif // WATCHLISTMODEL_H

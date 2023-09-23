@@ -28,27 +28,23 @@ private:
     };
 
     static void initHandle(CURL* curl){
-        if (curl) {
-            // Set the timeouts
-            curl_easy_setopt(curl, CURLOPT_TIMEOUT, 30L);
-            curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 5L);
+        // Set the timeouts
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 30L);
+        curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 5L);
 
-            curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+        curl_easy_setopt(curl, CURLOPT_VERBOSE, 0L);
 
-            // Set the user agent
-            curl_easy_setopt(curl, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3");
+        // Set the user agent
+        //            curl_easy_setopt(curl, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3");
 
-            // Set SSL options
-            curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-            curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
-            curl_easy_setopt(curl, CURLOPT_VERBOSE, 0);
-            curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
-            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &WriteCallback);
-            curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1L);
-            curl_easy_setopt(curl, CURLOPT_USERAGENT, defaultUA.c_str());
-            curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 50L);
-            curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-        }
+        // Set SSL options
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+        //curl_easy_setopt(curl, CURLOPT_VERBOSE, 0);
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &WriteCallback);
+        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1L);
+        curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 50L);
     }
 
     static CURL* getCurl(){
@@ -147,10 +143,10 @@ public:
         for (auto const& x : data) {
             postData += std::string(x.first) + "=" + std::string(x.second) + "&";
         }
-        return request(POST,url.c_str (),headers,postData.c_str());
+        return request(POST, url.c_str (), headers, postData.c_str());
     }
 
-    static Response request(int type,const char* url,const StringMap& headers={},const char* data = nullptr){
+    static Response request(int type, const char* url, const StringMap& headers={}, const char* data = nullptr){
         CURL* curl = getCurl ();
         Response response;
 
@@ -168,16 +164,25 @@ public:
         }
 
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headerLista);
-        if(type == POST){
+
+        if(type == POST)
+        {
             curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
+            curl_easy_setopt(curl, CURLOPT_POST, 1L);
+        }else if (type==GET)
+        {
+            curl_easy_setopt(curl, CURLOPT_POSTFIELDS, nullptr);
+            curl_easy_setopt(curl, CURLOPT_POST, 0L);
+            curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
         }
         // Set the response callback function
         std::string readBuffer;
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+
+        curl_easy_setopt(curl, CURLOPT_HEADERDATA, &response.headers);
+
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
 
-        curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, HeaderCallback);
-        curl_easy_setopt(curl, CURLOPT_HEADERDATA, &response.headers);
+
 
         // Perform the GET request
         CURLcode res = curl_easy_perform(curl);
@@ -188,7 +193,7 @@ public:
 
         // Check for errors
         if (res != CURLE_OK) {
-            std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << std::endl;
+            qDebug() << "curl_easy_perform() failed: " << curl_easy_strerror(res);
         }
 
         // Clean up

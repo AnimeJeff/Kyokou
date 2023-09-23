@@ -18,6 +18,7 @@ class Application : public QObject
     Q_PROPERTY(EpisodeListModel* episodeListModel READ episodeListModel CONSTANT)
     Q_PROPERTY(SearchResultsModel* showExplorer READ searchResultsModel CONSTANT)
     Q_PROPERTY(WatchListModel* watchList READ watchListModel CONSTANT)
+    Q_PROPERTY(DownloadModel* downloader READ downloadModel CONSTANT)
 private:
     friend PlaylistModel;
     friend SearchResultsModel;
@@ -33,13 +34,13 @@ public:
     inline EpisodeListModel* episodeListModel(){return &m_episodeListModel;}
     inline SearchResultsModel* searchResultsModel(){return &m_searchResultsModel;}
     inline WatchListModel* watchListModel(){return &m_watchListModel;}
+    inline DownloadModel* downloadModel(){return &m_downloadModel;}
 public:
     Q_INVOKABLE void loadSourceFromList(int index){
         try{
             auto currentShow = ShowManager::instance().getCurrentShow();
             auto watchListShowItem = m_watchListModel.getShowJsonInList (currentShow);
             m_playlistModel.syncList (currentShow,watchListShowItem);
-
             m_playlistModel.play (index);
         }catch(QException& e){
             qDebug() << e.what ();

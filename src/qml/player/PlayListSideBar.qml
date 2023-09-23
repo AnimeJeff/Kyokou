@@ -29,11 +29,11 @@ Rectangle{
         }
         height: 30
         placeholderText: qsTr("Enter query!")
-        text: window.lastSearch
+        text: root.lastSearch
         onAccepted: search()
     }
 
-    ListView {
+    TreeView {
         id: listView
         model: app.playlist
         clip:true

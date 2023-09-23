@@ -22,6 +22,7 @@
 #include <iostream>
 #include <filesystem>
 #include <QException>
+#include <regex>
 #define QS(str) QString::fromStdString(str)
 //void print(const QString& str){
 //    qDebug()<<str;
@@ -40,6 +41,8 @@ inline void httpsIfy(std::string& text) {
 inline bool containsSubstring(const std::string& str, const std::string& substr) {
     return str.find(substr) != std::string::npos;
 }
+
+
 
 std::string urlDecode(const std::string &str);
 

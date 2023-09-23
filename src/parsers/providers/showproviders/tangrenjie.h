@@ -15,7 +15,7 @@ public:
 
     QString name() override {return "唐人街影院";}
 
-    std::string hostUrl() override {return "https://www.tangrenjie.tv";}
+    std::string hostUrl = "https://www.tangrenjie.tv";
 
     QVector<ShowData> search(QString query, int page, int type) override;;
 

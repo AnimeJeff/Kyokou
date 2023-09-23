@@ -17,11 +17,10 @@ public:
     QString name(){
         return "AnimePahe";
     };
-    std::string hostUrl() override {
-        return "https://animepahe.ru";
-    };
+    std::string hostUrl = "https://animepahe.ru";
+
     QVector<ShowData> search(QString query, int page, int type) override {
-        std::string url = hostUrl() + "/api?m=search&q=" + Functions::urlEncode(query.toStdString ()) ;
+        std::string url = hostUrl + "/api?m=search&q=" + Functions::urlEncode(query.toStdString ()) ;
         NetworkClient::get(url); //TODO
     };
     QVector<ShowData> popular(int page, int type){

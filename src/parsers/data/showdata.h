@@ -12,12 +12,6 @@
 #include <QVector>
 #include <iostream>
 
-
-
-
-
-
-
 struct ShowData
 {
     //    template <typename E>
@@ -104,8 +98,6 @@ public:
     bool isInWatchList() const {
         return listType>-1;
     }
-
-
 
     friend class WatchListModel;
     bool operator==(const ShowData& other) const {

@@ -40,7 +40,6 @@ void PlaylistModel::play(int index){
     }));
 }
 
-
 void PlaylistModel::syncList(const ShowData& show,nlohmann::json* json){
 
     if(!m_playlists.isEmpty () && show.link == m_playlists.first ().sourceLink
@@ -72,7 +71,7 @@ QVariant PlaylistModel::data(const QModelIndex &index, int role) const
     if ( !index.isValid() || m_playlists.isEmpty () )
         return QVariant();
 
-    const Episode& episode = m_playlists.constFirst ().get(index.row());
+    const Episode& episode = m_playlists.at (index.row()).get (index.column ());
     switch (role) {
     case TitleRole:
         return episode.title;

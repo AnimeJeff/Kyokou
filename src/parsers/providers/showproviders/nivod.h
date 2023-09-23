@@ -14,7 +14,7 @@ public:
     }
     QString name() override {return "泥巴影院";}
 
-    std::string hostUrl() override {return "https://www.nivod4.tv/";}
+    std::string hostUrl = "https://www.nivod4.tv/";
 
     QVector<ShowData> filterSearch(int page, const QString& sortBy,int type,const QString& regionId = "0",const QString& langId="0",const QString& yearRange=" ") {
         std::string channel;
@@ -69,13 +69,19 @@ public:
             show.views = QString::fromStdString (std::to_string(infoJson["hot"].get<int>()));
         if(!infoJson["rating"].is_null())
             show.rating = QString::fromStdString (std::to_string ((infoJson["rating"].get<int>())/10));
-
         for (const auto& item : infoJson["plays"].items()){
             auto episode = item.value ();
-            int number = episode["episodeId"].get<int>();
             QString title = QString::fromStdString (episode["displayName"].get<std::string>());
-            std::string link = show.link+ "&"+episode["playIdCode"].get<std::string>();
-            show.episodes.append(Episode(number,link,title));
+            int number = -1;
+
+            bool ok;
+            int intTitle = title.toInt (&ok);
+            if(ok){
+                number = intTitle;
+                title = "";
+            }
+            std::string link = show.link + "&" + episode["playIdCode"].get<std::string>();
+            show.episodes.emplaceBack (number,link,title);
             show.totalEpisodes++;
         }
         return show;
@@ -100,7 +106,7 @@ public:
 
     nlohmann::json getInfoJson(const ShowData &show){
         auto response = callAPI("https://api.nivodz.com/show/detail/WEB/3.3", {{"show_id_code", show.link},{"episode_id","0"}});
-        qDebug() << QString::fromStdString (response);
+        //qDebug() << QString::fromStdString (response);
         return nlohmann::json::parse(response)["entity"];
     }
 
@@ -204,9 +210,9 @@ private:
         std::string sign = createSign(data);
         std::string postUrl = url + "?_ts=" + _mts + "&app_version=1.0&platform=3&market_id=web_nivod&device_code=web&versioncode=1&oid=" + _oid + "&sign=" + sign;
         auto response = NetworkClient::post(postUrl,mudvodHeaders,data).body;
-        qDebug()<<QString::fromStdString (NetworkClient::post (postUrl,{{"referer","https://nivod4.tv"}},{{"episode_id","0"},{"show_id_code","WPqWVrWnwsrG8sH4l24qEO2UX4Ak5xgO"}}).body);
-        qDebug() << postUrl;
-        qDebug() << data;
+        //qDebug()<<QString::fromStdString (NetworkClient::post (postUrl,{{"referer","https://nivod4.tv"}},{{"episode_id","0"},{"show_id_code","WPqWVrWnwsrG8sH4l24qEO2UX4Ak5xgO"}}).body);
+        //qDebug() << postUrl;
+        //qDebug() << data;
         //        while(response.size () == 0){
         //            response = NetworkClient::post(postUrl,mudvodHeaders,data).body;
         //            qDebug()<<"Bad Response";

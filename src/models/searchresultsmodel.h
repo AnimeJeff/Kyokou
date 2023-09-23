@@ -21,19 +21,13 @@ class SearchResultsModel : public QAbstractListModel
     QFutureWatcher<QVector<ShowData>> m_searchWatcher{};
     QFutureWatcher<ShowData> m_detailLoadingWatcher{};
     QVector<ShowData> m_list;
-    QThread thread;
+
 public:
     explicit SearchResultsModel(QObject *parent = nullptr)
         : QAbstractListModel(parent){
 
         QObject::connect(&m_searchWatcher, &QFutureWatcher<QVector<ShowData>>::finished,this, [this]() {
             setResults (m_searchWatcher.future ().result ());
-        });
-
-        QObject::connect(&ShowManager::instance(), &ShowManager::currentSearchProviderChanged,this, [this]() {
-            ShowManager::instance().getCurrentSearchProvider ()->disconnect ();
-            connect(ShowManager::instance().getCurrentSearchProvider (), &ShowProvider::fetchedResults, this, &SearchResultsModel::setResults);
-            ShowManager::instance().getCurrentSearchProvider ()->moveToThread (&thread);
         });
 
         QObject::connect(&m_detailLoadingWatcher, &QFutureWatcher<ShowData>::finished,this, [this]() {

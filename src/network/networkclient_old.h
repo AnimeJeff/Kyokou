@@ -28,11 +28,9 @@ private:
             curl_easy_setopt(curl, CURLOPT_TIMEOUT, 30L);
             curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 5L);
 
-            //curl_easy_setopt(curl, CURLOPT_PROXY, "socks5://aa32c2a4-1ae4-4434-a286-814463c070c9@host-001.crazyspeed.xyz:30501");
-            //curl_easy_setopt(curl, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5);
             curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
-            //curl_easy_setopt(curl, CURLOPT_PROXY_SERVICE_NAME, "Shadowsocks");
-            curl_easy_setopt(curl, CURLOPT_PROXY, "socks5://127.0.0.1:1080");
+
+//            curl_easy_setopt(curl, CURLOPT_PROXY, "socks5://127.0.0.1:1080");
             // Set the user agent
             curl_easy_setopt(curl, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3");
 

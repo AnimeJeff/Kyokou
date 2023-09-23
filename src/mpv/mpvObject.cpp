@@ -37,7 +37,6 @@
 class MpvRenderer : public QQuickFramebufferObject::Renderer
 {
     MpvObject *m_obj;
-    QTimer* timer;
 public:
     MpvRenderer(MpvObject *obj) : m_obj(obj){}
 
@@ -134,10 +133,13 @@ MpvObject::MpvObject(QQuickItem * parent) : QQuickFramebufferObject(parent)
     m_mpv.set_option("pause", false);          // Always play when a new file is opened
     m_mpv.set_option("softvol", true);         // mpv handles the volume
     m_mpv.set_option("vo", "libmpv");          // Force to use libmpv
-    m_mpv.set_option( "keep-open", true);      // Keeps the video open after EOF
+    m_mpv.set_option("keep-open", true);      // Keeps the video open after EOF
     m_mpv.set_option("screenshot-directory", QStandardPaths::writableLocation(QStandardPaths::PicturesLocation).toUtf8().constData());
     m_mpv.set_option("reset-on-next-file", "video-aspect-override,af,audio-delay,pause");
-    m_mpv.set_option( "hwdec", "auto");        // Hardware acceleration
+    m_mpv.set_option("hwdec", "auto");        // Hardware acceleration
+    m_mpv.set_option("cache", "yes");
+    m_mpv.set_option("cache-secs", "100");
+    m_mpv.set_option("cache-unlink-files", "whendone");
 
     char* appdata = getenv("APPDATA");
     if(appdata){
@@ -252,6 +254,7 @@ void MpvObject::open(const QUrl& fileUrl, const QUrl& danmakuUrl, const QUrl& au
 
     QByteArray fileuri_str = (fileUrl.isLocalFile() ? fileUrl.toLocalFile() : fileUrl.toString()).toUtf8();
     const char *args[] = {"loadfile", fileuri_str.constData(), nullptr};
+    currentVideoLink = fileUrl.toString ();
     m_mpv.command_async(args);
 //    std::string uri_str {"https://cc.2cdns.com/58/b1/58b108555cd2fc6c93dfeafc08b5e657/58b108555cd2fc6c93dfeafc08b5e657.vtt"};
 

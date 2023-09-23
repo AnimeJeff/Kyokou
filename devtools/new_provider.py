@@ -2,7 +2,7 @@ import os
 
 try:
     provider_name = input("Enter Provider Name: ")
-    outputPath = os.path.join(os.path.dirname(__file__),provider_name.lower())
+    outputPath = os.path.join(os.path.dirname(__file__),"..\src\parsers\providers\showproviders",provider_name.lower())
     with open(os.path.join(os.path.dirname(__file__),"template.txt"),"r") as f:
         template = f.read()
         template = template.replace("NewProvider",provider_name).replace("NEWPROVIDER",provider_name.upper())
