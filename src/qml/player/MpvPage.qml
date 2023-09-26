@@ -2,14 +2,15 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import MpvPlayer 1.0
 import QtQuick.Dialogs
-
+import "."
 Item{
     id:mpvPage
-    property alias mpv:mpvObject
     property alias progressBar:controlBar
     focus: true
+    visible: false
 
-    PlayListSideBar{
+    PlayListSideBar
+    {
         id:playlistBar
         anchors{
             right: parent.right
@@ -39,6 +40,7 @@ Item{
             top: parent.top
             bottom: parent.bottom
         }
+
         MouseArea{
             id:mouseArea
             anchors.fill: mpvObject
@@ -56,18 +58,18 @@ Item{
                 interval: 2000
                 onTriggered: {
                     if(!mpvPage.visible) return
-                    let newPos = cursor.pos()
+                    let newPos = app.cursor.pos()
                     if(newPos === mpvObject.lastPos){
-                        cursor.setCursorShape(Qt.BlankCursor)
+                        app.cursor.visible = false
                     }else{
-                        mpvObject.lastPos = cursor.pos()
+                        mpvObject.lastPos = app.cursor.pos()
                         inactivityTimer.restart()
                     }
                 }
             }
             onPositionChanged: {
-                cursor.setCursorShape(Qt.ArrowCursor)
-                mpvObject.lastPos = cursor.pos()
+                app.cursor.visible = true
+                mpvObject.lastPos = app.cursor.pos()
                 inactivityTimer.start()
             }
             acceptedButtons: Qt.LeftButton
@@ -168,6 +170,7 @@ Item{
 
         Component.onCompleted:
         {
+            root.mpv = mpvObject
             if(app.playlist.onLaunchFile)
             {
                 sideBar.gotoPage(2)

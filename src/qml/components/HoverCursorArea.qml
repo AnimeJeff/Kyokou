@@ -4,7 +4,7 @@ MouseArea {
     property int hoveredCursor: Qt.PointingHandCursor
     anchors.fill: parent
     hoverEnabled: true
-    onEntered: cursor.setCursorShape(hoveredCursor)
-    onExited: cursor.setCursorShape(Qt.ArrowCursor)
+    onEntered: app.cursor.shape = hoveredCursor
+    onExited: app.cursor.shape = Qt.ArrowCursor
     acceptedButtons: Qt.NoButton
 }

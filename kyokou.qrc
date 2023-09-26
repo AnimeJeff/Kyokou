@@ -43,12 +43,10 @@
         <file>src/qml/components/LoadingScreen.qml</file>
         <file>src/qml/player/MpvPage.qml</file>
         <file>src/qml/explorer/SearchPage.qml</file>
-        <file>src/qml/components/TitleBar.qml</file>
         <file>src/qml/player/ControlBar.qml</file>
         <file>src/qml/info/InfoPage.qml</file>
         <file>src/qml/explorer/components/SearchBar.qml</file>
         <file>src/qml/explorer/components/SearchContainer.qml</file>
-        <file>src/qml/SideBar.qml</file>
         <file>src/qml/components/CustomTextField.qml</file>
         <file>src/qml/components/HoverCursorArea.qml</file>
         <file>src/qml/components/CustomComboBox.qml</file>
@@ -60,6 +58,7 @@
         <file>src/qml/download/DownloadPage.qml</file>
         <file>src/qml/player/PlayListSideBar.qml</file>
         <file>src/qml/settings.qml</file>
-        <file>src/qml/Global.qml</file>
+        <file>src/qml/TitleBar.qml</file>
+        <file>src/qml/SideBar.qml</file>
     </qresource>
 </RCC>

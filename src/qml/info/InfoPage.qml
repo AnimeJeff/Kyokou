@@ -15,6 +15,9 @@ Item{
     focus: false
     property real labelFontSize: Math.sqrt(root.width*root.height * 1/2000) //20
     property var currentShow: showManager.currentShow
+
+
+
     ColumnLayout{
         anchors.fill: parent
         spacing: 0
@@ -140,7 +143,6 @@ Item{
                         Layout.fillWidth: true
                         color: "white"
                     }
-
                     Label {
                         id:viewsText
                         text: "<b>Views:</b> " + currentShow.views

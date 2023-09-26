@@ -26,7 +26,7 @@ Rectangle {
     property int currentPage: 0
     // Positionate all buttons
     Connections{
-        target: app.showExplorer
+        target: showManager
         function onDetailsLoaded() {
             gotoPage(1)
         }
@@ -36,7 +36,7 @@ Rectangle {
     property var pages: {
         0: "explorer/SearchPage.qml", //todo keep track of location of last scroll and scroll to
         1: "info/InfoPage.qml",
-        2: mpvPage,
+//        2: mpvPage,
         3: "watchlist/WatchListPage.qml",
         4: "download/DownloadPage.qml",
         5: "settings.qml"

@@ -3,7 +3,7 @@ import QtQuick.Window 2.2
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import MpvPlayer 1.0
-
+import QtQuick.Controls.Material 2.15
 import "./explorer"
 import "./info"
 import "./player"
@@ -19,22 +19,23 @@ Window {
     visible: true
     color: "black"
     flags: Qt.Window | Qt.FramelessWindowHint |Qt.WindowMinimizeButtonHint
-    property bool maximised:false
-    property bool fullscreen:false
+    property bool maximised: false
+    property bool fullscreen: false
     property bool pipMode: false
 
 
-    property var mpv : mpvPage.mpv
-    property real lastScrollY:0
-    property real watchListViewLastY: 0
+    property real searchResultsViewlastScrollY:0
+    property real watchListViewLastScrollY: 0
 
-    property string lastSearch:""
-    property bool playerFillWindow:false
+    property alias resizeAnime: resizingAnimation
+    property string lastSearch: ""
+    property bool playerFillWindow: false
     property double lastX
     property double lastY
-    property alias resizeAnime: resizingAnimation
+    property MpvObject mpv
 
-    ParallelAnimation {
+    ParallelAnimation
+    {
         id: resizingAnimation
         property real speed:6000
         SmoothedAnimation
@@ -69,16 +70,23 @@ Window {
             to: 0
             velocity: resizingAnimation.speed
         }
-    }
-
-    Shortcut{
-        sequence: "B"
-        onActivated:
-        {
-            //            resizingAnimation.running = true
+        // lags when resizing with mpv playing a video
+        // hide mpv then reshow
+        property bool mpvVisible:false
+        onRunningChanged: {
+            if (running)
+            {
+                mpvVisible = mpvPage.visible
+                mpvPage.visible = false
+                stackView.visible = false
+            }
+            else
+            {
+                mpvPage.visible = mpvVisible
+                stackView.visible = Qt.binding(()=>!mpvPage.visible)
+            }
         }
     }
-
 
     onMaximisedChanged:
     {
@@ -104,9 +112,7 @@ Window {
         }
         resizingAnimation.running = true
 
-
     }
-
 
     onFullscreenChanged:
     {
@@ -132,9 +138,7 @@ Window {
         }
         resizingAnimation.running = true
 
-
     }
-
 
     onPipModeChanged:
     {
@@ -168,16 +172,27 @@ Window {
     }
 
 
+    Shortcut
+    {
+        id: test
+        sequence: "B"
+        onActivated:
+        {
+            console.log(app.showExplorer.rowCount())
+        }
+    }
+
     Connections
     {
         target: app.playlist
         function onSourceFetched()
         {
             //            mpvPage.mpv.addSubtitle("https://cc.2cdns.com/58/b1/58b108555cd2fc6c93dfeafc08b5e657/58b108555cd2fc6c93dfeafc08b5e657.vtt")
-            mpvPage.mpv.subVisible = true
+            mpv.subVisible = true
             sideBar.gotoPage(2)
         }
     }
+
 
     TitleBar
     {
@@ -200,8 +215,8 @@ Window {
         visible: !mpvPage.visible
         id:stackView
         anchors{
-            top: playerFillWindow ? parent.top: titleBar.bottom
-            left: playerFillWindow ? parent.left : sideBar.right
+            top: titleBar.bottom
+            left: sideBar.right
             right: parent.right
             bottom: parent.bottom
         }
@@ -216,8 +231,7 @@ Window {
     {
         id:mpvPage
         visible: false
-        anchors.fill: stackView
-
+        anchors.fill: root.playerFillWindow ? parent : stackView
     }
 
     Dialog
@@ -225,13 +239,13 @@ Window {
         Connections{
             target: errorHandler
             function onShowWarning(msg){
-                errorMessage.text = msg
-                errorPopup.open()
+                notifierMessage.text = msg
+                notifier.open()
             }
         }
 
         anchors.centerIn: parent
-        id: errorPopup
+        id: notifier
         modal: true
         width: parent.width / 3
         height: parent.height / 4
@@ -250,7 +264,7 @@ Window {
                 anchors.topMargin: 20
             }
             Text {
-                id: errorMessage
+                id: notifierMessage
                 text: "An error has occurred."
                 font.pointSize: 14
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -261,14 +275,14 @@ Window {
                 anchors.bottom: parent.bottom
                 anchors.bottomMargin: 10
                 anchors.horizontalCenter: parent.horizontalCenter
-                onClicked: errorPopup.close()
+                onClicked: notifier.close()
             }
         }
     }
 
     Timer
     {
-        id: timer
+        id: callbackTimer
         running: false
         repeat: false
 
@@ -279,17 +293,16 @@ Window {
 
     function setTimeout(callback, delay)
     {
-        if (timer.running)
+        if (callbackTimer.running)
         {
             console.error("nested calls to setTimeout are not supported!");
             return;
         }
-        timer.callback = callback;
+        callbackTimer.callback = callback;
         // note: an interval of 0 is directly triggered, so add a little padding
-        timer.interval = delay + 1;
-        timer.running = true;
+        callbackTimer.interval = delay + 1;
+        callbackTimer.running = true;
     }
-
 
     MouseArea
     {
@@ -311,7 +324,14 @@ Window {
                    }
     }
 
-    Shortcut
+    Rectangle{
+        id:lol
+        anchors.fill: parent
+        visible: false
+        color: "black"
+    }
+
+    Shortcut //Ctrl+W
     {
         sequence: "Ctrl+W"
         onActivated:
@@ -350,9 +370,10 @@ Window {
     Shortcut
     {
         sequence: "0"
-        onActivated: errorPopup.open()
+        onActivated: notifier.open()
     }
-    Shortcut {
+    Shortcut
+    {
         sequence: "Ctrl+Tab"
         onActivated:
         {
@@ -367,22 +388,14 @@ Window {
 
         }
     }
-    Shortcut {
+    Shortcut
+    {
         sequence: "Ctrl+Q"
         onActivated:
         {
             lol.visible = false
         }
     }
-    Rectangle{
-        id:lol
-        anchors.fill: parent
-        visible: false
-        color: "black"
-    }
-
-
-
 
     Shortcut
     {
@@ -392,4 +405,5 @@ Window {
             pipMode = !pipMode
         }
     }
+
 }

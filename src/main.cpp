@@ -10,12 +10,12 @@
 #include <QNetworkProxyFactory>
 #include <QtGlobal>
 
-#include "mpv/mpvObject.h"
+#include "Player/Mpv/mpvObject.h"
 #include "application.h"
-#include "showmanager.h"
-#include "tools/cursorposprovider.hpp"
+#include "Explorer/showmanager.h"
 #include <QtPlugin>
-#include "tools/ErrorHandler.h"
+
+
 //qputenv("QT_DEBUG_PLUGINS", QByteArray("1"));
 int parseArgs(int argc, char *argv[]);
 void setOneInstance();void testNetwork();
@@ -54,12 +54,12 @@ int main(int argc, char *argv[]){
     qmlRegisterType<MpvObject>("MpvPlayer", 1, 0, "MpvObject");
     engine.rootContext ()->setContextProperty("showManager",&ShowManager::instance ());
     engine.rootContext ()->setContextProperty("app", &Application::instance ()); //remove singleton?
-    engine.rootContext ()->setContextProperty("cursor",&CursorPosProvider::instance ());
+
     engine.rootContext ()->setContextProperty("errorHandler",&ErrorHandler::instance ());
 
     // Parsing the arguments
     Application::instance ().parseArgs(argc,argv);
-
+    ShowData("dsdsa","dsa","fds",0,"");
 
     const QUrl url(QStringLiteral("qrc:qml/src/qml/main.qml"));
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,

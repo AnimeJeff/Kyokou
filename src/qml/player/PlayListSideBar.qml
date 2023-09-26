@@ -1,5 +1,7 @@
 import QtQuick
 import "./../components"
+import QtQuick.Controls 2.15
+
 Rectangle{
     id:playlistBar
     visible: false
@@ -18,58 +20,57 @@ Rectangle{
 
         }
     }
-    CustomTextField{
-        checkedColor: "#727CF5"
-        id:playlistSearch
-        color: "white"
-        anchors{
-            top:playlistComboBox.bottom
-            left: parent.left
-            right: parent.right
-        }
-        height: 30
-        placeholderText: qsTr("Enter query!")
-        text: root.lastSearch
-        onAccepted: search()
-    }
 
-    TreeView {
+    ListView
+    {
         id: listView
         model: app.playlist
         clip:true
-        boundsMovement: Flickable.StopAtBounds
-        boundsBehavior: Flickable.StopAtBounds
-
-        cacheBuffer : 100
-        anchors{
-            top: playlistSearch.bottom
+        anchors
+        {
+            top: playlistComboBox.bottom
             right: parent.right
             left: parent.left
             bottom: bottomBar.top
         }
-        currentIndex: app.playlist.currentIndex
+//        currentIndex: app.playlistModel.currentIndex
 
-        onCurrentIndexChanged: {
+        onCurrentIndexChanged:
+        {
             positionViewAtIndex(currentIndex, ListView.PositionAtCenter)
         }
-        spacing : 5
-        delegate: Text  {
-            id:itemText
-            text: model.numberTitle
-            color: index === app.playlist.currentIndex ? 'red':"white"
-            font.pixelSize: 18
-            wrapMode:Text.Wrap
+        delegate: Rectangle
+        {
+            width: listView.width
+            height: itemText.height + 10
+            radius: 4
+            clip: true
+            color:"black"// index === app.playlistModel.currentIndex ? 'red': "black"
+            Text
+            {
+                id:itemText
+                text: model.numberTitle
+                font.pixelSize: 14
+                wrapMode:Text.Wrap
+                color: "white"
+                anchors{
+                    left: parent.left
+                    right: parent.right
+                }
+            }
             MouseArea {
                 anchors.fill: parent
                 acceptedButtons: Qt.LeftButton
                 onDoubleClicked: {
-                    app.playlist.play(index)
+
+                    app.playlistModel.play(index)
                 }
             }
         }
     }
 
-    Rectangle{
+    Rectangle
+    {
         id:bottomBar
         anchors{
             bottom:parent.bottom

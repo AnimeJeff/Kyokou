@@ -24,7 +24,7 @@ Rectangle {
 
         onTriggered: {
             loadingScreen.visible = false
-            errorPopup.open()
+            notifier.open()
             // perform any additional actions you want when the timeout is reached
         }
     }

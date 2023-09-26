@@ -1,7 +1,6 @@
 	
 #ifndef NEWPROVIDER_H
 #define NEWPROVIDER_H
-#include "tools/functions.h""
 #include "parsers/showprovider.h"
 
 class NewProvider : public ShowProvider
@@ -15,16 +14,18 @@ public:
     QString name() { return ""; }
     std::string hostUrl = "";
 
-    QVector<ShowData> search(QString query, int page, int type){
+    QVector<ShowData> search(QString query, int page, int type)
+    {
         QVector<ShowData> shows;
         if(query.isEmpty ()){
             m_canFetchMore = false;
             return shows;
         }
-        std::string url = hostUrl() + "/search.html?keyword=" + Functions::urlEncode (query.toStdString ())+ "&page="+ std::to_string (page);
+        std::string url = hostUrl + "/search.html?keyword=" + Functions::urlEncode (query.toStdString ())+ "&page="+ std::to_string (page);
         auto showNodes = NetworkClient::get(url).document().select("//ul[@class='items']/li");
 
-        if(showNodes.empty ()){
+        if(showNodes.empty ())
+        {
             m_canFetchMore = false;
             return shows;
         }
@@ -40,7 +41,7 @@ public:
         m_canFetchMore = true;
         m_currentPage = page;
         lastSearch = [query,this,type]{
-            return search(query,++m_currentPage);
+            return search(query,++m_currentPage,type);
         };
         return shows;
     }

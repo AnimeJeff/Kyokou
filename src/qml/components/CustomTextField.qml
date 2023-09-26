@@ -3,7 +3,7 @@ import QtQuick 2.15
 import QtQuick 2.4
 
 TextField {
-    id: root
+    id: textField
 
     property color checkedColor: "#D5DBDB"
     property color textColor: "white"
@@ -21,16 +21,16 @@ TextField {
         implicitWidth: 213
         implicitHeight: 42
         radius: 8
-        color: root.enabled ? "transparent" :"#F4F6F6"
-        border.color: root.enabled ? root.checkedColor : "#D5DBDB"
+        color: textField.enabled ? "transparent" :"#F4F6F6"
+        border.color: textField.enabled ? textField.checkedColor : "#D5DBDB"
         border.width: 2
-        opacity: root.enabled ? 1 : 0.7
+        opacity: textField.enabled ? 1 : 0.7
 
-        layer.enabled: root.hovered
+        layer.enabled: textField.hovered
         //        layer.effect: DropShadow {
         //            id: dropShadow
         //            transparentBorder: true
-        //            color: root.checkedColor
+        //            color: textField.checkedColor
         //            samples: 10 /*20*/
         //        }
     }
@@ -38,15 +38,15 @@ TextField {
     cursorDelegate: Rectangle {
         width: 1
         height: parent.height * 0.4
-        color: root.checkedColor
-        visible: root.focus
+        color: textField.checkedColor
+        visible: textField.focus
 
 
 
         Timer {
             interval: 600
             repeat: true
-            running: root.focus
+            running: textField.focus
             onRunningChanged: parent.visible = running
             onTriggered: parent.visible = !parent.visible
         }
@@ -55,7 +55,7 @@ TextField {
 
 
     //    onExited: {
-    //        root.cursorShape = Qt.ArrowCursor
+    //        textField.cursorShape = Qt.ArrowCursor
     //    }
 
 
@@ -87,7 +87,7 @@ TextField {
             onTriggered: {
                 if (_private.isCheckDoubleClickedEvent >= 2) {
                     /* Double Clicked Event */
-                    root.doubleClicked(_private.mouseEvent)
+                    textField.doubleClicked(_private.mouseEvent)
                 }
 
                 stop()

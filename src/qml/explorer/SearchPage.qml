@@ -19,10 +19,10 @@ Item {
     LoadingScreen{
         id:loadingScreen
         anchors.fill: parent
-        loading: app.showExplorer.loading
+        loading: app.showExplorer.loading || showManager.loading
     }
     Component.onCompleted: {
-        list.contentY=lastScrollY
+        list.contentY = searchResultsViewlastScrollY
         forceActiveFocus()
     }
 
@@ -53,7 +53,7 @@ Item {
         highlightFollowsCurrentItem: false
         clip: true
         onContentYChanged: {
-            lastScrollY = contentY
+            searchResultsViewlastScrollY = contentY
         }
 
         //        footer: Rectangle{
@@ -119,8 +119,8 @@ Item {
                                        app.showExplorer.loadDetails(index)
                                    }
                         hoverEnabled: true
-                        onEntered: cursor.setCursorShape(Qt.PointingHandCursor)
-                        onExited: cursor.setCursorShape(Qt.ArrowCursor)
+                        onEntered: app.cursor.shape = Qt.PointingHandCursor
+                        onExited: app.cursor.shape = Qt.ArrowCursor
                     }
                 }
                 Text {
@@ -145,6 +145,8 @@ Item {
             }
         }
     }
+
+
 
     Keys.enabled: true
     Keys.onPressed: event => handleKeyPress(event)

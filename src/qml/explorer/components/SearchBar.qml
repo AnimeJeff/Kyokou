@@ -52,66 +52,6 @@ Item {
                 app.showExplorer.popular(1,4)
             }
         }
-        //        ComboBox{
-        //            id:providerbox
-        //            Layout.fillWidth: true
-        //            Layout.fillHeight: true
-        //            model: showManager
-        //            onCurrentIndexChanged: {
-        //                console.log(currentIndex)
-        //            }
-        //            property color checkedColor: "#1ABC9C"
-
-        //            delegate: ItemDelegate {
-        //                width: providerbox.width
-        //                contentItem: Text {
-        //                    text: modelData//model.text
-        //                    color: providerbox.highlightedIndex === index ? "white" : "black"
-        //                    font.family: "Arial"
-        //                    elide: Text.ElideRight
-        //                    font.pixelSize: 14
-        //                    verticalAlignment: Text.AlignVCenter
-        //                    MouseArea{
-        //                        onClicked: {
-
-        //                        }
-        //                    }
-        //                }
-        //                //                MouseArea{
-        //                //                    anchors.fill: parent
-        //                //                    onClicked: onClickedFun(index,model)
-        //                //                }
-        //                background: Rectangle {
-        //                    width: parent.width
-        //                    height: parent.height
-        //                    color: providerbox.highlightedIndex === index ? providerbox.checkedColor : "#F3F4F5"
-        //                }
-        //            }
-
-        //            popup: Popup {
-        //                y: root.height - 1
-        //                width: root.width
-        //                implicitHeight: contentItem.implicitHeight
-        //                padding: 0
-
-        //                contentItem: ListView {
-        //                    implicitHeight: contentHeight
-        //                    model: root.popup.visible ? root.delegateModel : null
-        //                    clip: true
-        //                    currentIndex: root.highlightedIndex
-
-        //                    ScrollIndicator.vertical: ScrollIndicator { }
-        //                }
-        //                background: Rectangle {
-        //                    color: "#F3F4F5"
-        //                    radius: 5
-        //                    clip: true
-        //                    layer.enabled: root.hovered | root.down
-        //                }
-        //            }
-
-        //        }
-
 
         CustomComboBox{
             id:providersComboBox
