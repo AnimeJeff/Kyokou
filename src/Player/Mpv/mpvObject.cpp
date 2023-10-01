@@ -221,41 +221,22 @@ MpvObject::MpvObject(QQuickItem * parent) : QQuickFramebufferObject(parent)
 // Open file
 void MpvObject::open(const QUrl& fileUrl, const QUrl& danmakuUrl, const QUrl& audioTrack)
 {
-    //    Q_ASSERT(NetworkAccessManager::instance() != nullptr);
 
-    //    // set network parameters
-    //    if (!fileUrl.isLocalFile())
-    //    {
-    //        // set referer
-    //        m_mpv.set_option("referrer", NetworkAccessManager::instance()->refererOf(fileUrl).constData());
+//    m_mpv.set_option("referrer","");
+//    m_mpv.set_option("stream-lavf-o", "seekable=0");
+//    m_mpv.set_option("stream-lavf-o", "");
+//    m_mpv.set_option("force-seekable", false);
+//    m_mpv.set_option("http-proxy", "");
+//    qDebug() << fileUrl.isLocalFile();
+//    qDebug() << "localfile" << fileUrl.toLocalFile().toUtf8();
+//    qDebug() << "string" << ;
+//    QByteArray fileuri_str = fileUrl.toString().toUtf8();//(fileUrl.isLocalFile() ? fileUrl.toLocalFile() : fileUrl.toString()).toUtf8();
 
-    //        // set user-agent
-    //        m_mpv.set_option("user-agent", NetworkAccessManager::instance()->userAgentOf(fileUrl).constData());
-    //        /* Some websites does not allow "Range" option in http request header.
-    //         * To hack these websites, we force ffmpeg/libav to set the stream unseekable.
-    //         * Then we make the video seekable again by enabling seeking in cache.
-    //         */
-    //        if (NetworkAccessManager::instance()->urlIsUnseekable(fileUrl))
-    //        {
-    //            m_mpv.set_option("stream-lavf-o", "seekable=0");
-    //            m_mpv.set_option("force-seekable", true);
-    //        }
-    //        else
-    //        {
-    //            m_mpv.set_option("stream-lavf-o", "");
-    //            m_mpv.set_option("force-seekable", false);
-    //        }
-    //    }
-    //    else
-    //    {
-    //        m_mpv.set_option("stream-lavf-o", "");
-    //        m_mpv.set_option("force-seekable", false);
-    //    }
 
-    QByteArray fileuri_str = (fileUrl.isLocalFile() ? fileUrl.toLocalFile() : fileUrl.toString()).toUtf8();
-    const char *args[] = {"loadfile", fileuri_str.constData(), nullptr};
+    const char *args[] = {"loadfile", fileUrl.toString().toUtf8().constData(), nullptr};
     currentVideoLink = fileUrl.toString ();
     m_mpv.command_async(args);
+
 //    std::string uri_str {"https://cc.2cdns.com/58/b1/58b108555cd2fc6c93dfeafc08b5e657/58b108555cd2fc6c93dfeafc08b5e657.vtt"};
 
 //    const char *subargs[] = {"sub-add", uri_str.data (), "select", nullptr};

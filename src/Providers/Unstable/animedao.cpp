@@ -1,8 +1,8 @@
 
-#include "animedao.h"
+//#include "animedao.h"
 
-AnimeDao::AnimeDao()
-{
+//AnimeDao::AnimeDao()
+//{
 
-}
+//}
 

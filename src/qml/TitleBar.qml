@@ -8,6 +8,36 @@ Rectangle {
     anchors.right: parent.right
     height: 35
 
+    AnimatedImage {
+        id:finn
+        anchors {
+
+            left:parent.right
+        }
+        source: "qrc:/resources/gifs/finn.gif"
+        width: 35
+        height: 35
+        playing: false
+        HoverHandler{
+            onHoveredChanged: parent.playing = hovered
+        }
+
+    }
+    AnimatedImage {
+        anchors {
+            top: parent.top
+            bottom:parent.bottom
+            left:finn.right
+        }
+        width: height
+        height: parent.height
+        source: "qrc:/resources/gifs/jake.gif"
+        playing: false
+        HoverHandler{
+            onHoveredChanged: parent.playing = hovered
+        }
+    }
+
     MouseArea {
         property var clickPos
         anchors.fill: parent
@@ -37,8 +67,6 @@ Rectangle {
         background: Rectangle { color:  "#fa564d"; radius: 7; anchors.fill: parent }
         onClicked: root.close()
         focusPolicy: Qt.NoFocus
-
-
     }
 
     Button {

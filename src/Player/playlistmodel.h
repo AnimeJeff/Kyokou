@@ -1,67 +1,89 @@
-#ifndef PLAYLISTMODEL_H
-#define PLAYLISTMODEL_H
-
-#include "Providers/showprovider.h"
+#pragma once
+#include <set>
+#include "Explorer/Data/showdata.h"
 #include <QDir>
 #include <QAbstractListModel>
 #include <QtConcurrent>
 #include <QStandardItemModel>
-#include "Player/mpv/mpvObject.h"
-#include "Components/errorhandler.h"
-#include "Explorer/showmanager.h"
 #include "playlistitem.h"
 
-class PlaylistModel : public QAbstractListModel
+class PlaylistModel : public QAbstractItemModel
 {
     Q_OBJECT
     Q_PROPERTY(QString currentItemName READ getCurrentItemName NOTIFY currentIndexChanged)
     Q_PROPERTY(QString showName READ getTitle NOTIFY showNameChanged)
+
+    Q_PROPERTY(int playlistIndex READ getPlaylistIndex NOTIFY showNameChanged)
+    Q_PROPERTY(int itemIndex READ getPlaylistItemIndex NOTIFY showNameChanged)
+    Q_PROPERTY(QModelIndex currentIndex READ getCurrentIndex NOTIFY currentIndexChanged)
+
+
     Q_PROPERTY(bool loading READ isLoading NOTIFY loadingChanged)
-    Q_PROPERTY(QString onLaunchFile READ getPlayOnLaunchFile CONSTANT)
+    Q_PROPERTY(QUrl launchPath READ getLaunchPath CONSTANT)
+
     QString getTitle()
     {
         return "";
     }
     QString getCurrentItemName() const
     {
-        if (rootItem->isEmpty ()) return "";
-        return rootItem->first ()->getItemName (rootItem->currentIndex);
+        if (m_playlists.isEmpty ()) return "";
+        return m_playlists.first ()->getDisplayName (m_playlists.first ()->currentIndex);
     }
-    std::shared_ptr<PlaylistItem> rootItem;
-public:
-    explicit PlaylistModel(QObject *parent = nullptr) : QAbstractListModel(parent)
+    int getPlaylistIndex()
     {
+        return m_playlistIndex;
+    }
+    int getPlaylistItemIndex()
+    {
+        return m_playlists[m_playlistIndex]->currentIndex;
+    }
 
-        rootItem = std::make_shared<PlaylistItem> ("root",-1);
-    };
-    ~PlaylistModel(){}
+    int m_playlistIndex = 0;
+    QVector<PlaylistItem*> m_playlists;
+    QUrl loadOnlineSource(int playlistIndex, int itemIndex);
+    QUrl getLaunchPath()
+    {
+        return m_launchPath;
+    }
+signals:
+    void playlistIndexChanged();
+    void playlistItemIndexChanged();
 
-    QString loadOnlineSource(int playlistIndex, int itemIndex);
+public:
+    explicit PlaylistModel(QObject *parent = nullptr) : QAbstractItemModel(parent) {};
+    ~PlaylistModel() { qDeleteAll(m_playlists); }
+
+    QModelIndex getCurrentIndex();
+    Q_INVOKABLE bool load(QModelIndex index)
+    {
+        auto childItem = static_cast<PlaylistItem*>(index.internalPointer ());
+        auto parentItem = childItem->parent ();
+
+        if (!parentItem){
+            return false;
+        }
+        int itemIndex = childItem->row ();
+        int playlistIndex = m_playlists.indexOf (parentItem);
+        play(playlistIndex, itemIndex);
+        return true;
+    }
 
     // opens the file to play immediately when application launches
-    void setLaunchFile(const QString& path);
-    void setLaunchFolder(const QString& path);
-    QString getPlayOnLaunchFile()
-    {
-        return m_onLaunchFile;
-    }
-
+    bool setLaunchPath(const QString& path);
     std::set<std::string> playlistSet;
     /*
      * hashset containing all playlist links which prevents the same playlist from
      * being added to the list of playlists
     */
 
-    Q_INVOKABLE void loadFolder(const QUrl& path); // loading playlist from folder
-
-    void appendPlaylist(const ShowData& show,nlohmann::json* json);
-
+    Q_INVOKABLE void loadFromEpisodeList(int index);
+    Q_INVOKABLE void continueFromLastWatched();
+    void replaceCurrentPlaylist(const QUrl& path);
     void appendPlaylist(const QUrl& path);
-
-    void replaceCurrentPlaylist(const ShowData& show,nlohmann::json* json);
-
+    void appendPlaylist(PlaylistItem *playlist);
+    void replaceCurrentPlaylist(PlaylistItem *playlist);
     Q_INVOKABLE void play(int playlistIndex, int itemIndex);
-    int m_currentPlaylistIndex;
 
     //  Traversing the playlist
     Q_INVOKABLE void loadOffset(int offset);
@@ -74,7 +96,7 @@ public:
         loadOffset(-1);
     }
 private:
-    inline bool isLoading()
+    bool isLoading()
     {
         return loading;
     }
@@ -83,10 +105,9 @@ private:
         loading = b;
         emit loadingChanged ();
     }
-private:
-    QFutureWatcher<void> m_watcher;
-    QString m_onLaunchFile;
     bool loading = false;
+    QFutureWatcher<QUrl> m_watcher;
+    QUrl m_launchPath;
 
 signals:
     void loadingChanged(void);
@@ -94,9 +115,6 @@ signals:
     void currentIndexChanged(void);
     void updatedLastWatchedIndex();
     void showNameChanged(void);
-    void encounteredError(QString error);
-public slots:
-    void syncList(const ShowData& show,nlohmann::json* json);
 public:
     enum
     {
@@ -107,6 +125,9 @@ public:
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     QHash<int, QByteArray> roleNames() const override;
+    QModelIndex index(int row, int column, const QModelIndex &parent) const override;
+    QModelIndex parent(const QModelIndex &index) const override;
+    int columnCount(const QModelIndex &parent) const override {return 1;}
 };
 
 class ServerListModel: public QAbstractListModel
@@ -127,19 +148,7 @@ public:
         m_servers[index].working = false;
     }
 
-    void testServers()
-    {
-        QFuture<void> future = QtConcurrent::run ([this](){
-            for (auto& server : m_servers)
-            {
-                // extract source first
-                if(NetworkClient::get (server.source.toStdString ()).code != 200)
-                {
-                    server.working = false;
-                };
-            }
-        });
-    }
+
 
     QVector<VideoServer> servers() const
     {
@@ -188,4 +197,3 @@ public:
     QHash<int, QByteArray> roleNames() const override;
 };
 
-#endif // PLAYLISTMODEL_H

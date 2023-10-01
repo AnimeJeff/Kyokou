@@ -1,31 +1,54 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 Rectangle {
-    id: loadingScreen
-    property bool loading:false
+    id: overlay
     color: "#80000000"
-    visible: busyIndicator.running
-    z:parent.z+1
-
-    BusyIndicator {
-        id: busyIndicator
-        anchors.centerIn: parent
-        running: loading
-        visible: loading
-        z:loadingScreen.z
-        height: 100
-        width: 100
+    visible: loading
+    z: parent.z + 1
+    signal cancelled()
+    signal timedOut()
+    property bool loading:false
+    property bool timeoutEnabled:true
+    property int timeoutInterval:5000
+    onLoadingChanged: {
+        if(loading && timeoutEnabled)
+        {
+            loadingTimer.start()
+        }
+        else{
+            loadingTimer.stop()
+        }
     }
+
+    MouseArea {
+        anchors.fill: parent
+        propagateComposedEvents: false
+        hoverEnabled: true
+        preventStealing: true
+        onClicked: {
+            cancelled()
+        }
+    }
+
+
+    AnimatedImage {
+        anchors.centerIn: parent
+        source: "qrc:/resources/gifs/loading-totoro.gif"
+        width: 150
+        height: width * 1.5
+        visible: loading
+        playing: loading
+    }
+
     Timer {
         id: loadingTimer
-        interval: 5000 // set the timeout interval to 5 seconds
+        interval: timeoutInterval
         running: false
-        repeat: false // don't repeat the timer
+        repeat: false
 
         onTriggered: {
-            loadingScreen.visible = false
-            notifier.open()
-            // perform any additional actions you want when the timeout is reached
+            cancelled()
+            timedOut()
         }
     }
 }

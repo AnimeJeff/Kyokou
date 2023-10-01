@@ -5,34 +5,30 @@ import QtQuick.Controls 2.0
 ComboBox {
     id: comboBox
 
-    property color checkedColor: "#1ABC9C"
+    property color checkedColor: "#4E5BF2"
     property int fontSize: 15
     property var onClickedFun
-
+    property int hAlignment: Text.AlignHCenter
+    property int vAlignment: Text.AlignVCenter
+    property int contentRadius: 5
     delegate: ItemDelegate {
         width: comboBox.width
 
-//        MouseArea{
-//            anchors.fill: parent
-//            onClicked: {
-//                popup.close()
-//                comboBox.currentIndex = index
-//            }
-//        }
         contentItem: Text {
             text: model.text
             color: comboBox.highlightedIndex === index ? "white" : "black"
-            font.family: "Arial"
             elide: Text.ElideRight
             font.pixelSize: fontSize
-            verticalAlignment: Text.AlignVCenter
+            verticalAlignment: vAlignment
+            horizontalAlignment: hAlignment
         }
 
         background: Rectangle {
-             width: parent.width
-             height: parent.height
-             color: comboBox.highlightedIndex === index ? comboBox.checkedColor : "#F3F4F5"
-         }
+            width: parent.width
+            height: parent.height
+            color: comboBox.highlightedIndex === index ? comboBox.checkedColor : "#F3F4F5"
+            radius:contentRadius
+        }
     }
 
     indicator: Canvas {
@@ -61,35 +57,33 @@ ComboBox {
         }
     }
 
-    contentItem: Item {
+    contentItem: Text {
         width: comboBox.background.width - comboBox.indicator.width - 10
         height: comboBox.background.height
-
-        Text {
-            anchors.verticalCenter: parent.verticalCenter
-            x: 10
-            text: comboBox.displayText
-            elide: Text.ElideRight
-
-            font.pixelSize: fontSize
-            font.family: "Arial"
-            font.weight: Font.Thin
-            color: comboBox.down ? Qt.rgba(255, 255, 255, 0.75) : "white"
-        }
+        anchors.verticalCenter: parent.verticalCenter
+        x: 10
+        text: comboBox.displayText
+        elide: Text.ElideRight
+        horizontalAlignment: hAlignment
+        verticalAlignment: vAlignment
+        font.pixelSize: fontSize
+        font.weight: Font.Thin
+        color: comboBox.down ? Qt.rgba(255, 255, 255, 0.75) : "white"
     }
+
 
     background: Rectangle {
         implicitWidth: 102
         implicitHeight: 41
         color: comboBox.down ? Qt.darker(comboBox.checkedColor, 1.2) : comboBox.checkedColor
-        radius: 5
+        radius: contentRadius
 
         layer.enabled: comboBox.hovered | comboBox.down
-//        layer.effect: DropShadow {
-//            transparentBorder: true
-//            color: comboBox.checkedColor
-//            samples: 10 /*20*/
-//        }
+        //        layer.effect: DropShadow {
+        //            transparentBorder: true
+        //            color: comboBox.checkedColor
+        //            samples: 10 /*20*/
+        //        }
     }
 
     popup: Popup {

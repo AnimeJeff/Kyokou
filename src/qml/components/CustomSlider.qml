@@ -30,11 +30,11 @@ Slider {
 
 
             layer.enabled: root.hovered | root.pressed
-            layer.effect: DropShadow {
-                transparentBorder: true
-                color: root.checkedColor
-                samples: 8
-            }
+//            layer.effect: DropShadow {
+//                transparentBorder: true
+//                color: root.checkedColor
+//                samples: 8
+//            }
         }
     }
 

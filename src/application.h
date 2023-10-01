@@ -34,15 +34,14 @@ private:
     WatchListModel m_watchListModel {this};
     DownloadModel m_downloadModel {this};
 public:
-    inline PlaylistModel* playlistModel(){return &m_playlistModel;}
-    inline EpisodeListModel* episodeListModel(){return &m_episodeListModel;}
-    inline SearchResultsModel* searchResultsModel(){return &m_searchResultsModel;}
-    inline WatchListModel* watchListModel(){return &m_watchListModel;}
-    inline DownloadModel* downloadModel(){return &m_downloadModel;}
-    inline Cursor* cursor(){return &m_cursor;}
+    PlaylistModel* playlistModel() { return &m_playlistModel; }
+    EpisodeListModel* episodeListModel() { return &m_episodeListModel; }
+    SearchResultsModel* searchResultsModel() { return &m_searchResultsModel; }
+    WatchListModel* watchListModel() { return &m_watchListModel; }
+    DownloadModel* downloadModel() { return &m_downloadModel; }
+    Cursor* cursor() { return &m_cursor; }
 public:
-    Q_INVOKABLE void loadSourceFromList(int index);
-    int parseArgs(int argc, char *argv[]);
+    bool parseArgs(int argc, char *argv[]);
 public:
     static Application& instance()
     {
@@ -50,7 +49,7 @@ public:
         return s_instance;
     }
 private:
-    explicit Application(QObject *parent = nullptr);;
+    explicit Application(QObject *parent = nullptr);
     ~Application() {
         NetworkClient::shutdown();
     }

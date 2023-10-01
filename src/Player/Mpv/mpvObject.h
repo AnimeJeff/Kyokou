@@ -104,6 +104,7 @@ public slots:
     }
     void reload()
     {
+        if (currentVideoLink.isEmpty ()) return;
         open(currentVideoLink);
     }
 

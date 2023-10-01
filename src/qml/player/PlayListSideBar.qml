@@ -6,71 +6,112 @@ Rectangle{
     id:playlistBar
     visible: false
     color: '#d0303030'
-    CustomComboBox{
-        id:playlistComboBox
-        anchors{
-            left: parent.left
-            right: parent.right
-            top: parent.top
-        }
-        height: 30
-        displayText: app.playlist.showName
-        //        model: showManager
-        onClickedFun:function(index,model){
 
+    Connections {
+        id:currentIndexChangeConnection
+        target:app.playlist
+        function onCurrentIndexChanged()
+        {
+            if(!app.playlist.currentIndex.valid) return
+            sel.setCurrentIndex(app.playlist.currentIndex, ItemSelectionModel.SelectCurrent)
+            treeView.expandToIndex(app.playlist.currentIndex)
+            let halfHeight = treeView.height / 2
+            let contentY = 45 * (app.playlist.itemIndex-12) + 26.25 * (app.playlist.playlistIndex + 1)// - halfHeight
+            if(contentY < 0) contentY = 0
+            treeView.contentY = contentY
         }
+
     }
-
-    ListView
-    {
-        id: listView
+    TreeView {
+        id: treeView
         model: app.playlist
         clip:true
-        anchors
-        {
-            top: playlistComboBox.bottom
+        boundsBehavior:Flickable.StopAtBounds
+        boundsMovement: Flickable.StopAtBounds
+        anchors {
+            top: parent.top
             right: parent.right
             left: parent.left
             bottom: bottomBar.top
         }
-//        currentIndex: app.playlistModel.currentIndex
 
-        onCurrentIndexChanged:
-        {
-            positionViewAtIndex(currentIndex, ListView.PositionAtCenter)
+        selectionModel: ItemSelectionModel {
+            id:sel
+            model: app.playlist
+            onCurrentChanged:(current, previous)=>
+                             {
+                                 if(!current.parent.valid)
+                                 {
+                                     if(previous.parent.valid)
+                                     {
+                                         setCurrentIndex(previous, ItemSelectionModel.SelectCurrent)
+                                     }
+                                     else
+                                     {
+                                         clear()
+                                     }
+                                     return
+                                 }
+                                 if(current === app.playlist.currentIndex) return;
+                                 app.playlist.load(current)
+                             }
         }
-        delegate: Rectangle
-        {
-            width: listView.width
-            height: itemText.height + 10
-            radius: 4
-            clip: true
-            color:"black"// index === app.playlistModel.currentIndex ? 'red': "black"
-            Text
-            {
-                id:itemText
-                text: model.numberTitle
-                font.pixelSize: 14
-                wrapMode:Text.Wrap
-                color: "white"
-                anchors{
-                    left: parent.left
-                    right: parent.right
+        Component.onCompleted: {
+            currentIndexChangeConnection.onCurrentIndexChanged()
+        }
+
+        selectionBehavior:TableView.SelectRows
+        delegate: TreeViewDelegate {
+            id:treeDelegate
+            implicitWidth :treeView.width
+            TapHandler {
+                acceptedModifiers: Qt.NoModifier
+                onTapped:
+                {
+                    if(treeDelegate.hasChildren)
+                    {
+                        if (treeView.isExpanded(row))
+                        {
+                            treeView.collapse(row)
+                        }
+                        else
+                            treeView.expand(row)
+                    }
                 }
             }
-            MouseArea {
+
+            background: Rectangle {
                 anchors.fill: parent
-                acceptedButtons: Qt.LeftButton
-                onDoubleClicked: {
+                color: "#d0303030"
+            }
+            indicator: Text {
+                id: indicator
+                visible: treeDelegate.isTreeNode && treeDelegate.hasChildren
+                x: padding + (treeDelegate.depth * treeDelegate.indent)
+                anchors.verticalCenter: treeDelegate.verticalCenter
+                text: "▸"
+                rotation: treeDelegate.expanded ? 90 : 0
+                color: "red"
+                font.bold: true
+                font.pixelSize: 16 * root.aspectRatio
+                height: font.pixelSize
+            }
+            contentItem: Text {
+                id: label
+                x: padding + (treeDelegate.isTreeNode ? (treeDelegate.depth + 1) * treeDelegate.indent : 0)
+                width: treeDelegate.width - treeDelegate.padding - x
+                font.pixelSize: treeDelegate.hasChildren ? 20 * root.aspectRatio : 16 * root.aspectRatio
 
-                    app.playlistModel.play(index)
-                }
+                height: treeDelegate.hasChildren ? font.pixelSize : font.pixelSize * 2
+                clip: true
+                text: model.numberTitle
+                color: current ? "red" : treeDelegate.hasChildren && row === app.playlist.playlistIndex ? "green" : "white"
             }
         }
+
     }
 
-    Rectangle
-    {
+    Rectangle {
         id:bottomBar
         anchors{
             bottom:parent.bottom

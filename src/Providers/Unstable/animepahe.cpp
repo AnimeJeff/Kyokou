@@ -1,8 +1,8 @@
 
-#include "animepahe.h"
+//#include "animepahe.h"
 
-AnimePahe::AnimePahe()
-{
+//AnimePahe::AnimePahe()
+//{
 
-}
+//}
 

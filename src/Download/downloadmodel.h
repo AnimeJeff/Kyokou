@@ -165,18 +165,18 @@ public:
     }
 
     Q_INVOKABLE void downloadCurrentShow(int startIndex,int endIndex = -1){
-//        QString folderName = ShowManager::instance ().getCurrentShow ().title;
-//        static auto folderNameCleanerRegex = QRegularExpression("[/\\:*?\"<>|]");
-//        folderName = folderName.replace(":",".").replace(folderNameCleanerRegex,"_");
+        QString folderName = ShowManager::instance ().getCurrentShow ().title;
+        static auto folderNameCleanerRegex = QRegularExpression("[/\\:*?\"<>|]");
+        folderName = folderName.replace(":",".").replace(folderNameCleanerRegex,"_");
 //        auto folderPath = QDir::cleanPath (downloadFolderPath + QDir::separator () + folderName);
-//        const QVector<PlaylistItem>* episodes = ShowManager::instance ().getCurrentShow ().playlist.getChildren ();
-//        const std::shared_ptr<ShowProvider> provider = ShowManager::instance().getCurrentShowProvider();
-//        if(endIndex < 0)endIndex = startIndex;
-//        for(int i = startIndex;i <= endIndex;i++){
-//            auto servers = provider->loadServers (episodes->at (i));
-//            auto link = provider->extractSource (servers.first ());
-//            downloadM3u8(link,folderName,downloadFolderPath,"");
-//        }
+        const PlaylistItem* episodes = ShowManager::instance ().getCurrentShow ().getPlaylist ();
+        const ShowProvider* provider = ShowManager::instance().getCurrentShowProvider();
+        if(endIndex < 0)endIndex = startIndex;
+        for(int i = startIndex;i <= endIndex;i++) {
+            auto servers = provider->loadServers (episodes->at (i));
+            auto link = provider->extractSource (servers.first ());
+            downloadM3u8(link, folderName, downloadFolderPath,"");
+        }
     }
 
     void cancelAllTasks() {

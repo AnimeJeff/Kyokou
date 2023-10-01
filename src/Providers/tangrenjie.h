@@ -1,35 +1,33 @@
-
-#ifndef TANGRENJIE_H
-#define TANGRENJIE_H
+#pragma once
 #include <QString>
 #include <regex>
 #include "showprovider.h"
-class Tangrenjie:public ShowProvider
+class Tangrenjie: public ShowProvider
 {
-    std::regex player_aaaa_regex{R"(player_aaaa=(\{.*?\})</script>)"};
-    QVector<ShowData> selectShow(const std::string& url);
 public:
     Tangrenjie() = default;
-public:
-    int providerEnum() override {return Providers::TANGRENJIE;}
-
-    QString name() override {return "唐人街影院";}
-
+    QString name() const override {return "唐人街影院";}
     std::string hostUrl = "https://www.tangrenjie.tv";
 
-    QVector<ShowData> search(QString query, int page, int type) override;;
+    QList<int> getAvailableTypes() const override {
+        return {ShowData::ANIME, ShowData::MOVIE, ShowData::TVSERIES, ShowData::VARIETY, ShowData::DOCUMENTARY};
+    };
 
-    QVector<ShowData> popular(int page, int type) override {
-        return filterSearch(page,type,"hits");
-    }
-    QVector<ShowData> latest(int page, int type) override {
-        return filterSearch(page,type,"time");
-    }
+    QVector<ShowData> search(QString query, int page, int type) override;
+    QVector<ShowData> popular(int page, int type) override;
+    QVector<ShowData> latest(int page, int type) override;
+
+    void loadDetails(ShowData& show) const override;
+    int getTotalEpisodes(const ShowData& show) const override;
+    QVector<VideoServer> loadServers(const PlaylistItem *episode) const override;
+    QString extractSource(VideoServer &server) const override;
+
+
+private:
     QVector<ShowData> filterSearch(int page, int type,const std::string& sortBy,const std::string& area="",const std::string& year="",const std::string& language="");
-    ShowData loadDetails(ShowData show) override;;
-    int getTotalEpisodes(const ShowData& show) override;
-    QVector<VideoServer> loadServers(const PlaylistItem &episode) override;;
-    QString extractSource(VideoServer &server) override;;
+    std::regex player_aaaa_regex{R"(player_aaaa=(\{.*?\})</script>)"};
+    QVector<ShowData> selectShow(const std::string& url) const;
 };
 
-#endif // TANGRENJIE_H
+
+

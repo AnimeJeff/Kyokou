@@ -1,11 +1,32 @@
 
 #include "tangrenjie.h"
-QVector<ShowData> Tangrenjie::selectShow(const std::string& url)
+
+QVector<ShowData> Tangrenjie::search(QString query, int page, int type)
 {
-    //    pugi::xpath_node_set showNodes = NetworkClient::get(url).document().select("//a[@class='vodlist_thumb lazyload']");
+    std::string url = "https://www.tangrenjie.tv/vod/search/page/"+ std::to_string (page) + "/wd/" + Functions::urlEncode (query.toStdString ()) + ".html";
+    auto results = selectShow(url);
+    m_currentPage = page;
+    lastSearch = [query,type,this](int page){
+        return search(query, page, type);
+    };
+    m_canFetchMore=!results.empty ();
+    return results;
+}
+
+QVector<ShowData> Tangrenjie::latest(int page, int type)
+{
+    return filterSearch(page,type,"time");
+}
+
+QVector<ShowData> Tangrenjie::popular(int page, int type)
+{
+    return filterSearch(page,type,"hits");
+}
+
+QVector<ShowData> Tangrenjie::selectShow(const std::string& url) const
+{
     auto resp = NetworkClient::get(url);
     auto doc = resp.document ();
-//    auto body = resp.body;
     pugi::xpath_node_set showNodes = doc.select("//a[@class='vodlist_thumb lazyload']");
     QVector<ShowData> shows;
     for (pugi::xpath_node_set::const_iterator it = showNodes.begin (); it != showNodes.end(); ++it)
@@ -17,22 +38,10 @@ QVector<ShowData> Tangrenjie::selectShow(const std::string& url)
             coverUrl = QString::fromStdString (hostUrl) + coverUrl;
         }
         auto latestTxt = it->selectFirst (".//span[@class='pic_text text_right']").node ().child_value ();
-        shows.emplaceBack (ShowData(title, link, coverUrl, Providers::TANGRENJIE, latestTxt));
+        shows.emplaceBack (ShowData(title, link, coverUrl, name (), latestTxt));
     }
 
     return shows;
-}
-
-QVector<ShowData> Tangrenjie::search(QString query, int page, int type)
-{
-    std::string url = "https://www.tangrenjie.tv/vod/search/page/"+ std::to_string (page) + "/wd/" + Functions::urlEncode (query.toStdString ()) + ".html";
-    auto results = selectShow(url);
-    m_currentPage = page;
-    lastSearch = [query,type,this]{
-        return search(query,++m_currentPage,type);
-    };
-    m_canFetchMore=!results.empty ();
-    return results;
 }
 
 QVector<ShowData> Tangrenjie::filterSearch(int page, int type, const std::string &sortBy, const std::string &area, const std::string &year, const std::string &language)
@@ -65,22 +74,17 @@ QVector<ShowData> Tangrenjie::filterSearch(int page, int type, const std::string
     }
     url += ".html";
 
-    auto results = selectShow (url);
-    if(results.empty ())
-    {
-        m_canFetchMore = false;
-        return results;
-    }
-    m_currentPage = page;
-    lastSearch = [sortBy,type,area,year,language,this]{
-        return filterSearch(++m_currentPage,type, sortBy, area,year,language);
+    QVector<ShowData> results = selectShow(url);
+    m_canFetchMore = !results.isEmpty ();
+    if (m_canFetchMore) m_currentPage = page;
+    lastSearch = [sortBy,type,area,year,language,this](int page){
+        return filterSearch(page,type, sortBy, area,year,language);
     };
-
-    m_canFetchMore = true;
     return results;
 }
 
-ShowData Tangrenjie::loadDetails(ShowData show) {
+void Tangrenjie::loadDetails(ShowData& show) const
+{
     CSoup doc = NetworkClient::get(hostUrl + show.link ).document ();
     show.description = doc.selectText("//div[@class='content']");
     int count = 1;
@@ -99,22 +103,24 @@ ShowData Tangrenjie::loadDetails(ShowData show) {
         show.addEpisode (number,link,name);
         show.totalEpisodes++;
     }
-    return show;
 }
 
-int Tangrenjie::getTotalEpisodes(const ShowData &show) {
+int Tangrenjie::getTotalEpisodes(const ShowData &show) const
+{
     CSoup doc = NetworkClient::get(hostUrl + show.link).document ();
     return doc.select("//ul[@class='content_playlist list_scroll clearfix']/li/a").size ();
 }
 
-QVector<VideoServer> Tangrenjie::loadServers(const PlaylistItem &episode) {
+QVector<VideoServer> Tangrenjie::loadServers(const PlaylistItem *episode) const
+{
     VideoServer server;
     server.name = "player_aaaa";
-    server.link = episode.link;
+    server.link = episode->link;
     return QVector<VideoServer>{server};
 }
 
-QString Tangrenjie::extractSource(VideoServer &server) {
+QString Tangrenjie::extractSource(VideoServer &server) const
+{
     //qDebug()<<QString::fromStdString (hostUrl+server.link);
     std::string response = NetworkClient::get(hostUrl + server.link).body;
     std::smatch match;

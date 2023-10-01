@@ -19,10 +19,10 @@ Window {
     visible: true
     color: "black"
     flags: Qt.Window | Qt.FramelessWindowHint |Qt.WindowMinimizeButtonHint
+    property int aspectRatio: root.width / root.height
     property bool maximised: false
     property bool fullscreen: false
     property bool pipMode: false
-
 
     property real searchResultsViewlastScrollY:0
     property real watchListViewLastScrollY: 0
@@ -33,37 +33,34 @@ Window {
     property double lastX
     property double lastY
     property MpvObject mpv
+    property alias notifier: notifier
+    property bool mpvWasPlaying
 
-    ParallelAnimation
-    {
+    ParallelAnimation {
         id: resizingAnimation
         property real speed:6000
-        SmoothedAnimation
-        {
+        SmoothedAnimation {
             id:widthanime
             target: root
             properties: "width";
             to: Screen.desktopAvailableWidth
             velocity: resizingAnimation.speed
         }
-        SmoothedAnimation
-        {
+        SmoothedAnimation {
             id:heightanime
             target: root
             properties: "height";
             to: Screen.desktopAvailableHeight
             velocity: resizingAnimation.speed
         }
-        SmoothedAnimation
-        {
+        SmoothedAnimation {
             id:xanime
             target: root
             properties: "x";
             velocity: resizingAnimation.speed
             to: 0
         }
-        SmoothedAnimation
-        {
+        SmoothedAnimation {
             id:yanime
             target: root
             properties: "y";
@@ -76,20 +73,23 @@ Window {
         onRunningChanged: {
             if (running)
             {
-                mpvVisible = mpvPage.visible
-                mpvPage.visible = false
-                stackView.visible = false
+                mpvWasPlaying = mpv.state == MpvObject.VIDEO_PLAYING
+                if(mpvWasPlaying)
+                {
+                    mpv.pause()
+                }
             }
             else
             {
-                mpvPage.visible = mpvVisible
-                stackView.visible = Qt.binding(()=>!mpvPage.visible)
+                if(mpvWasPlaying)
+                {
+                    mpv.play()
+                }
             }
         }
     }
 
-    onMaximisedChanged:
-    {
+    onMaximisedChanged: {
         if (resizingAnimation.running) return
         if(maximised)
         {
@@ -114,8 +114,7 @@ Window {
 
     }
 
-    onFullscreenChanged:
-    {
+    onFullscreenChanged: {
         if (resizingAnimation.running) return
         if(fullscreen)
         {
@@ -140,11 +139,11 @@ Window {
 
     }
 
-    onPipModeChanged:
-    {
+    onPipModeChanged: {
         if (resizingAnimation.running) return
         if (pipMode)
         {
+            mpvPage.progressBar.visible = false
             xanime.to = Screen.desktopAvailableWidth - Screen.width/3
             yanime.to = Screen.desktopAvailableHeight - Screen.height/2.3
             if(root.x !== 0 && root.y !== 0)
@@ -171,9 +170,7 @@ Window {
 
     }
 
-
-    Shortcut
-    {
+    Shortcut {
         id: test
         sequence: "B"
         onActivated:
@@ -182,8 +179,7 @@ Window {
         }
     }
 
-    Connections
-    {
+    Connections {
         target: app.playlist
         function onSourceFetched()
         {
@@ -191,17 +187,16 @@ Window {
             mpv.subVisible = true
             sideBar.gotoPage(2)
         }
+
     }
 
 
-    TitleBar
-    {
+    TitleBar {
         id:titleBar
         focus: false
     }
 
-    SideBar
-    {
+    SideBar {
         id:sideBar
         anchors{
             left: parent.left
@@ -210,8 +205,7 @@ Window {
         }
     }
 
-    StackView
-    {
+    StackView {
         visible: !mpvPage.visible
         id:stackView
         anchors{
@@ -227,28 +221,21 @@ Window {
         }
     }
 
-    MpvPage
-    {
+    MpvPage {
         id:mpvPage
         visible: false
         anchors.fill: root.playerFillWindow ? parent : stackView
     }
 
-    Dialog
-    {
-        Connections{
-            target: errorHandler
-            function onShowWarning(msg){
-                notifierMessage.text = msg
-                notifier.open()
-            }
-        }
-
-        anchors.centerIn: parent
+    Dialog {
         id: notifier
         modal: true
         width: parent.width / 3
         height: parent.height / 4
+        anchors.centerIn: parent
+        property alias headerText:headerText.text
+        property alias text:notifierMessage.text
+
         contentItem: Rectangle {
             color: "#f2f2f2"
             border.color: "#c2c2c2"
@@ -256,6 +243,7 @@ Window {
             radius: 10
             anchors.centerIn: parent
             Text {
+                id:headerText
                 text: "Error"
                 font.pointSize: 16
                 font.bold: true
@@ -278,31 +266,16 @@ Window {
                 onClicked: notifier.close()
             }
         }
-    }
-
-    Timer
-    {
-        id: callbackTimer
-        running: false
-        repeat: false
-
-        property var callback
-
-        onTriggered: callback()
-    }
-
-    function setTimeout(callback, delay)
-    {
-        if (callbackTimer.running)
-        {
-            console.error("nested calls to setTimeout are not supported!");
-            return;
+        Connections {
+            target: errorHandler
+            function onShowWarning(msg){
+                notifierMessage.text = msg
+                notifier.open()
+            }
         }
-        callbackTimer.callback = callback;
-        // note: an interval of 0 is directly triggered, so add a little padding
-        callbackTimer.interval = delay + 1;
-        callbackTimer.running = true;
+
     }
+
 
     MouseArea
     {
@@ -324,15 +297,14 @@ Window {
                    }
     }
 
-    Rectangle{
+    Rectangle {
         id:lol
         anchors.fill: parent
         visible: false
         color: "black"
     }
 
-    Shortcut //Ctrl+W
-    {
+    Shortcut{
         sequence: "Ctrl+W"
         onActivated:
         {
@@ -342,58 +314,51 @@ Window {
             }
         }
     }
-    Shortcut
-    {
+    Shortcut{
         sequence: "1"
         onActivated: sideBar.gotoPage(0)
     }
-    Shortcut
-    {
+    Shortcut{
         sequence: "2"
         onActivated: sideBar.gotoPage(1)
     }
-    Shortcut
-    {
+    Shortcut{
         sequence: "3"
         onActivated: sideBar.gotoPage(2)
     }
-    Shortcut
-    {
+    Shortcut{
         sequence: "4"
         onActivated: sideBar.gotoPage(3)
     }
-    Shortcut
-    {
+    Shortcut {
         sequence: "5"
         onActivated: sideBar.gotoPage(4)
     }
-    Shortcut
-    {
+    Shortcut {
         sequence: "0"
         onActivated: notifier.open()
     }
-    Shortcut
-    {
+    Shortcut {
         sequence: "Ctrl+Tab"
         onActivated:
         {
+            root.lower()
             root.showMinimized()
+            pipMode = false
             playerFillWindow = false
             maximised = false
             fullscreen = false
-            pipMode = false
             mpv.pause()
             lol.visible = true
-
-
         }
     }
-    Shortcut
-    {
+
+    Shortcut{
         sequence: "Ctrl+Q"
         onActivated:
         {
-            lol.visible = false
+           lol.visible = !lol.visible
+
         }
     }
 
@@ -406,4 +371,26 @@ Window {
         }
     }
 
+    Timer {
+        id: callbackTimer
+        running: false
+        repeat: false
+
+        property var callback
+
+        onTriggered: callback()
+    }
+
+    function setTimeout(callback, delay){
+        if (callbackTimer.running){
+            console.error("nested calls to setTimeout are not supported!");
+            return;
+        }
+        callbackTimer.callback = callback;
+        // note: an interval of 0 is directly triggered, so add a little padding
+        callbackTimer.interval = delay + 1;
+        callbackTimer.running = true;
+    }
+
 }
+

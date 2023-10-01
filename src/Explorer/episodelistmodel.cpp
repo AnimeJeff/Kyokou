@@ -1,29 +1,19 @@
 #include "episodelistmodel.h"
-#include "application.h" //TODO
-
-
+#include "Explorer/showmanager.h"
+QString EpisodeListModel::getContinueEpisodeName()
+{
+    const auto* playlist = ShowManager::instance ().getCurrentShow ().getPlaylist ();
+    if(continueIndex < 0 || !playlist) return "";
+    const PlaylistItem *episode = ShowManager::instance().getCurrentShow().getPlaylist()->at(continueIndex);
+    return episode->name.isEmpty () ? QString::number (episode->number) : episode->number < 0 ? episode->name : QString::number (episode->number) + "\n" + episode->name;
+}
 
 void EpisodeListModel::updateLastWatchedName()
 {
-    continueEpisodeName = "";
-    auto currentShow = ShowManager::instance ().getCurrentShow ();
-    continueIndex = currentShow.getLastWatchedIndex ();
-    if(!currentShow.playlist) return;
-    int totalEpisodes = currentShow.playlist->count ();
-//    qDebug()<<continueIndex <<totalEpisodes;
-    if(continueIndex >= 0 && continueIndex < totalEpisodes)
-    {
-        if(continueIndex==totalEpisodes-2) continueIndex++;
-        auto lastWatchedEpisode =
-            currentShow.playlist->at(continueIndex); //check
-        continueEpisodeName = QString::number (lastWatchedEpisode->number);
-
-        if(!(lastWatchedEpisode->name.isEmpty () ||
-              lastWatchedEpisode->name.toInt () == lastWatchedEpisode->number)){
-            continueEpisodeName += "\n" + lastWatchedEpisode->name;
-        }
-
-    }
+    const auto* playlist = ShowManager::instance ().getCurrentShow ().getPlaylist ();
+    if(!playlist) return;
+    continueIndex = ShowManager::instance ().getLastWatchedIndex ();
+    if(continueIndex == playlist->count () - 2) ++continueIndex;
     emit continueIndexChanged();
 }
 
@@ -31,28 +21,28 @@ int EpisodeListModel::rowCount(const QModelIndex &parent) const
 {
     if (parent.isValid())
         return 0;
-    auto playlist = ShowManager::instance().getCurrentShow ().playlist;
-    return playlist ? playlist->count () : 0;
+    const PlaylistItem* playlist = ShowManager::instance ().getCurrentShow ().getPlaylist();
+    if (!playlist) return 0;
+    return playlist->count ();
 }
 
-QVariant EpisodeListModel::data(const QModelIndex &index, int role) const{
-
+QVariant EpisodeListModel::data(const QModelIndex &index, int role) const
+{
     if (!index.isValid())
         return QVariant();
-    int i = index.row();
-    if(isReversed)
-    {
-        i = ShowManager::instance().getCurrentShow ().playlist->count () - i - 1;
-    }
-    const auto& episode = ShowManager::instance().getCurrentShow().playlist->getChildren()->at(i);
+    const PlaylistItem* playlist = ShowManager::instance ().getCurrentShow ().getPlaylist();
+    if (!playlist) return QVariant();
+    int i = isReversed ? playlist->count () - index.row() - 1 : index.row();
+    const PlaylistItem* episode = playlist->at(i);
 
-    switch (role) {
+    switch (role)
+    {
     case TitleRole:
         return episode->name;
     case NumberRole:
         return episode->number;
     case FullTitleRole:
-        return episode->fullName;
+        return episode->getFullName();
     default:
         return QVariant();
     }
@@ -65,5 +55,3 @@ QHash<int, QByteArray> EpisodeListModel::roleNames() const{
     names[FullTitleRole] = "fullTitle";
     return names;
 }
-
-

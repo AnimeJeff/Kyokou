@@ -1,6 +1,4 @@
-#ifndef WATCHLISTMODEL_H
-#define WATCHLISTMODEL_H
-
+#pragma once
 #include <fstream>
 #include <iostream>
 #include <QAbstractListModel>
@@ -14,72 +12,55 @@
 class WatchListModel: public QAbstractListModel
 {
     Q_OBJECT
-    Q_PROPERTY(int listType READ getDisplayingListType WRITE setDisplayingListType NOTIFY layoutChanged)
+    Q_PROPERTY(int listType READ getCurrentListType WRITE setDisplayingListType NOTIFY layoutChanged)
     Q_PROPERTY(bool loading READ isLoading NOTIFY loadingChanged)
 private:
-    enum{
+    enum ListType
+    {
         WATCHING,
         PLANNED,
         ON_HOLD,
         DROPPED,
         COMPLETED
     };
+    //hashmap containing json for fast indexing
     nlohmann::json m_jsonList;
-    QVector<QVector<std::shared_ptr<ShowData>>> m_list;
-//    QVector<std::shared_ptr<ShowData>>& m_currentList = m_list[WATCHING];
-
-    int m_displayingListType = WATCHING;
-    int getDisplayingListType(){
-        return m_displayingListType;
-    }
-    void setDisplayingListType(int listType){
-        m_displayingListType = listType;
-        emit layoutChanged ();
-    }
-    bool isLoading(){
+    int m_currentListType = WATCHING;
+    int getCurrentListType();
+    void setDisplayingListType(int listType);
+    bool isLoading()
+    {
         return loading;
     }
     bool loading = false;
 private:
+    std::unordered_map<std::string,std::tuple<nlohmann::json*,int,int>> jsonHashmap;
     void loadWatchList(QString filePath = "");
-
     void changeListType(const ShowData& show,int listType);
     void fetchUnwatchedEpisodes();
+    QString watchListFilePath;
 public:
     explicit WatchListModel(QObject *parent = nullptr): QAbstractListModel(parent){
-        m_list.reserve (5);
         loadWatchList ();
-        auto lol = QtConcurrent::run([this](){
-            fetchUnwatchedEpisodes ();
-        });
-
+//        auto lol = QtConcurrent::run([this](){
+//            fetchUnwatchedEpisodes ();
+//        });
     };
-    ~WatchListModel() {
-        m_list.clear ();
-    }
-public:
     Q_INVOKABLE void add(const ShowData& show, int listType = WATCHING);
     Q_INVOKABLE void addCurrentShow(int listType = WATCHING);
     Q_INVOKABLE void remove(const ShowData& show);
     Q_INVOKABLE void removeCurrentShow();
     Q_INVOKABLE void move(int from, int to);
     Q_INVOKABLE void moveEnded();
-
-    bool checkInList(const ShowData &show);
-    std::shared_ptr<ShowData> getShowInList(const ShowData& show);
-    nlohmann::json* getShowJsonInList(const ShowData& show);
-    Q_INVOKABLE void loadDetails(int index);
-    QString watchListFilePath;
+    Q_INVOKABLE void loadShow(int index);
 signals:
-    void detailsRequested(ShowData show);
     void loadingChanged(void);
 public slots:
-    bool checkCurrentShowInList();
-
-    void save(){
+    bool syncCurrentShow();
+    void save()
+    {
         static std::mutex mutex;
         mutex.lock ();
-
         std::ofstream output_file(watchListFilePath.toStdString ());
         output_file << m_jsonList.dump (4);
         output_file.close();
@@ -98,4 +79,3 @@ private:
     QHash<int, QByteArray> roleNames() const override ;
 };
 
-#endif // WATCHLISTMODEL_H

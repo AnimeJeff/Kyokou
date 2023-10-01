@@ -1,46 +1,47 @@
+//#pragma once
+//#include "Providers/showprovider.h"
 
-#ifndef ANIMEPAHE_H
-#define ANIMEPAHE_H
+//class AnimePahe : public ShowProvider
+//{
+//public:
+//    AnimePahe();
 
-#include "Providers/showprovider.h"
+//    // ShowProvider interface
+//public:
+//    int providerEnum(){
+//        return Providers::ANIMEPAHE;
+//    };
+//    QString name(){
+//        return "AnimePahe";
+//    };
+//    std::string hostUrl = "https://animepahe.ru";
 
-class AnimePahe : public ShowProvider
-{
-public:
-    AnimePahe();
+//    QVector<ShowData> search(QString query, int page, int type) override {
+//        std::string url = hostUrl + "/api?m=search&q=" + Functions::urlEncode(query.toStdString ()) ;
+//        NetworkClient::get(url); //TODO
+//    };
+//    QVector<ShowData> popular(int page, int type)
+//    {
+//        return QVector<ShowData>();
+//    };
+//    QVector<ShowData> latest(int page, int type)
+//    {
+//        return QVector<ShowData>();
+//    };
+//    void loadDetails(ShowData& show) override
+//        {
 
-    // ShowProvider interface
-public:
-    int providerEnum(){
-        return Providers::ANIMEPAHE;
-    };
-    QString name(){
-        return "AnimePahe";
-    };
-    std::string hostUrl = "https://animepahe.ru";
+//    };
+//    int getTotalEpisodes(const ShowData &show)
+//    {
+//        return 0;
+//    };
+//    QVector<VideoServer> loadServers(const PlaylistItem &episode)
+//    {
+//        return QVector<VideoServer>();
+//    };
+//    QString extractSource(VideoServer &server){
+//        return "";
+//    };
+//};
 
-    QVector<ShowData> search(QString query, int page, int type) override {
-        std::string url = hostUrl + "/api?m=search&q=" + Functions::urlEncode(query.toStdString ()) ;
-        NetworkClient::get(url); //TODO
-    };
-    QVector<ShowData> popular(int page, int type){
-        return QVector<ShowData>();
-    };
-    QVector<ShowData> latest(int page, int type){
-        return QVector<ShowData>();
-    };
-    ShowData loadDetails(ShowData show){
-        return show;
-    };
-    int getTotalEpisodes(const ShowData &show){
-        return 0;
-    };
-    QVector<VideoServer> loadServers(const PlaylistItem &episode){
-        return QVector<VideoServer>();
-    };
-    QString extractSource(VideoServer &server){
-        return "";
-    };
-};
-
-#endif // ANIMEPAHE_H

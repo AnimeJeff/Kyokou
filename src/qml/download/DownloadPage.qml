@@ -8,7 +8,7 @@ Page {
         RowLayout {
             anchors.fill: parent
             spacing: 16
-            Label {
+            Text {
                 text: qsTr("Downloads")
                 font.pixelSize: 20
             }
@@ -37,7 +37,7 @@ Page {
             contentItem:
                 RowLayout {
                 spacing: 16
-                Label {
+                Text {
                     text: model.name
                     font.pixelSize: 16
                 }

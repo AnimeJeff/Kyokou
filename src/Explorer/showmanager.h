@@ -1,78 +1,36 @@
-#ifndef SHOWMANAGER_H
-#define SHOWMANAGER_H
+#pragma once
 #include <QAbstractListModel>
 #include <QObject>
-
+#include "Explorer/Data/showdata.h"
+#include "Providers/testprovider.h"
 #include "Providers/tangrenjie.h"
 #include "Providers/gogoanime.h"
 #include "Providers/nivod.h"
 #include "Providers/haitu.h"
 #include "Providers/allanime.h"
 
-#include "Explorer/Data/showdata.h"
-#include "Providers/testprovider.h"
-
+class ShowProvider;
 class ShowManager: public QAbstractListModel
 {
     Q_OBJECT
     Q_PROPERTY(ShowData currentShow READ getCurrentShow NOTIFY currentShowChanged)
     Q_PROPERTY(bool hasCurrentShow READ hasCurrentShow NOTIFY currentShowChanged) //info page cover
-
     Q_PROPERTY(bool loading READ isLoading NOTIFY loadingChanged)
-
-    // ShowData is not a QObject so these data which are mutable must be provided by this proxy class
+    // ShowData is not a QObject so these dynamic data which are mutable must be provided by this proxy class
     Q_PROPERTY(int currentShowListType READ getCurrentShowListType NOTIFY listTypeChanged)
     Q_PROPERTY(int currentShowLastWatchedIndex READ getLastWatchedIndex NOTIFY lastWatchedIndexChanged)
     Q_PROPERTY(bool currentShowIsInWatchList READ isInWatchList NOTIFY listTypeChanged)
 
-    ShowData currentShow{"Undefined","xasdd","dsads",-1};
+    Q_PROPERTY(QList<int> availableShowTypes READ getAvailableShowTypes NOTIFY searchProviderChanged)
+
+    ShowData currentShow{"Undefined","","",""};
 private:
-    explicit ShowManager()
-    {
-        providers =
-            {
-                std::make_shared<Nivod> (),
-                std::make_shared<Gogoanime> (),
-                std::make_shared<Tangrenjie> (),
-                std::make_shared<Haitu> (),
-#ifdef QT_DEBUG
-                std::make_shared<TestProvider> ()
-#endif \
-                //             std::make_shared<AllAnime> (),
-            };
-
-        for (const auto& provider:providers)
-        {
-            providersHashMap.insert(provider->name (),provider);
-            providersEnumHashMap.insert(provider->providerEnum (),provider);
-        }
-
-#ifdef QT_DEBUG
-        m_currentSearchProvider = providersHashMap["TestProvider"];
-#else
-        m_currentSearchProvider = providersHashMap["泥巴影院"];
-#endif
-        providers.move (providers.indexOf (m_currentSearchProvider),providers.size ()-1);
-        QObject::connect(&m_detailLoadingWatcher, &QFutureWatcher<ShowData>::finished, this, [this]() {
-            try
-            {
-                currentShow = m_detailLoadingWatcher.future ().result ();
-                emit detailsLoaded();
-            }
-            catch (...)
-            {
-                ErrorHandler::instance().show("Failed to load details for show");
-            }
-            setLoading(false);
-        });
-    }
-    ~ShowManager() {
-
-    }
+    explicit ShowManager();
+    ~ShowManager();
     ShowManager(const ShowManager&) = delete;
     ShowManager& operator=(const ShowManager&) = delete;
 
-    QFutureWatcher<ShowData> m_detailLoadingWatcher{};
+    QFutureWatcher<void> m_watcher {};
 
     bool m_loading = false;
     bool isLoading(){return m_loading;}
@@ -81,113 +39,64 @@ private:
         m_loading = loading;
         emit loadingChanged();
     }
+    QTimer m_timeoutTimer {this};
+    QString m_cancelReason;
+
+    QList<int> getAvailableShowTypes()
+    {
+        return m_currentSearchProvider->getAvailableTypes();
+    }
 
 public:
     bool hasCurrentShow()
     {
         return !currentShow.link.empty ();
     }
-    ShowData getCurrentShow() const
+    const ShowData& getCurrentShow()
     {
         return currentShow;
     };
-    void setCurrentShow(const ShowData& show)
-    {
-        if(ShowManager::instance ().getCurrentShow ().link == show.link)
-        {
-            emit detailsLoaded();
-            return;
-        }
-        setLoading(true);
-        m_detailLoadingWatcher.setFuture(
-            QtConcurrent::run (
-                [show,this]()
-                {
-                    return loadDetails (show);
-                }));
-    }
-
+    void setCurrentShow(const ShowData& show);
     bool isInWatchList()
     {
         return currentShow.isInWatchList ();
     }
 
-    std::shared_ptr<ShowProvider> getProvider(int provider)
+    ShowProvider* getProvider(const QString& provider)
     {
-        if(providersEnumHashMap.contains(provider)) return providersEnumHashMap[provider];
+        if(providersHashMap.contains(provider))
+            return providersHashMap[provider];
         return nullptr;
     }
-    std::shared_ptr<ShowProvider> getCurrentShowProvider()
+    ShowProvider* getCurrentShowProvider()
     {
-        return providersEnumHashMap[currentShow.provider];
+        return providersHashMap[currentShow.provider];
     }
-    std::shared_ptr<ShowProvider> getCurrentSearchProvider() const
+    ShowProvider* getCurrentSearchProvider() const
     {
-        Q_ASSERT(m_currentSearchProvider!=nullptr);
+        Q_ASSERT(m_currentSearchProvider != nullptr);
         return m_currentSearchProvider;
     }
-    Q_INVOKABLE void changeSearchProvider(int index)
-    {
-        m_currentSearchProvider = providers.at (index);
-        providers.move (index,providers.size ()-1);
-        emit layoutChanged();
-    }
+    Q_INVOKABLE void changeSearchProvider(int index);
+    void setLastWatchedIndex(int index);
+    int getLastWatchedIndex() const;
+    void setListType(int listType);
+    int getCurrentShowListType() const;
 
-    void setLastWatchedIndex(int index)
+    Q_INVOKABLE void cancel()
     {
-        currentShow.setLastWatchedIndex (index);
-        emit lastWatchedIndexChanged ();
-    }
-    int getLastWatchedIndex() const
-    {
-        return currentShow.getLastWatchedIndex ();
-    }
-    void setListType(int listType)
-    {
-
-        currentShow.setListType (listType);
-        emit listTypeChanged ();
-    }
-    int getCurrentShowListType()
-    {
-        return currentShow.getListType ();
-    }
-    ShowData loadDetails(const ShowData& show)
-    {
-        if(show.provider == -1){
-            //lazy show
-            ShowData loadedShow {show};
-            //            loadedShow.episodes.emplaceBack (Episode{ 1,show.link,show.title });
-            //todo playlistitem
-            return loadedShow;
+        if(m_watcher.isRunning ())
+        {
+            m_watcher.cancel ();
+            setLoading (false);
         }
-
-        auto provider = getProvider (show.provider);
-        if(provider) {
-            qDebug()<<"Loading details for" << show.title << "with" << provider->name () << "using the link:" << show.link;
-            try{
-                auto loadedShow = provider->loadDetails (show);
-                qDebug()<<"Successfully loaded details for" << loadedShow.title;
-                return loadedShow;
-            }catch(const QException& e){
-                qDebug() << e.what ();
-            }catch(std::exception& e){
-                qDebug()<<e.what ();
-                std::cout << e.what();
-            }catch(...){
-                qDebug()<<"Failed to load" << show.title;
-            }
-            return show;
-        }
-        qDebug()<<"Unable to find a provider for provider enum" << show.provider;
-        return show;
     }
 signals:
-    void currentShowChanged();
-    void lastWatchedIndexChanged();
-    void listTypeChanged();
-    void loadingChanged();
-    void detailsLoaded();
+    void currentShowChanged(void);
+    void lastWatchedIndexChanged(void);
+    void listTypeChanged(void);
+    void loadingChanged(void);
+    void searchProviderChanged(void);
 public:
     static ShowManager& instance()
     {
@@ -195,50 +104,18 @@ public:
         return instance;
     }
 private:
-    QHash<QString,std::shared_ptr<ShowProvider>> providersHashMap;
-    QHash<int,std::shared_ptr<ShowProvider>> providersEnumHashMap; //remove in future
-
-    QVector<std::shared_ptr<ShowProvider>> providers;
-    std::shared_ptr<ShowProvider> m_currentSearchProvider;
-    QString currentSearchProviderName(){
-        return m_currentSearchProvider->name ();
-    }
-
-
-public:
-    enum{
+    QHash<QString, ShowProvider*> providersHashMap;
+    QVector<ShowProvider*> providers;
+    ShowProvider* m_currentSearchProvider;
+    QString currentSearchProviderName();
+private:
+    enum
+    {
         NameRole = Qt::UserRole,
         IconRole,
-        EnumRole
     };
-    int rowCount(const QModelIndex &parent) const override{
-        return providers.count ();
-    };
-    QVariant data(const QModelIndex &index, int role) const override{
-        if (!index.isValid())
-            return QVariant();
-        auto provider = providers.at(index.row ());
-        switch (role) {
-        case NameRole:
-            return provider->name ();
-            break;
-        case IconRole:
-            break;
-        case EnumRole:
-            return provider->providerEnum ();
-            break;
-        default:
-            break;
-        }
-        return QVariant();
-    };
-    QHash<int, QByteArray> roleNames() const override{
-        QHash<int, QByteArray> names;
-        names[NameRole] = "text";
-        //        names[IconRole] = "icon";
-        //        names[EnumRole] = "providerEnum";
-        return names;
-    };
+    int rowCount(const QModelIndex &parent) const override;;
+    QVariant data(const QModelIndex &index, int role) const override;;
+    QHash<int, QByteArray> roleNames() const override;;
 };
 
-#endif // SHOWMANAGER_H

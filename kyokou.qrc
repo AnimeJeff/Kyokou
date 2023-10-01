@@ -1,41 +1,53 @@
 <RCC>
     <qresource prefix="/">
         <file>resources/images/error_image.png</file>
-        <file>resources/images/pause_grey.png</file>
-        <file>resources/images/pause_grey_on.png</file>
-        <file>resources/images/pause_lightgrey.png</file>
-        <file>resources/images/pause_lightgrey_on.png</file>
-        <file>resources/images/play_grey.png</file>
-        <file>resources/images/play_grey_on.png</file>
-        <file>resources/images/play_lightgrey.png</file>
-        <file>resources/images/play_lightgrey_on.png</file>
-        <file>resources/images/playlist_grey.png</file>
-        <file>resources/images/playlist_grey_on.png</file>
-        <file>resources/images/playlist_lightgrey.png</file>
-        <file>resources/images/playlist_lightgrey_on.png</file>
-        <file>resources/images/settings_grey.png</file>
-        <file>resources/images/settings_grey_on.png</file>
-        <file>resources/images/settings_lightgrey.png</file>
-        <file>resources/images/settings_lightgrey_on.png</file>
-        <file>resources/images/stop_grey.png</file>
-        <file>resources/images/stop_grey_on.png</file>
-        <file>resources/images/stop_lightgrey.png</file>
-        <file>resources/images/stop_lightgrey_on.png</file>
-        <file>resources/images/volume_grey.png</file>
-        <file>resources/images/volume_grey_on.png</file>
-        <file>resources/images/volume_lightgrey.png</file>
-        <file>resources/images/volume_lightgrey_on.png</file>
         <file>resources/images/icon.ico</file>
         <file>resources/images/icon.png</file>
+        <file>resources/gifs/basketball.gif</file>
+        <file>resources/images/9anime.png</file>
+        <file>resources/images/gogo.png</file>
+        <file>resources/images/nivod.png</file>
+        <file>resources/images/pause.png</file>
+        <file>resources/images/pause_hover.png</file>
+        <file>resources/images/play.png</file>
+        <file>resources/images/play_hover.png</file>
+        <file>resources/images/library.png</file>
+        <file>resources/images/details.png</file>
+        <file>resources/images/details_selected.png</file>
+        <file>resources/images/folder.png</file>
+        <file>resources/images/folder_hover.png</file>
+        <file>resources/images/high_volume.png</file>
+        <file>resources/images/high_volume_hover.png</file>
+        <file>resources/images/library_selected.png</file>
+        <file>resources/images/low_volume.png</file>
+        <file>resources/images/low_volume_hover.png</file>
+        <file>resources/images/mid_volume.png</file>
+        <file>resources/images/mid_volume_hover.png</file>
+        <file>resources/images/mute_volume.png</file>
+        <file>resources/images/mute_volume_hover.png</file>
+        <file>resources/images/player_settings.png</file>
+        <file>resources/images/player_settings_hover.png</file>
+        <file>resources/images/playlist.png</file>
+        <file>resources/images/playlist_hover.png</file>
+        <file>resources/images/tv.png</file>
+        <file>resources/images/tv_selected.png</file>
         <file>resources/images/download.png</file>
         <file>resources/images/search.png</file>
         <file>resources/images/settings.png</file>
-        <file>resources/images/view-details.png</file>
-        <file>resources/images/retro-tv.png</file>
-        <file>resources/images/folder_lightgrey.png</file>
-        <file>resources/images/folder_lightgrey_on.png</file>
-        <file>resources/images/library.png</file>
-        <file>resources/gifs/basketball.gif</file>
+        <file>resources/images/download_selected.png</file>
+        <file>resources/images/search_selected.png</file>
+        <file>resources/images/settings_selected.png</file>
+        <file>resources/images/pip.png</file>
+        <file>resources/images/pip_hover.png</file>
+        <file>resources/app-font.ttf</file>
+        <file>resources/gifs/finn.gif</file>
+        <file>resources/gifs/hula-hoop-totoro.gif</file>
+        <file>resources/gifs/jake.gif</file>
+        <file>resources/gifs/loading-totoro.gif</file>
+        <file>resources/gifs/rainy-totoro.gif</file>
+        <file>resources/images/sorting-arrows.png</file>
+        <file>resources/gifs/image-loading.gif</file>
+        <file>resources/images/download-button.png</file>
     </qresource>
     <qresource prefix="/qml">
         <file>src/qml/main.qml</file>
@@ -45,20 +57,21 @@
         <file>src/qml/explorer/SearchPage.qml</file>
         <file>src/qml/player/ControlBar.qml</file>
         <file>src/qml/info/InfoPage.qml</file>
-        <file>src/qml/explorer/components/SearchBar.qml</file>
-        <file>src/qml/explorer/components/SearchContainer.qml</file>
         <file>src/qml/components/CustomTextField.qml</file>
         <file>src/qml/components/HoverCursorArea.qml</file>
         <file>src/qml/components/CustomComboBox.qml</file>
         <file>src/qml/components/CustomButton.qml</file>
         <file>src/qml/components/CustomSwitch.qml</file>
         <file>src/qml/components/CustomSlider.qml</file>
-        <file>src/qml/info/components/EpisodeList.qml</file>
         <file>src/qml/watchlist/WatchListPage.qml</file>
         <file>src/qml/download/DownloadPage.qml</file>
         <file>src/qml/player/PlayListSideBar.qml</file>
         <file>src/qml/settings.qml</file>
         <file>src/qml/TitleBar.qml</file>
         <file>src/qml/SideBar.qml</file>
+        <file>src/qml/info/EpisodeList.qml</file>
+        <file>src/qml/explorer/SearchBar.qml</file>
+        <file>src/qml/explorer/ShowContainer.qml</file>
+        <file>src/qml/watchlist/WatchListContainer.qml</file>
     </qresource>
 </RCC>

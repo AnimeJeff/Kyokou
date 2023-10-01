@@ -2,15 +2,14 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import MpvPlayer 1.0
 import QtQuick.Dialogs
-import "."
+
 Item{
     id:mpvPage
     property alias progressBar:controlBar
     focus: true
     visible: false
 
-    PlayListSideBar
-    {
+    PlayListSideBar {
         id:playlistBar
         anchors{
             right: parent.right
@@ -18,62 +17,90 @@ Item{
             bottom: parent.bottom
         }
         z:2
-        width: playlistBar.visible ? 200 : 0
-        function toggle(){
+        width: playlistBar.visible ? root.width/5 : 0
+
+        function toggle()
+        {
             playlistBar.visible = !playlistBar.visible
-            if(playlistBar.visible && mpv.state === MpvObject.VIDEO_PLAYING){
+            if(playlistBar.visible && mpv.state === MpvObject.VIDEO_PLAYING)
+            {
                 mpv.pause()
-            }else if (mpv.state === MpvObject.VIDEO_PAUSED){
+            }
+            else if (mpv.state === MpvObject.VIDEO_PAUSED)
+            {
                 mpv.play()
             }
         }
     }
 
-    MpvObject{
+    MpvObject {
         id:mpvObject
         z:0
         volume: volumeSlider.value
         property var lastPos
-        anchors{
+        anchors {
             left:parent.left
             right: playlistBar.left
             top: parent.top
             bottom: parent.bottom
         }
+        onPlayNext: app.playlist.playNextItem()
+        Component.onCompleted: {
+            root.mpv = mpvObject
 
-        MouseArea{
-            id:mouseArea
-            anchors.fill: mpvObject
-            hoverEnabled: true
-            onMouseXChanged: {
-                mouseArea.cursorShape = Qt.ArrowCursor;
-                controlBar.peak()
+            if(app.playlist.launchPath.toString().trim() !== "")
+            {
+                sideBar.gotoPage(2)
+                setTimeout(()=>mpv.open(app.playlist.launchPath), 100)
             }
-            Timer{
-                id:doubleClickTimer
-                interval: 300
+            else
+            {
+                app.showExplorer.latest(1,4);
             }
-            Timer{
-                id:inactivityTimer
-                interval: 2000
-                onTriggered: {
-                    if(!mpvPage.visible) return
-                    let newPos = app.cursor.pos()
-                    if(newPos === mpvObject.lastPos){
-                        app.cursor.visible = false
-                    }else{
-                        mpvObject.lastPos = app.cursor.pos()
-                        inactivityTimer.restart()
-                    }
+        }
+        Rectangle {
+            id:pipCloseButton
+            width: 20
+            height: 20
+            z: mouseArea.z + 1
+            anchors {
+                top: mpvObject.top
+                left:mpvObject.left
+            }
+            visible: pipMode && pipModeMouseArea.containsMouse
+            MouseArea {
+                preventStealing: true
+                anchors.fill: parent
+                onClicked: {
+//                    pipCloseButton.visible = false
+                    pipMode = false
                 }
             }
-            onPositionChanged: {
+            color:"red"
+        }
+        MouseArea {
+            id:mouseArea
+            anchors {
+                top: mpvObject.top
+                bottom: controlBar.visible ? controlBar.top : mpvObject.bottom
+                left: mpvObject.left
+                right: mpvObject.right
+            }
+            hoverEnabled: true
+            onExited: {
                 app.cursor.visible = true
-                mpvObject.lastPos = app.cursor.pos()
-                inactivityTimer.start()
+            }
+            onPositionChanged: {
+                if(!pipMode)
+                {
+                    controlBar.peak()
+                    app.cursor.visible = true
+                    mpvObject.lastPos = app.cursor.pos()
+                    inactivityTimer.start()
+                }
             }
             acceptedButtons: Qt.LeftButton
-            onClicked: (mouse)=>{
+            onClicked: (mouse)=> {
                            if(doubleClickTimer.running)
                            {
                                if(pipMode)
@@ -93,18 +120,74 @@ Item{
                                }
                                doubleClickTimer.stop()
                            }
-                           else{
-                               if(mpv.state == MpvObject.VIDEO_PLAYING) {mpv.pause() }else {mpv.play()}
+                           else
+                           {
+                               if(mpv.state == MpvObject.VIDEO_PLAYING) mpv.pause()
+                               else mpv.play()
+
                                doubleClickTimer.restart()
                            }
-
-
                        }
+
+            Timer {
+                id:doubleClickTimer
+                interval: 300
+            }
+            Timer {
+                id:inactivityTimer
+                interval: 2000
+                onTriggered:
+                {
+                    if(!mpvPage.visible) return
+                    let newPos = app.cursor.pos()
+                    if(newPos === mpvObject.lastPos && controlBar)
+                    {
+                        app.cursor.visible = false
+                    }
+                    else
+                    {
+                        mpvObject.lastPos = app.cursor.pos()
+                        inactivityTimer.restart()
+                    }
+                }
+            }
+
+            MouseArea {
+                id:pipModeMouseArea
+                pressAndHoldInterval:300
+                visible: pipMode
+                enabled: pipMode
+                hoverEnabled: true
+                anchors.fill: parent
+                property var clickPos
+                onPositionChanged: {
+                    if(clickPos)
+                    {
+                        let newX = app.cursor.pos().x - clickPos.x
+                        let newY = app.cursor.pos().y - clickPos.y
+                        if(newX < 0) newX = 0
+                        else if(newX > Screen.desktopAvailableWidth-root.width) newX = Screen.desktopAvailableWidth-root.width
+                        if(newY < 0) newY = 0
+                        else if(newY > Screen.desktopAvailableHeight-root.height) newY = Screen.desktopAvailableHeight-root.height
+                        root.x = newX
+                        root.y = newY
+                    }
+                }
+                onReleased: {
+                    clickPos = null
+                }
+                onPressed: (mouse)=>{
+                                    clickPos  = Qt.point(mouse.x,mouse.y)
+                                }
+                onContainsMouseChanged: {
+                    pipCloseButton.visible = containsMouse
+                }
+            }
         }
-        ControlBar{
+        ControlBar {
             id:controlBar
-            z:1000
-            anchors{
+            z:mpvObject.z + 1
+            anchors {
                 bottom: parent.bottom
                 left: parent.left
                 right: parent.right
@@ -114,8 +197,10 @@ Item{
             isPlaying: mpv.state === MpvObject.VIDEO_PLAYING || mpv.state === MpvObject.TV_PLAYING
             time: mpv.time
             duration: mpv.duration
+            mpv:mpvObject
+
             onPlayPauseButtonClicked: mpv.state === MpvObject.VIDEO_PLAYING ? mpv.pause() : mpv.play()
-            onStopButtonClicked: mpv.stop()
+            //            onStopButtonClicked: mpv.stop()
             onSeekRequested: (time)=>mpv.seek(time);
             onVolumeButtonClicked: {
                 volumePopup.x = mpv.mapFromItem(volumeButton, 0, 0).x;
@@ -124,9 +209,10 @@ Item{
             }
             onSidebarButtonClicked: playlistBar.toggle()
             onFolderButtonClicked: folderDialog.open()
-            function peak(time)
-            {
-                controlBar.visible = true && root.resizeAnime.running === false
+            function peak(time) {
+                if(pipMode) return
+                controlBar.visible = true
+                //                        && resizeAnime.running === false
                 if(time)
                 {
                     timer.interval = time
@@ -143,8 +229,7 @@ Item{
             }
             property bool autoHideBars: true
 
-            Timer
-            {
+            Timer {
                 id: timer
                 interval: 1000
                 onTriggered:
@@ -162,27 +247,9 @@ Item{
             }
 
         }
-
-        onPlayNext:
-        {
-            app.playlist.playNextItem()
-        }
-
-        Component.onCompleted:
-        {
-            root.mpv = mpvObject
-            if(app.playlist.onLaunchFile)
-            {
-                sideBar.gotoPage(2)
-                setTimeout(()=>mpv.open(app.playlist.onLaunchFile),100)
-            }
-
-        }
-
     }
 
-    Popup
-    {
+    Popup {
         id: volumePopup
         width: 40
         height: 120
@@ -199,23 +266,22 @@ Item{
         }
     }
 
-    FolderDialog
-    {
+    FolderDialog {
         id:folderDialog
         currentFolder: "file:///D:/TV/"
         onAccepted:
         {
             app.playlist.loadFolder(folderDialog.selectedFolder)
-            //todo autoplay
+
         }
     }
-
 
     Keys.enabled: true
     Keys.onPressed: event => handleKeyPress(event)
     function handleCtrlModifiedKeyPress(key)
     {
-        switch(key){
+        switch(key)
+        {
         case Qt.Key_1:
             mpv.loadAnime4K(1)
             break;
@@ -266,6 +332,12 @@ Item{
         }else{
             switch (event.key) {
             case Qt.Key_Escape:
+                if (resizeAnime.running) return
+                if(pipMode)
+                {
+                    pipMode = false
+                    return
+                }
                 playerFillWindow = false
                 fullscreen = false
                 break;
@@ -322,6 +394,7 @@ Item{
                     mpv.setSpeed(2.0)
                 break;
             case Qt.Key_F:
+                if (resizeAnime.running) return
                 if(pipMode)
                 {
                     pipMode = false

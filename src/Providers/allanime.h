@@ -14,7 +14,6 @@
 
 //    };
 //public:
-//    int providerEnum() { return 1; }
 //    QString name() { return "AllAnime"; }
 //    std::string hostUrl = "https://allanime.to";
 //private:

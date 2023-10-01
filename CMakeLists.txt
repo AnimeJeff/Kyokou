@@ -2,13 +2,14 @@ cmake_minimum_required(VERSION 3.16)
 
 project(kyokou VERSION 0.1 LANGUAGES CXX)
 
-find_package(Qt6 6.5 COMPONENTS Quick REQUIRED)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Quick )
 find_package(Qt6 REQUIRED COMPONENTS QuickControls2)
 find_package(Qt6 REQUIRED COMPONENTS Qml)
 find_package(Qt6 REQUIRED COMPONENTS Concurrent)
+find_package(Qt6 REQUIRED COMPONENTS Core5Compat)
 
 set(CMAKE_BUILD_TYPE Debug)
-#set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 20)
@@ -96,6 +97,7 @@ target_link_libraries(kyokou
     PRIVATE Qt6::QuickControls2
     PRIVATE Qt6::Qml
     PRIVATE Qt6::Concurrent
+    PRIVATE Qt6::Core5Compat
 )
 if (Qt6_FOUND)
     message("** Found Qt6")

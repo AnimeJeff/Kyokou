@@ -6,8 +6,6 @@ import MpvPlayer 1.0
 
 import "components"
 
-
-// Sidebar UI
 Rectangle {
 
     id: sideBar
@@ -27,14 +25,14 @@ Rectangle {
     // Positionate all buttons
     Connections{
         target: showManager
-        function onDetailsLoaded() {
+        function onCurrentShowChanged() {
             gotoPage(1)
         }
     }
 
 
     property var pages: {
-        0: "explorer/SearchPage.qml", //todo keep track of location of last scroll and scroll to
+        0: "explorer/SearchPage.qml",
         1: "info/InfoPage.qml",
 //        2: mpvPage,
         3: "watchlist/WatchListPage.qml",
@@ -42,28 +40,36 @@ Rectangle {
         5: "settings.qml"
     }
 
-    function gotoPage(index){
-        if(currentPage!==index){
-            if(index===2){
+    function gotoPage(index)
+    {
+        if(fullscreen) return;
+        if(index === 1 && !showManager.hasCurrentShow) return;
+        if(currentPage!==index)
+        {
+            currentPage = index
+            if(index===2)
+            {
                 mpvPage.progressBar.peak(2000)
                 mpvPage.visible = true
                 mpvPage.forceActiveFocus()
-            }else{
+            }
+            else
+            {
+
                 stackView.replace(pages[index])
                 stackView.forceActiveFocus()
                 setTimeout(()=>{mpvPage.visible = false},100)
             }
-            currentPage = index
+
         }
     }
 
     ColumnLayout {
         height: sideBar.height
-        spacing: 0
+        spacing: 5
         ImageButton {
-            image:"qrc:/resources/images/search.png"
-            hoverImage:"qrc:/resources/images/search.png"
-            HoverCursorArea{}
+            image: selected ? "qrc:/resources/images/search_selected.png" :"qrc:/resources/images/search.png"
+            hoverImage: selected ? "qrc:/resources/images/search_selected.png" :"qrc:/resources/images/search.png"
             Layout.preferredWidth: sideBar.width
             Layout.preferredHeight: sideBar.width
             onClicked: {
@@ -73,44 +79,45 @@ Rectangle {
         }
 
         ImageButton {
-            image:"qrc:/resources/images/view-details.png"
-            hoverImage:"qrc:/resources/images/view-details.png"
-            HoverCursorArea{}
+            id: detailsPageButton
+            enabled: showManager.hasCurrentShow
+            image: selected ? "qrc:/resources/images/details_selected.png" : "qrc:/resources/images/details.png"
+            hoverImage: selected ? "qrc:/resources/images/details_selected.png" : "qrc:/resources/images/details.png"
             Layout.preferredWidth: sideBar.width
             Layout.preferredHeight: sideBar.width
-            onClicked: {
-                gotoPage(1)
-            }
-            selected: currentPage === 1
+            onClicked:gotoPage(1)
+            selected: currentPage == 1
         }
         ImageButton {
-            image:"qrc:/resources/images/retro-tv.png"
-            hoverImage:"qrc:/resources/images/retro-tv.png"
-            HoverCursorArea{}
+            id:playerPageButton
+            image: selected ? "qrc:/resources/images/tv_selected.png" :"qrc:/resources/images/tv.png"
+            hoverImage: selected ? "qrc:/resources/images/tv_selected.png" :"qrc:/resources/images/tv.png"
             Layout.preferredWidth: sideBar.width
             Layout.preferredHeight: sideBar.width
             onClicked: gotoPage(2)
             selected: currentPage === 2
         }
         ImageButton {
-            image:"qrc:/resources/images/library.png"
-            hoverImage:"qrc:/resources/images/library.png"
+            id:libraryPageButton
+            image: selected ? "qrc:/resources/images/library_selected.png" :"qrc:/resources/images/library.png"
+            hoverImage: selected ? "qrc:/resources/images/library_selected.png" :"qrc:/resources/images/library.png"
             Layout.preferredWidth: sideBar.width
             Layout.preferredHeight: sideBar.width
-            HoverCursorArea{}
+
             onClicked: gotoPage(3)
             selected: currentPage === 3
         }
-
         ImageButton {
-            image:"qrc:/resources/images/download.png"
-            hoverImage:"qrc:/resources/images/download.png"
+            id: downloadPageButton
+            image: selected ? "qrc:/resources/images/download_selected.png" :"qrc:/resources/images/download.png"
+            hoverImage: selected ? "qrc:/resources/images/download_selected.png" :"qrc:/resources/images/download.png"
+
             Layout.preferredWidth: sideBar.width
             Layout.preferredHeight: sideBar.width
-            HoverCursorArea{}
             onClicked: gotoPage(4)
             selected: currentPage === 4
         }
+
         AnimatedImage {
             source: "qrc:/resources/gifs/basketball.gif"
             Layout.preferredWidth: sideBar.width
@@ -125,11 +132,12 @@ Rectangle {
             Layout.fillHeight: orientation == "vertical"
         }
         ImageButton {
-            image:"qrc:/resources/images/settings.png"
-            hoverImage:"qrc:/resources/images/settings.png"
+            image: selected ? "qrc:/resources/images/settings_selected.png" :"qrc:/resources/images/settings.png"
+            hoverImage: selected ? "qrc:/resources/images/settings_selected.png" :"qrc:/resources/images/settings.png"
+
             Layout.preferredWidth: sideBar.width
             Layout.preferredHeight: sideBar.width
-            HoverCursorArea{}
+
             onClicked: gotoPage(5)
             selected: currentPage === 4
         }
