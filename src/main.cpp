@@ -25,7 +25,11 @@ int main(int argc, char *argv[]){
 
     QQuickWindow::setGraphicsApi(QSGRendererInterface::OpenGLRhi);
     QGuiApplication app(argc, argv);
-    if (!Application::instance ().parseArgs(argc,argv)) return 1;
+    if (!Application::instance ().parseArgs(argc,argv))
+    {
+        std::cout << "Failed to parse args";
+        return 1;
+    }
     auto dllPath = QCoreApplication::applicationDirPath().toStdString () + "/dll";
 
     QQmlApplicationEngine engine;

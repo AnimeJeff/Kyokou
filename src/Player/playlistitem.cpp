@@ -26,13 +26,15 @@ PlaylistItem::PlaylistItem(int number, const std::string &link, const QString &n
 
 QUrl PlaylistItem::loadLocalSource(int index)
 {
-    if (index < 0 || index > m_children->count ()) throw std::runtime_error("index out of range");
+    if (index < 0 || index > m_children->count ()) throw std::runtime_error("loading local source for an invalid index");
     if (currentIndex != index) {
         Q_ASSERT(m_historyFile);
         if(m_historyFile->isOpen () || m_historyFile->open(QIODevice::WriteOnly))
         {
             m_fileCloseTimer->start ();
+            m_historyFile->resize(0);
             QTextStream stream(m_historyFile);
+
             stream << QString::fromStdString (m_children->at(index)->link).split ("/").last ();
             currentIndex = index;
         }
@@ -107,6 +109,7 @@ PlaylistItem* PlaylistItem::fromLocalDir(const QString &path)
             return nullptr;
         }
     }
+    if(playlist->currentIndex < 0) playlist->currentIndex = 0;
     return playlist;
 }
 

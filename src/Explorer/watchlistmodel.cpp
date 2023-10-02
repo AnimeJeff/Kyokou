@@ -119,11 +119,11 @@ void WatchListModel::moveEnded()
     save();
 }
 
-bool WatchListModel::syncCurrentShow()
+void WatchListModel::syncCurrentShow()
 {
     if(ShowManager::instance ().isInWatchList ())
     {
-        return true;
+        emit syncedCurrentShow();
     }
     std::string link = ShowManager::instance ().getCurrentShow ().link;
     if(jsonHashmap.contains (link))
@@ -132,9 +132,9 @@ bool WatchListModel::syncCurrentShow()
         ShowManager::instance ().setLastWatchedIndex(json->operator[]("lastWatchedIndex").get<int> ());
         ShowManager::instance().setListType(type);
         ShowManager::instance().getCurrentShow().playlist->m_watchListShowItem = json;
-        return true;
+        emit syncedCurrentShow();
     }
-    return false;
+    emit syncedCurrentShow();
 }
 
 void WatchListModel::fetchUnwatchedEpisodes(){
@@ -161,10 +161,15 @@ void WatchListModel::loadShow(int index)
 {
     auto showJson = m_jsonList[m_currentListType][index];
     std::string link = showJson["link"].get<std::string>();
+    qDebug() << link;
     QString title = QString::fromStdString(showJson["title"].get<std::string>());
+     qDebug() << title;
     QString coverUrl = QString::fromStdString(showJson["cover"].get<std::string>());
+      qDebug() << coverUrl;
     QString provider = QString::fromStdString (showJson["provider"].get<std::string>());
+       qDebug() << provider;
     int lastWatchedIndex = showJson["lastWatchedIndex"].get<int>();
+       qDebug() << lastWatchedIndex;
     ShowData show(title, link, coverUrl, provider);
     ShowManager::instance ().setCurrentShow (show);
     ShowManager::instance ().setLastWatchedIndex (lastWatchedIndex);

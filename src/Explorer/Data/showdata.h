@@ -63,6 +63,7 @@ public:
     friend class ShowManager;
     friend class WatchListModel;
     friend class PlaylistModel;
+    friend class DownloadModel;
     void addEpisode(int number, std::string link, QString name, bool online = true)
     {
         if(!playlist)

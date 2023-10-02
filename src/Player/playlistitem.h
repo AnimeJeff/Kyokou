@@ -19,16 +19,18 @@ private:
 private:
     friend class PlaylistModel;
     friend class WatchListModel;
+    friend class DownloadModel;
     friend class ShowManager;
     nlohmann::json* m_watchListShowItem = nullptr ;
     QString fullName;
     const QString provider;
-    bool isInPlaylist = false;
+    std::atomic<int> useCount = 0;
 public:
     PlaylistItem(const QString &name, const QString &provider, std::string link, PlaylistItem *parent = nullptr);
     PlaylistItem(int number, const std::string& link, const QString& name, PlaylistItem *parent, bool online = true);
     ~PlaylistItem()
     {
+        qDebug() << "deleted" << name;
         if(m_historyFile)
         {
             //m_fileCloseTimer is also deleted as it is a child of m_historyFile
@@ -56,13 +58,7 @@ public:
     {
         return m_parent;
     }
-    PlaylistItem* operator[](int i)
-    {
-        if(!m_children || m_children->empty () || i < 0 || i >= m_children->count ()){
-            throw "Index out of bound";
-        }
-        return m_children->operator[](i);
-    }
+
 
     int row()
     {
@@ -72,16 +68,16 @@ public:
     }
     const PlaylistItem* at(int i) const
     {
-        if(!m_children || m_children->empty () || i < 0 || i >= m_children->count ()){
-            throw std::runtime_error("Index out of bound");
-        }
+        Q_ASSERT(m_children || !m_children->isEmpty () || i >= 0 || i < m_children->count ());
+        if(!(m_children || !m_children->isEmpty () || i >= 0 || i < m_children->count ()))
+            throw std::runtime_error("Index out of bounds");
         return m_children->at(i);
     }
     PlaylistItem* first()
     {
-        if(!m_children || m_children->empty ()){
-            throw std::runtime_error("Index out of bound");
-        }
+        Q_ASSERT(m_children || !m_children->isEmpty ());
+        if(!m_children || m_children->isEmpty ())
+            throw std::runtime_error("Children is empty");
         return m_children->operator[](0);
     }
     bool isEmpty() const

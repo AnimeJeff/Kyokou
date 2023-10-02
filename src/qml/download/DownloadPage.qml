@@ -1,100 +1,80 @@
-import QtQuick 2.0
+import QtQuick 2.15
 import QtQuick.Controls 2.15
-import QtQuick.Layouts
-Page {
-    id: downloadPage
-    header: ToolBar {
-        contentHeight: 56
-        RowLayout {
-            anchors.fill: parent
-            spacing: 16
-            Text {
-                text: qsTr("Downloads")
-                font.pixelSize: 20
-            }
-        }
-    }
+import "./../components"
+import QtQuick.Layouts 1.15
 
-    Component {
-        id: progressBarDelegate
-        ProgressBar {
-            id: progressBar
-            width: parent.width
-            from: 0
-            to: 100
-            value: 0
-        }
-    }
+Item {
+    id:infoPage
 
-
+    focus: false
     ListView {
+        id:list
         anchors.fill: parent
-        anchors.topMargin: 16
-        anchors.bottomMargin: 16
-        model: app.downloader
-        delegate: ItemDelegate {
-            height: 48
-            contentItem:
-                RowLayout {
-                spacing: 16
+        ScrollBar.vertical: ScrollBar {
+            active: true
+        }
+        clip: true
+        model:app.downloader
+//        model:ListModel{
+//            ListElement{
+//                name:"download item 1"
+//                progressValue:100
+//                progressText:"test"
+//                path:"path"
+//            }
+//            ListElement{
+//                name:"download item 2"
+//                progressValue:50
+//                progressText:"test"
+//                path:"path"
+//            }
+//        }
+
+        boundsMovement: Flickable.StopAtBounds
+        spacing: 10
+        delegate: Rectangle {
+            width: list.width
+            height: 20 * root.aspectRatio * 3
+            color: "black"
+            required property int progressValue;
+            required property string progressText;
+            required property string name;
+            required property string path;
+            GridLayout
+            {
+                anchors.fill: parent
+                rows:3
+                columns: 2
                 Text {
-                    text: model.name
-                    font.pixelSize: 16
+                    id:episodeStr
+                    text:  name + "\t" + path
+                    font.pixelSize: 20 * root.aspectRatio
+                    Layout.columnSpan: 2
+                    wrapMode: Text.Wrap
+                    color: "white"
                 }
-                Item {
+                Text {
+                    text:  progressText
+                    font.pixelSize: 20 * root.aspectRatio
+                    Layout.columnSpan: 2
+                    wrapMode: Text.Wrap
+                    color: "white"
+                }
+                ProgressBar {
+                    from: 0
+                    to: 100
+                    value: progressValue
+                    Layout.columnSpan: 2
                     Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    ProgressBar {
-                        from: 0
-                        to: 100
-                        value: model.progress
-                        //                        style: progressBarDelegate
-                    }
-                }
-                Button {
-                    text: qsTr("Cancel")
-                    font.pixelSize: 16
-                    onClicked: {
-                        //                        downloadModel.cancelDownload(modelData)
-                    }
                 }
             }
         }
+
     }
-    focus: true
-    //    Rectangle {
-    //        id: gameArea
-    //        width: 400
-    //        height: 400
-    //        color: "blue"
-    //        focus: true
-    //        Image {
-    //            id: sprite
-    //            source:"qrc:/resources/images/library.png"
-    //            width: 50
-    //            height: 50
-    //            x: gameArea.width/2 - width/2
-    //            y: gameArea.height/2 - height/2
-    //        }
 
 
-    //        function moveSprite(x, y) {
-    //            sprite.x += x
-    //            sprite.y += y
-    //        }
 
-    //        Keys.onPressed: {
-    //            if (event.key === Qt.Key_Left) {
-    //                moveSprite(-1, 0)
-    //            } else if (event.key === Qt.Key_Right) {
-    //                moveSprite(1, 0)
-    //            } else if (event.key === Qt.Key_Up) {
-    //                moveSprite(0, -1)
-    //            } else if (event.key === Qt.Key_Down) {
-    //                moveSprite(0, 1)
-    //            }
-    //        }
-    //    }
 
 
 }
+

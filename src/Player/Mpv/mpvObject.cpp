@@ -24,13 +24,10 @@
 #include <QStandardPaths>
 #include <QMetaType>
 
-#if QT_VERSION_MAJOR >= 6
+
 #include <QtOpenGL/QOpenGLFramebufferObject>
 #include <QQuickOpenGLUtils>
-//#include <models/searchresultsmodel.h>
-#else
-#include <QtGui/QOpenGLFramebufferObject>
-#endif
+
 
 
 /* MPV Renderer */
@@ -232,7 +229,7 @@ void MpvObject::open(const QUrl& fileUrl, const QUrl& danmakuUrl, const QUrl& au
 //    qDebug() << "string" << ;
 //    QByteArray fileuri_str = fileUrl.toString().toUtf8();//(fileUrl.isLocalFile() ? fileUrl.toLocalFile() : fileUrl.toString()).toUtf8();
 
-
+//    qDebug() << fileUrl.toString ().toUtf8 ().constData ();
     const char *args[] = {"loadfile", fileUrl.toString().toUtf8().constData(), nullptr};
     currentVideoLink = fileUrl.toString ();
     m_mpv.command_async(args);

@@ -33,8 +33,7 @@ public:
     {
         return isReversed;
     }
-    explicit EpisodeListModel(QObject *parent = nullptr) : QAbstractListModel(parent)
-    {};
+    explicit EpisodeListModel(QObject *parent = nullptr) : QAbstractListModel(parent) {};
 
     enum {
         TitleRole = Qt::UserRole,
@@ -42,7 +41,7 @@ public:
         FullTitleRole
     };
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
-    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;;
+    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     QHash<int, QByteArray> roleNames() const override;;
 private:
 };

@@ -32,13 +32,23 @@ private:
     PlaylistModel m_playlistModel {this};
     SearchResultsModel m_searchResultsModel {this};
     WatchListModel m_watchListModel {this};
-    DownloadModel m_downloadModel {this};
+//    DownloadModel m_downloadModel {this};
+    bool downloaderInitialised = false;
+    bool N_m3u8DLPathExists = false;
 public:
     PlaylistModel* playlistModel() { return &m_playlistModel; }
     EpisodeListModel* episodeListModel() { return &m_episodeListModel; }
     SearchResultsModel* searchResultsModel() { return &m_searchResultsModel; }
     WatchListModel* watchListModel() { return &m_watchListModel; }
-    DownloadModel* downloadModel() { return &m_downloadModel; }
+    DownloadModel* downloadModel() {
+        if(!N_m3u8DLPathExists) return nullptr;
+        if(!downloaderInitialised){
+            qDebug() << "downloader init";
+            downloaderInitialised = true;
+        }
+        static DownloadModel downloadModel;
+        return &downloadModel;
+    }
     Cursor* cursor() { return &m_cursor; }
 public:
     bool parseArgs(int argc, char *argv[]);

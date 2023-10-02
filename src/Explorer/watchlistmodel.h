@@ -39,12 +39,13 @@ private:
     void changeListType(const ShowData& show,int listType);
     void fetchUnwatchedEpisodes();
     QString watchListFilePath;
+    QMutex mutex;
 public:
     explicit WatchListModel(QObject *parent = nullptr): QAbstractListModel(parent){
         loadWatchList ();
-//        auto lol = QtConcurrent::run([this](){
-//            fetchUnwatchedEpisodes ();
-//        });
+        auto lol = QtConcurrent::run([this](){
+            fetchUnwatchedEpisodes ();
+        });
     };
     Q_INVOKABLE void add(const ShowData& show, int listType = WATCHING);
     Q_INVOKABLE void addCurrentShow(int listType = WATCHING);
@@ -55,16 +56,15 @@ public:
     Q_INVOKABLE void loadShow(int index);
 signals:
     void loadingChanged(void);
+    void syncedCurrentShow(void);
 public slots:
-    bool syncCurrentShow();
+    void syncCurrentShow();
     void save()
     {
-        static std::mutex mutex;
-        mutex.lock ();
+        QMutexLocker locker(&mutex);
         std::ofstream output_file(watchListFilePath.toStdString ());
         output_file << m_jsonList.dump (4);
         output_file.close();
-        mutex.unlock ();
         qDebug()<<"Saved";
     }
 

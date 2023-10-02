@@ -344,12 +344,12 @@ Window {
         {
             root.lower()
             root.showMinimized()
-            pipMode = false
-            playerFillWindow = false
-            maximised = false
-            fullscreen = false
-            mpv.pause()
+            if(pipMode) pipMode = false
+            if(playerFillWindow) playerFillWindow = false
+            if(maximised) maximised = false
+            if(fullscreen) fullscreen = false
             lol.visible = true
+            mpv.pause()
         }
     }
 

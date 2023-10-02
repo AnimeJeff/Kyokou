@@ -51,7 +51,8 @@ void ShowManager::setCurrentShow(const ShowData &show)
         emit currentShowChanged();
         return;
     }
-    if(currentShow.playlist && !currentShow.playlist->isInPlaylist)
+    if(currentShow.playlist)qDebug() << currentShow.playlist->useCount;
+    if(currentShow.playlist && --currentShow.playlist->useCount <= 0)
     {
         delete currentShow.playlist;
     }
@@ -74,8 +75,8 @@ void ShowManager::setCurrentShow(const ShowData &show)
             }));
     m_watcher.future ()
         .then ([this](){
-            m_timeoutTimer.stop ();
             setLoading(false);
+            ++currentShow.playlist->useCount;
             emit currentShowChanged();})
         .onFailed ([](const std::exception &e){
             qDebug() << e.what();
@@ -84,7 +85,6 @@ void ShowManager::setCurrentShow(const ShowData &show)
         .onCanceled ([this](){
             qDebug() << "Operation cancelled:" << m_cancelReason;
         });
-    //m_timeoutTimer.start ();
 }
 
 void ShowManager::changeSearchProvider(int index)

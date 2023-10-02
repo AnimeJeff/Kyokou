@@ -11,223 +11,209 @@
 #include <QThreadPool>
 #include <QCoreApplication>
 #include "Explorer/showmanager.h"
+#include <mutex>
+#include <QMap>
+//QString DownloadRunnable::N_m3u8DLPath = "";
+//bool DownloadRunnable::N_m3u8DLExists = false;
 
-class DownloadRunnable : public QObject,public QRunnable {
-    Q_OBJECT
-    QProcess* process;
-    static QString N_m3u8DLPath;
-    static bool N_m3u8DLExists;
-public:
-    enum {
+struct DownloadTask
+{
+    QString videoName;
+    QString folder;
+    QString link;
+    QString headers;
+    QString displayName;
+    QString path;
+    bool success = false;
+    int progressValue = 0;
+    QString progressText = "";
+    QFutureWatcher<bool>* watcher = nullptr;
+    enum State
+    {
+        SUCCESS,
+        FAILED,
         INVALID_URI
     };
-    QStringList m_command;
-    explicit DownloadRunnable(const QString& videoName, const QString& folder, const QString& link , const QString& headers,QObject* parent = nullptr)
-        : m_command(QStringList{link,"--workDir",folder,"--saveName", videoName, "--enableDelAfterDone", "--disableDateInfo"}),QObject(parent)
+
+    ~DownloadTask()
     {
-        setAutoDelete (false);
+        qDebug() << displayName << "deleted";
     }
-    ~DownloadRunnable(){
-        cancel();
-        qDebug()<<"runnable deleted";
-    }
-    void cancel() {
-        m_cancelled = true;
-        if(process->state() == QProcess::Running){
-            process->terminate ();
-        }
-        process->deleteLater ();
-    }
-    void run() override {
-        process = new QProcess();
-        process->setProgram (N_m3u8DLPath);
-        process->setArguments (m_command);
-
-        static QRegularExpression re(R"(\d+\.\d+(?=\%))");
-        process->start();
-
-        //        qDebug() << N_m3u8DLPath << process->program ();
-        //        qDebug() << process->arguments ();
-        //        qDebug() << process->state ();
-        //        qDebug() << process->error ();
-
-        while (process->state() == QProcess::Running
-               && process->waitForReadyRead()
-               && !m_cancelled)
-        {
-            auto line = process->readAllStandardOutput().trimmed();
-            qDebug() << line;
-            QRegularExpressionMatch match = re.match(line);
-            if (match.hasMatch())
-            {
-                QString percentStr = match.captured();
-                double percent = percentStr.toDouble();
-                emit progress(percent);
-            }
-            else if (line.contains("Task Done"))
-            {
-                qDebug() << "Task Done";
-                emit finished();
-                break;
-            }
-            else if(line.contains("Invalid Uri"))
-            {
-                emit error(INVALID_URI);
-            }
-        }
-        process->deleteLater ();
-    }
-
-    static void setN_m3u8DLPath(const QString& path){
-        N_m3u8DLPath = path;
-        QDir dir(N_m3u8DLPath);
-        N_m3u8DLExists = dir.exists ();
-    }
-
-signals:
-    void progress(int value);
-    void finished();
-    void error(int reason);
-private:
-    bool m_cancelled = false;
 };
 
-class DownloadTask : public QObject {
-    Q_OBJECT
-    DownloadRunnable runnable;
-    bool isRunning = false;
-public:
-    explicit DownloadTask(const QString& videoName, const QString& folder, const QString& link, const QString& headers,QObject* parent = nullptr)
-        : QObject(parent), runnable(DownloadRunnable(videoName, folder, link, headers,parent))
-    {
-        QObject::connect (&runnable, &DownloadRunnable::progress,this,[this](int progress){
-            this->progress = progress;
-            emit progressChanged(progress);
-        });
-        downloadPath = QDir::cleanPath(folder + QDir::separator() + videoName);
-    }
-    ~DownloadTask(){
-        cancel();
-    }
-    int progress;
-    QString downloadPath;
-    void start(QThreadPool& pool){
-        QObject::connect(&runnable, &DownloadRunnable::finished, this, [this](){
-            emit finished();
-        });
-        pool.start(&runnable);
-    }
 
-    void cancel(){
-        runnable.cancel ();
-    }
-signals:
-    void finished(void);
-    void progressChanged(int progress);
-};
+static void download(QPromise<bool> &promise, const QString& N_m3u8DLPath, const QStringList &command);
 
 class DownloadModel: public QAbstractListModel
 {
     Q_OBJECT
     enum{
-        TitleRole = Qt::UserRole,
+        NameRole = Qt::UserRole,
         PathRole,
-        ProgressRole
+        ProgressValueRole,
+        ProgressTextRole
     };
-    static QString downloadFolderPath;
-public:
-    explicit DownloadModel(QObject *parent = nullptr): QAbstractListModel(parent){
-        pool.setMaxThreadCount(4);
-    }
-    static void setDownloadFolderPath(const QString& path){
-        downloadFolderPath = path;
-    }
-    QThreadPool pool{this};
-
+    QString downloadDir;
+    QVector<QFutureWatcher<bool>*> watchers;
+    QVector<DownloadTask*> tasksQueue;
     QVector<DownloadTask*> tasks;
-
-    Q_INVOKABLE void downloadM3u8(const QString& link,QString videoName,
-                                  const QString& folder,const QString& referer)
+    QMap<QFutureWatcher<bool>*,DownloadTask*> watcherTaskTracker;
+    QRecursiveMutex mutex;
+    QString N_m3u8DLPath;
+    QRegularExpression folderNameCleanerRegex = QRegularExpression("[/\\:*?\"<>|]");
+public:
+    explicit DownloadModel(QObject *parent = nullptr): QAbstractListModel(parent)
     {
-        videoName.replace(':', '.');
-        QString headers = "authority:\"AUTHORITY\"|origin:\"https://REFERER\"|referer:\"https://REFERER/\"|user-agent:\"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36\"sec-ch-ua:\"Not A;Brand\";v=\"99\", \"Chromium\";v=\"102\", \"Google Chrome\";v=\"102\"";
-        headers.replace("REFERER", referer.isEmpty() ? link.split("https://")[1].split("/")[0] : referer);
-        DownloadTask* task = new DownloadTask(videoName, folder, link, headers,this);
-        tasks.push_back (task);
-        connect(task, &DownloadTask::finished, task, [&](){
-            tasks.removeOne (task);
-            task->deleteLater ();
-        });
-        connect(task, &DownloadTask::progressChanged, this, [&](){
-            emit layoutChanged();
-        });
-        task->start (pool);
+        N_m3u8DLPath = QDir::cleanPath (QCoreApplication::applicationDirPath() + QDir::separator() + "N_m3u8DL-CLI_v3.0.2.exe");
+        downloadDir = QDir::cleanPath (QCoreApplication::applicationDirPath() + QDir::separator() + "Downloads");
+        constexpr int threadCount = 4 ;
+//        pool.setMaxThreadCount(threadCount);
+        for (int i = 0; i < threadCount; ++i)
+        {
+            auto watcher = new QFutureWatcher<bool>();
+            watchers.push_back (watcher);
+            QObject::connect (watcher, &QFutureWatcher<bool>::finished, this, [watcher, this](){
+                //set task success
+                bool success = watcher->future ().isValid () ? watcher->future().result() : false;
+                //                if(success) removeTask(watcher);
+                qDebug() << watcherTaskTracker[watcher]->displayName << "completed";
+                removeTask(watcher);
+                setTask (watcher);
+                emit layoutChanged ();
+            });
+            QObject::connect (watcher, &QFutureWatcher<bool>::canceled, this, [watcher, this](){
+                qDebug() << "watcher cancelled";
+                removeTask(watcher);
+                setTask (watcher);
+            });
+
+            QObject::connect (watcher, &QFutureWatcher<bool>::progressValueChanged, this, [watcher, this](){
+                Q_ASSERT(watcherTaskTracker[watcher]);
+                watcherTaskTracker[watcher]->progressValue = watcher->progressValue ();
+                watcherTaskTracker[watcher]->progressText = watcher->progressText ();
+                int i = tasks.indexOf (watcherTaskTracker[watcher]);
+                emit dataChanged (index(i, 0),index(i, 0));
+            });
+
+        }
+    }
+    void removeTask(QFutureWatcher<bool> *watcher)
+    {
+        QMutexLocker locker(&mutex);
+        DownloadTask *task = watcherTaskTracker[watcher];
+        Q_ASSERT(task);
+        watcherTaskTracker[watcher] = nullptr;
+        tasks.removeOne (task);
+        delete task;
     }
 
-    Q_INVOKABLE void downloadCurrentShow(int startIndex,int endIndex = -1){
-        QString folderName = ShowManager::instance ().getCurrentShow ().title;
-        static auto folderNameCleanerRegex = QRegularExpression("[/\\:*?\"<>|]");
-        folderName = folderName.replace(":",".").replace(folderNameCleanerRegex,"_");
-//        auto folderPath = QDir::cleanPath (downloadFolderPath + QDir::separator () + folderName);
-        const PlaylistItem* episodes = ShowManager::instance ().getCurrentShow ().getPlaylist ();
-        const ShowProvider* provider = ShowManager::instance().getCurrentShowProvider();
-        if(endIndex < 0)endIndex = startIndex;
-        for(int i = startIndex;i <= endIndex;i++) {
-            auto servers = provider->loadServers (episodes->at (i));
-            auto link = provider->extractSource (servers.first ());
-            downloadM3u8(link, folderName, downloadFolderPath,"");
+    void setTask(QFutureWatcher<bool>* watcher);
+
+    static QRegularExpression percentRegex;
+
+    Q_INVOKABLE void downloadCurrentShow(int startIndex, int count = 1);
+
+    void setDownloadFolder(const QString& path)
+    {
+        downloadDir = path;
+    }
+    static void download(QPromise<bool> &promise, const QString& N_m3u8DLPath, const QStringList &command)
+    {
+        promise.setProgressRange (0, 100);
+        QProcess process;
+        process.setProgram (N_m3u8DLPath);
+        process.setArguments (command);
+        QRegularExpression re = DownloadModel::percentRegex;
+        process.start();
+        //        qDebug() << N_m3u8DLPath << process->program ();
+        //        qDebug() << process->arguments ();
+        //        qDebug() << process->state ();
+        //        qDebug() << process->error ();
+
+        int percent;
+        while (process.state() == QProcess::Running
+               && process.waitForReadyRead()
+               && !promise.isCanceled ())
+        {
+            auto line = process.readAllStandardOutput().trimmed();
+            QRegularExpressionMatch match = re.match(line);
+            if (match.hasMatch())
+            {
+                percent = match.captured().toDouble();
+                promise.setProgressValueAndText (percent, line);
+            }
+            else if(line.contains("Invalid Uri"))
+            {
+                promise.addResult (false); //todo add reason
+                return;
+            }
+        }
+        qDebug() << "exited loop";
+
+        promise.addResult (true);
+    }
+
+    void addTask(DownloadTask *task)
+    {
+        QMutexLocker locker(&mutex);
+        tasksQueue.push_back (task);
+        tasks.push_back (task);
+    }
+    void startTasks()
+    {
+        QMutexLocker locker(&mutex);
+        for(auto* watcher:watchers)
+        {
+            if(tasksQueue.isEmpty ()) break;
+            else if(!watcherTaskTracker[watcher]) setTask (watcher);
         }
     }
 
     void cancelAllTasks() {
-        for (auto& task : tasks) {
-            task->cancel();
+        QMutexLocker locker(&mutex);
+        qDeleteAll (tasks);
+        for (auto* watcher : watchers)
+        {
+            if(!watcherTaskTracker[watcher]) continue;
+            watcherTaskTracker[watcher] = nullptr;
+            watcher->cancel ();
+            watcher->waitForFinished ();
         }
-        tasks.clear();
-        pool.clear ();
     }
 
-    ~DownloadModel(){
+    ~DownloadModel()
+    {
         cancelAllTasks();
+        qDeleteAll(watchers);
     }
 
-    void cancelTask(int index) {
-        if (index >= 0 && index < tasks.size()) {
+    void cancelTask(int index)
+    {
+        if (index >= 0 && index < tasks.size())
+        {
+            QMutexLocker locker(&mutex);
             DownloadTask* task = tasks[index];
-            task->cancel();
-            tasks.remove(index);
-            task->deleteLater();
+            if(task->watcher)
+            {
+                task->watcher->cancel ();
+                task->watcher->waitForFinished ();
+                removeTask (task->watcher);
+            }
+            else
+            {
+                delete task;
+            }
+
         }
     }
 public:
-    int rowCount(const QModelIndex &parent) const{
-        return tasks.size ();
+    int rowCount(const QModelIndex &parent) const
+    {
+        return tasks.count ();
     };
-    QVariant data(const QModelIndex &index, int role) const{
-        if (!index.isValid())
-            return QVariant();
-        int i = index.row();
+    QVariant data(const QModelIndex &index, int role) const;;
 
-        const DownloadTask* task = tasks.at (i);
-
-        switch (role) {
-        case TitleRole:
-            return task->progress;
-            break;
-        case ProgressRole:
-            return task->progress;
-            break;
-        default:
-            return QVariant();
-        }
-    };
-
-    QHash<int, QByteArray> roleNames() const{
-        QHash<int, QByteArray> names;
-        names[TitleRole] = "title";
-        names[ProgressRole] = "progress";
-        return names;
-    };
+    QHash<int, QByteArray> roleNames() const;;
 };
 
 

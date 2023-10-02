@@ -12,15 +12,15 @@ bool PlaylistModel::setLaunchPath(const QString& pathString)
         return true;
     }
     QFileInfo path = QFileInfo(pathString);
+    qDebug()<<"File" << pathString << "exists: " << path.exists ();
     if (!path.exists ()) return false;
     path.makeAbsolute ();
-
     if (path.isDir ())
     {
         auto playlist = PlaylistItem::fromLocalDir (path.filePath ());
         if(!playlist) return false;
         replaceCurrentPlaylist (playlist);
-        m_launchPath = playlist->loadLocalSource (playlist->currentIndex);//QString::fromStdString (m_playlists.first()->at (m_playlists.first()->currentIndex)->link)
+        m_launchPath = playlist->loadLocalSource (playlist->currentIndex);
     }
     else
     {
@@ -30,6 +30,7 @@ bool PlaylistModel::setLaunchPath(const QString& pathString)
             m_launchPath = QUrl::fromLocalFile (path.filePath ());
         }
     }
+    qDebug()<<m_launchPath;
     return true;
 }
 
@@ -82,7 +83,8 @@ void PlaylistModel::appendPlaylist(PlaylistItem *playlist)
 {
     if (!playlist || playlistSet.contains (playlist->link)) return;
     beginResetModel();
-    playlist->isInPlaylist = true;
+    ++playlist->useCount;
+    qDebug() <<"playlist model" << playlist->useCount;
     m_playlists.push_back (playlist);
     playlistSet.insert(playlist->link);
     endResetModel();
@@ -91,11 +93,8 @@ void PlaylistModel::appendPlaylist(PlaylistItem *playlist)
 
 void PlaylistModel::appendPlaylist(const QUrl &path)
 {
-    //    auto playlist = new PlaylistItem("", -1, "");
-    //    playlist->link = path.toString ().toStdString ();
-    //    playlist->loadFromLocalDir (path.toLocalFile (), playlist);
-    //    appendPlaylist (playlist);
-    //todo
+    auto playlist = PlaylistItem::fromLocalDir (path.toString ());
+    appendPlaylist (playlist);
 }
 
 void PlaylistModel::replaceCurrentPlaylist(PlaylistItem *playlist)
@@ -110,15 +109,12 @@ void PlaylistModel::replaceCurrentPlaylist(PlaylistItem *playlist)
     }
     if(!m_playlists.isEmpty ())
     {
-        if(m_playlists.first () != ShowManager::instance().getCurrentShow ().playlist)
+        playlistSet.erase (m_playlists.first()->link);
+        if(--m_playlists.first ()->useCount == 0)
         {
             delete m_playlists.first ();
         }
-        else
-        {
-            m_playlists.first ()->isInPlaylist = false;
-        }
-        playlistSet.erase (m_playlists.at (0)->link);
+
         m_playlists.removeFirst ();
     }
     appendPlaylist (playlist);
@@ -127,10 +123,8 @@ void PlaylistModel::replaceCurrentPlaylist(PlaylistItem *playlist)
 
 void PlaylistModel::replaceCurrentPlaylist(const QUrl &path)
 {
-    //    auto playlist = new PlaylistItem("", -1, "");
-    //    playlist->link = path.toString ().toStdString ();
-    //    playlist->loadFromLocalDir (path.toLocalFile (), playlist);
-    //    replaceCurrentPlaylist (playlist); //todo
+    auto playlist = PlaylistItem::fromLocalDir (path.toString ());
+    replaceCurrentPlaylist (playlist);
 }
 
 void PlaylistModel::play(int playlistIndex, int itemIndex)
@@ -140,6 +134,7 @@ void PlaylistModel::play(int playlistIndex, int itemIndex)
     setLoading(true);
     auto playlist = m_playlists.at (playlistIndex);
     auto item = playlist->at (itemIndex);
+    m_playlistIndex = playlistIndex;
     switch(item->type)
     {
     case PlaylistItem::ONLINE:
@@ -151,6 +146,7 @@ void PlaylistModel::play(int playlistIndex, int itemIndex)
     }
     case PlaylistItem::LOCAL:
     {
+        qDebug() << playlist->name << playlist->count ();
         auto url = playlist->loadLocalSource (itemIndex);
         m_watcher.setFuture (QtConcurrent::run([url]() {
             return url;
