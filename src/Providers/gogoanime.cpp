@@ -2,17 +2,17 @@
 
 
 
-QVector<ShowData> Gogoanime::search(QString query, int page, int type)
+QList<ShowData> Gogoanime::search(QString query, int page, int type)
 {
-    QVector<ShowData> animes;
-    if(query.isEmpty ())
+    QList<ShowData> animes;
+    if (query.isEmpty ())
     {
         m_canFetchMore = false;
         return animes;
     }
     std::string url = hostUrl + "/search.html?keyword=" + Functions::urlEncode (query.toStdString ())+ "&page="+ std::to_string (page);
     auto animeNodes = NetworkClient::get(url).document().select("//ul[@class='items']/li");
-    if(animeNodes.empty ()){
+    if (animeNodes.empty ()){
         m_canFetchMore = false;
         return animes;
     }
@@ -34,9 +34,9 @@ QVector<ShowData> Gogoanime::search(QString query, int page, int type)
     return animes;
 }
 
-QVector<ShowData> Gogoanime::popular(int page, int type)
+QList<ShowData> Gogoanime::popular(int page, int type)
 {
-    QVector<ShowData> animes;
+    QList<ShowData> animes;
     std::string url = "https://ajax.gogo-load.com/ajax/page-recent-release-ongoing.html?page=" + std::to_string (page);
     auto animeNodes = NetworkClient::get (url).document ().select ("//div[@class='added_series_body popular']/ul/li");
     for (pugi::xpath_node_set::const_iterator it = animeNodes.begin(); it != animeNodes.end(); ++it)
@@ -58,9 +58,9 @@ QVector<ShowData> Gogoanime::popular(int page, int type)
     return animes;
 }
 
-QVector<ShowData> Gogoanime::latest(int page, int type)
+QList<ShowData> Gogoanime::latest(int page, int type)
 {
-    QVector<ShowData> animes;
+    QList<ShowData> animes;
     std::string url = "https://ajax.gogo-load.com/ajax/page-recent-release.html?page=" + std::to_string (page) + "&type=1";
     pugi::xpath_node_set animeNodes = NetworkClient::get(url).document().select("//ul[@class='items']/li");
     for (pugi::xpath_node_set::const_iterator it = animeNodes.begin(); it != animeNodes.end(); ++it)
@@ -69,7 +69,7 @@ QVector<ShowData> Gogoanime::latest(int page, int type)
         static QRegularExpression re{R"(([\w-]*?)(?:-\d{10})?\.)"};
         auto lastSlashIndex =  coverUrl.lastIndexOf("/");
         auto id = re.match (coverUrl.mid(lastSlashIndex + 1));
-        if(!id.hasMatch ())
+        if (!id.hasMatch ())
         {
             qDebug() << "Unable to extract Id from" << coverUrl.mid(lastSlashIndex+1);
             continue;
@@ -89,7 +89,7 @@ QVector<ShowData> Gogoanime::latest(int page, int type)
 
 void Gogoanime::loadDetails(ShowData &anime) const
 {
-    CSoup doc = getInfoPage (anime);
+    CSoup doc = getInfoPage (anime.link);
     int lastEpisode = std::stoi(doc.selectFirst ("//ul[@id='episode_page']/li[last()]/a").attr ("ep_end").as_string ());
     std::string animeId = doc.selectFirst ("//input[@id='movie_id']").attr ("value").as_string ();
     std::string alias = doc.selectFirst ("//input[@id='alias_anime']").attr ("value").as_string ();
@@ -108,7 +108,7 @@ void Gogoanime::loadDetails(ShowData &anime) const
             int number = -1;
             bool ok;
             int intTitle = title.toInt (&ok);
-            if(ok)
+            if (ok)
             {
                 number = intTitle;
                 title = "";
@@ -134,12 +134,12 @@ void Gogoanime::loadDetails(ShowData &anime) const
 }
 
 
-CSoup Gogoanime::getInfoPage(const ShowData &anime) const
+CSoup Gogoanime::getInfoPage(const std::string& link) const
 {
-    auto response = NetworkClient::get(hostUrl + anime.link);
-    if(response.code == 404)
+    auto response = NetworkClient::get(hostUrl + link);
+    if (response.code == 404)
     {
-        QString errorMessage = "Invalid URL: '" + QString::fromStdString (hostUrl + anime.link +"'");
+        QString errorMessage = "Invalid URL: '" + QString::fromStdString (hostUrl + link +"'");
         MyException(errorMessage).raise();
     }
     return response.document ();
@@ -152,15 +152,15 @@ std::string Gogoanime::getEpisodesLink(const CSoup &doc) const
     return "https://ajax.gogo-load.com/ajax/load-list-episode?ep_start=0&ep_end=" + lastEpisode + "&id=" + animeId;
 }
 
-int Gogoanime::getTotalEpisodes(const ShowData &anime) const
+int Gogoanime::getTotalEpisodes(const std::string& link) const
 {
-    auto doc = getInfoPage (anime);
+    auto doc = getInfoPage (link);
     return NetworkClient::get(getEpisodesLink(doc)).document ().select("//ul/li/a").size ();
 }
 
-QVector<VideoServer> Gogoanime::loadServers(const PlaylistItem *episode) const
+QList<VideoServer> Gogoanime::loadServers(const PlaylistItem *episode) const
 {
-    QVector<VideoServer> servers;
+    QList<VideoServer> servers;
     pugi::xpath_node_set serverNodes = NetworkClient::get(hostUrl + episode->link).document ().select("//div[@class='anime_muti_link']/ul/li/a");
     for (pugi::xpath_node_set::const_iterator it = serverNodes.begin (); it != serverNodes.end(); ++it)
     {

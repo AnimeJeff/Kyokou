@@ -11,23 +11,23 @@ public:
         return {ShowData::ANIME, ShowData::MOVIE, ShowData::TVSERIES, ShowData::VARIETY, ShowData::DOCUMENTARY};
     };
 
-    QVector<ShowData> search(QString query, int page, int type) override;
-    QVector<ShowData> popular(int page, int type) override;
-    QVector<ShowData> latest(int page, int type) override;
+    QList<ShowData> search(QString query, int page, int type) override;
+    QList<ShowData> popular(int page, int type) override;
+    QList<ShowData> latest(int page, int type) override;
 
     void loadDetails(ShowData& show) const override;;
-    QVector<VideoServer> loadServers(const PlaylistItem* episode) const override;;
-    int getTotalEpisodes(const ShowData &show) const override;
+    QList<VideoServer> loadServers(const PlaylistItem* episode) const override;;
+    int getTotalEpisodes(const std::string& link) const override;
     QString extractSource(VideoServer& server) const override;;
 
 private:
     QMap<QString, QString> objKeySort(const QMap<QString, QString>& inputMap) const;
-    nlohmann::json getInfoJson(const ShowData &show) const;
+    nlohmann::json getInfoJson(const std::string& link) const;
     std::string createSign(const std::map<std::string, std::string>& bodyMap, const std::string& secretKey = "2x_Give_it_a_shot") const;
     std::string decryptedByDES(const std::string& input) const;
     int getShowType(const std::string& channelName) const;
-    QVector<ShowData> showsFromJsonArray(const nlohmann::json& showList,int type = 0);
-    QVector<ShowData> filterSearch(int page, const QString& sortBy,int type, const QString& regionId = "0", const QString& langId="0", const QString& yearRange = " ");
+    QList<ShowData> showsFromJsonArray(const nlohmann::json& showList,int type = 0);
+    QList<ShowData> filterSearch(int page, const QString& sortBy,int type, const QString& regionId = "0", const QString& langId="0", const QString& yearRange = " ");
     std::string callAPI(const std::string& url, const std::map<std::string, std::string>& data) const;
 private:
     const std::string _HOST_CONFIG_KEY = "2x_Give_it_a_shot";

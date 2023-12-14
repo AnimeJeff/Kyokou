@@ -23,7 +23,7 @@ private:
     }
     ErrorHandler(const ErrorHandler&) = delete; // Disable copy constructor.
     ErrorHandler& operator=(const ErrorHandler&) = delete; // Disable copy assignment.
-    ~ErrorHandler() {} // Private destructor to prevent external deletion.
+    ~ErrorHandler(){} // Private destructor to prevent external deletion.
 
 
 };

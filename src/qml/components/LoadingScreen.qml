@@ -11,7 +11,7 @@ Rectangle {
     property bool timeoutEnabled:true
     property int timeoutInterval:5000
     onLoadingChanged: {
-        if(loading && timeoutEnabled)
+        if (loading && timeoutEnabled)
         {
             loadingTimer.start()
         }

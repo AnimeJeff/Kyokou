@@ -1,5 +1,10 @@
 #include "showmanager.h"
-
+#include "Providers/testprovider.h"
+#include "Providers/tangrenjie.h"
+#include "Providers/gogoanime.h"
+#include "Providers/nivod.h"
+#include "Providers/haitu.h"
+#include "Providers/allanime.h"
 
 
 ShowManager::ShowManager()
@@ -18,7 +23,6 @@ ShowManager::ShowManager()
     for (ShowProvider* provider : providers)
     {
         providersHashMap.insert(provider->name (), provider);
-
     }
 
 #ifdef QT_DEBUG
@@ -35,7 +39,7 @@ ShowManager::ShowManager()
     });
 }
 
-ShowManager::~ShowManager() {
+ShowManager::~ShowManager(){
     if (currentShow.playlist)
     {
         delete currentShow.playlist;
@@ -51,8 +55,9 @@ void ShowManager::setCurrentShow(const ShowData &show)
         emit currentShowChanged();
         return;
     }
-    if(currentShow.playlist)qDebug() << currentShow.playlist->useCount;
-    if(currentShow.playlist && --currentShow.playlist->useCount <= 0)
+    // delete the previous show playlist that is being held in info tab
+    if (currentShow.playlist) qDebug() << currentShow.playlist->useCount;
+    if (currentShow.playlist && --currentShow.playlist->useCount <= 0)
     {
         delete currentShow.playlist;
     }
@@ -60,18 +65,21 @@ void ShowManager::setCurrentShow(const ShowData &show)
     currentShow = show;
     m_watcher.setFuture(
         QtConcurrent::run (
-            [show,this]()
+            [this]()
             {
-                if(show.provider.isEmpty ())
-                    return;
-                if (ShowProvider *provider = getProvider(show.provider))
+                if (currentShow.provider.isEmpty ())
                 {
-                    qDebug()<<"Loading details for" << show.title << "with" << provider->name () << "using the link:" << show.link;
-                    provider->loadDetails (currentShow);
-                    qDebug()<<"Successfully loaded details for" << show.title;
+                    currentShow.addEpisode(1, currentShow.link,"", TRUE);
                     return;
                 }
-                ErrorHandler::instance ().show (QString("Error: Unable to find a provider instance for %1").arg(show.provider));
+                if (ShowProvider *provider = getProvider(currentShow.provider))
+                {
+                    qDebug()<<"Loading details for" << currentShow.title << "with" << provider->name () << "using the link:" << currentShow.link;
+                    provider->loadDetails (currentShow);
+                    qDebug()<<"Successfully loaded details for" << currentShow.title;
+                    return;
+                }
+                ErrorHandler::instance ().show (QString("Error: Unable to find a provider instance for %1").arg(currentShow.provider));
             }));
     m_watcher.future ()
         .then ([this](){
@@ -119,6 +127,15 @@ int ShowManager::getCurrentShowListType() const
     return currentShow.listType;
 }
 
+void ShowManager::cancel()
+{
+    if (m_watcher.isRunning ())
+    {
+        m_watcher.cancel ();
+        setLoading (false);
+    }
+}
+
 QString ShowManager::currentSearchProviderName(){
     return m_currentSearchProvider->name ();
 }
@@ -131,7 +148,7 @@ QVariant ShowManager::data(const QModelIndex &index, int role) const{
     if (!index.isValid())
         return QVariant();
     auto provider = providers.at(index.row ());
-    switch (role) {
+    switch (role){
     case NameRole:
         return provider->name ();
         break;

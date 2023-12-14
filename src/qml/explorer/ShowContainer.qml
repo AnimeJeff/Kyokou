@@ -42,7 +42,7 @@ GridView {
                 anchors.fill: parent
                 hoverEnabled: true
                 onContainsMouseChanged: {
-                    if(containsMouse)
+                    if (containsMouse)
                     {
                         app.cursor.shape = Qt.PointingHandCursor
                     }
@@ -105,7 +105,7 @@ GridView {
     //        property int realContentHeight: Math.ceil(container.count/6)*cellHeight
 
     onAtYEndChanged: {
-        if(atYEnd && count > 0 && app.showExplorer.canLoadMore())
+        if (atYEnd && count > 0 && app.showExplorer.canLoadMore())
         {
             app.showExplorer.loadMore();
         }

@@ -24,15 +24,15 @@ Control {
     property int duration: 0
     property alias volumeButton: volumeButton
     property int buttonSize : 22
-    function toHHMMSS(seconds) {
+    function toHHMMSS(seconds){
         var hours = Math.floor(seconds / 3600);
         seconds -= hours*3600;
         var minutes = Math.floor(seconds / 60);
         seconds -= minutes*60;
 
-        if (hours   < 10) {hours   = "0"+hours;}
-        if (minutes < 10) {minutes = "0"+minutes;}
-        if (seconds < 10) {seconds = "0"+seconds;}
+        if (hours   < 10){hours   = "0"+hours;}
+        if (minutes < 10){minutes = "0"+minutes;}
+        if (seconds < 10){seconds = "0"+seconds;}
         return hours+':'+minutes+':'+seconds;
     }
 

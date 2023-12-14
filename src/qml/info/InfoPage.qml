@@ -131,13 +131,14 @@ Item {
         }
 
         CustomComboBox {
-
             id:libraryComboBox
             Layout.alignment: Qt.AlignBottom
             Layout.preferredWidth: posterImage.width
             Layout.preferredHeight: continueWatchingButton.height
             currentIndex: showManager.currentShowListType + 1
-            displayText: currentText.length !== 0 ? currentText : showManager.currentShow.isInWatchList ? "Remove from library" : "Add to library"
+            displayText: currentText.length === 0 ?
+                             showManager.currentShow.isInWatchList ? "Remove from library" : "Add to library"
+                            : currentText
             fontSize:18 * root.aspectRatio
 
             delegate: ItemDelegate {
@@ -146,13 +147,13 @@ Item {
                     anchors.fill: parent
                     hoverEnabled: true
                     onClicked: {
-                        if(index !== 0)
+                        if (index !== 0)
                         {
                             app.watchList.addCurrentShow(index-1)
                         }
                         else
                         {
-                            if(showManager.currentShowIsInWatchList)
+                            if (showManager.currentShowIsInWatchList)
                             {
                                 app.watchList.removeCurrentShow()
                             }

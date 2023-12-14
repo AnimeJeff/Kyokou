@@ -36,20 +36,20 @@ private:
     bool downloaderInitialised = false;
     bool N_m3u8DLPathExists = false;
 public:
-    PlaylistModel* playlistModel() { return &m_playlistModel; }
-    EpisodeListModel* episodeListModel() { return &m_episodeListModel; }
-    SearchResultsModel* searchResultsModel() { return &m_searchResultsModel; }
-    WatchListModel* watchListModel() { return &m_watchListModel; }
-    DownloadModel* downloadModel() {
-        if(!N_m3u8DLPathExists) return nullptr;
-        if(!downloaderInitialised){
+    PlaylistModel* playlistModel(){ return &m_playlistModel; }
+    EpisodeListModel* episodeListModel(){ return &m_episodeListModel; }
+    SearchResultsModel* searchResultsModel(){ return &m_searchResultsModel; }
+    WatchListModel* watchListModel(){ return &m_watchListModel; }
+    DownloadModel* downloadModel(){
+        if (!N_m3u8DLPathExists) return nullptr;
+        if (!downloaderInitialised){
             qDebug() << "downloader init";
             downloaderInitialised = true;
         }
         static DownloadModel downloadModel;
         return &downloadModel;
     }
-    Cursor* cursor() { return &m_cursor; }
+    Cursor* cursor(){ return &m_cursor; }
 public:
     bool parseArgs(int argc, char *argv[]);
 public:
@@ -60,7 +60,7 @@ public:
     }
 private:
     explicit Application(QObject *parent = nullptr);
-    ~Application() {
+    ~Application(){
         NetworkClient::shutdown();
     }
     Application(const Application&) = delete; // Disable copy constructor.

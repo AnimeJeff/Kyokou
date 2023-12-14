@@ -6,7 +6,7 @@
 #include <QQuickWindow>
 #include "mpv.hpp"
 #include <QClipboard>
-#include "Components/errorhandler.h"
+#include <QByteArray>
 
 class MpvRenderer;
 
@@ -30,51 +30,55 @@ public:
     enum Hwdec {AUTO, VAAPI, VDPAU, NVDEC};
     Q_ENUM(State)
 
-    inline static MpvObject* instance() { return s_instance; }
+    inline static MpvObject* instance(){ return s_instance; }
 
     MpvObject(QQuickItem * parent = nullptr);
     virtual Renderer *createRenderer() const;
 
     // Access properties
-    inline QSize videoSize() { return QSize(m_videoWidth, m_videoHeight) / window()->effectiveDevicePixelRatio(); }
-    inline State state() { return m_state; }
-    inline qint64 duration() { return m_duration; }
-    inline qint64 time() { return m_time; }
-    inline bool subVisible() { return m_subVisible; }
-    inline int volume() { return m_volume; }
-    inline float speed() { return m_speed; }
-    inline QStringList audioTracks() { return m_audioTracks; }
-    inline QStringList subtitles() { return m_subtitles; }
+    inline QSize videoSize(){ return QSize(m_videoWidth, m_videoHeight) / window()->effectiveDevicePixelRatio(); }
+    inline State state(){ return m_state; }
+    inline qint64 duration(){ return m_duration; }
+    inline qint64 time(){ return m_time; }
+    inline bool subVisible(){ return m_subVisible; }
+    inline int volume(){ return m_volume; }
+    inline float speed(){ return m_speed; }
+    inline QStringList audioTracks(){ return m_audioTracks; }
+    inline QStringList subtitles(){ return m_subtitles; }
     Q_INVOKABLE void testupdate(){
-        if(isVisible ()){
+        if (isVisible ()){
             update();
         }
     }
     void setVolume(int volume);
     void setSubVisible(bool subVisible);
-
-
+    qint64 OPStart = -1;
+    qint64 OPLength = 0;
+    qint64 EDStart = -1;
+    qint64 EDLength = 0;
+    struct
+    {
+        std::string modeA;
+        std::string modeB;
+        std::string modeC;
+        std::string modeAA;
+        std::string modeBB;
+        std::string modeCA;
+    } anime4K;
 public slots:
     void open(const QUrl& fileUrl, const QUrl& danmakuUrl = QUrl(), const QUrl& audioTrackUrl = QUrl());
     void play(void);
     void pause(void);
     void stop(void);
     void mute(void){
-        if(m_volume>0){
+        if (m_volume>0){
             m_lastVolume=m_volume;
             setVolume (0);
         }else{
             setVolume (m_lastVolume);
         }
     }
-    void setSpeed(float speed){
-        if (m_speed==speed)
-            return;
-        m_speed=speed;
-        m_mpv.set_property_async("speed", static_cast<double>(speed));
-        showText(QByteArrayLiteral("speed: ") + QByteArray::number (speed));
-        emit speedChanged();
-    }
+    void setSpeed(float speed);
     void seek(qint64 offset, bool absolute = true);
     void screenshot(void);
     void addAudioTrack(const QUrl& url);
@@ -82,8 +86,50 @@ public slots:
     void setProperty(const QString& name, const QVariant& value);
     void showText(const QByteArray &text);
 
-    void loadAnime4K(int n){
-        std::string cmd = "CTRL+"+std::to_string (n);
+    void loadAnime4K(int n)
+    {
+        const char *args[] = {"no-osd", "change-list", "glsl-shaders", "set", "\"\""};
+        QByteArray text;
+        switch(n)
+        {
+        case 1:
+            args[4] = anime4K.modeA.data ();
+            text = QByteArrayLiteral ("Anime4K: Mode A (HQ)");
+            break;
+        case 2:
+            args[4] = anime4K.modeB.data ();
+            text = QByteArrayLiteral ("Anime4K: Mode B (HQ)");
+            break;
+        case 3:
+            args[4] = anime4K.modeC.data ();
+            text = QByteArrayLiteral ("Anime4K: Mode C (HQ)");
+            break;
+        case 4:
+            args[4] = anime4K.modeAA.data ();
+            text = QByteArrayLiteral ("Anime4K: Mode AA (HQ)");
+            break;
+        case 5:
+            args[4] = anime4K.modeBB.data ();
+            text = QByteArrayLiteral ("Anime4K: Mode BB (HQ)");
+            break;
+        case 6:
+            args[4] = anime4K.modeCA.data ();
+            text = QByteArrayLiteral ("Anime4K: Mode CA (HQ)");
+            break;
+        case 0:
+            args[3] = "clr";
+            text = QByteArrayLiteral ("GLSL shaders cleared");
+            break;
+        default:
+            return;
+        }
+//        for (int i = 0; i < 5; i++)
+//            qDebug() << args[i];
+
+//        m_mpv.command_async (args);
+        showText (text);
+
+        std::string cmd = "CTRL+" + std::to_string (n);
         sendKeyPress (cmd.data());
     }
     void sendKeyPress(const char* cmd){
@@ -92,10 +138,15 @@ public slots:
     }
     void pasteOpen()
     {
-        QClipboard *clipboard = QGuiApplication::clipboard();
-        QString clipboardText = clipboard->text();
+        QString clipboardText = QGuiApplication::clipboard()->text();
         qDebug() << clipboardText;
-        open(clipboardText);
+        if (clipboardText.contains (".m3u8") || clipboardText.contains (".mp4"))
+            open(clipboardText);
+        else if (clipboardText.endsWith (".vtt"))
+        {
+            addSubtitle(clipboardText);
+            setSubVisible(true);
+        }
     }
     void copyVideoLink()
     {
@@ -108,6 +159,26 @@ public slots:
         open(currentVideoLink);
     }
 
+    bool setOPSkipStart(qint64 start)
+    {
+        if(start < 0) return false;
+        OPStart = start;
+        return true;
+    }
+    bool setEDSkipStart(qint64 start)
+    {
+        if(start < 0) return false;
+        EDStart = start;
+        return true;
+    }
+    void setOPSkipLength(qint64 length)
+    {
+        OPLength = length;
+    }
+    void setEDSkipLength(qint64 length)
+    {
+        EDLength = length;
+    }
 
 signals:
     void audioTracksChanged(void);
@@ -149,7 +220,7 @@ private:
     QUrl m_audioToBeAdded;
     QStringList m_audioTracks;
     QStringList m_subtitles;
-//    Danmaku2ASS::AssBuilder::Ptr m_danmakuAss;
+    //    Danmaku2ASS::AssBuilder::Ptr m_danmakuAss;
     std::vector<std::string> m_blockWords;
 
     static MpvObject* s_instance;

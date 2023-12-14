@@ -12,13 +12,13 @@ bool PlaylistModel::setLaunchPath(const QString& pathString)
         return true;
     }
     QFileInfo path = QFileInfo(pathString);
-    qDebug()<<"File" << pathString << "exists: " << path.exists ();
+    //qDebug()<<"File" << pathString << "exists: " << path.exists ();
     if (!path.exists ()) return false;
     path.makeAbsolute ();
     if (path.isDir ())
     {
         auto playlist = PlaylistItem::fromLocalDir (path.filePath ());
-        if(!playlist) return false;
+        if (!playlist) return false;
         replaceCurrentPlaylist (playlist);
         m_launchPath = playlist->loadLocalSource (playlist->currentIndex);
     }
@@ -30,7 +30,7 @@ bool PlaylistModel::setLaunchPath(const QString& pathString)
             m_launchPath = QUrl::fromLocalFile (path.filePath ());
         }
     }
-    qDebug()<<m_launchPath;
+    //qDebug()<<m_launchPath;
     return true;
 }
 
@@ -51,23 +51,19 @@ void PlaylistModel::continueFromLastWatched()
 
 QUrl PlaylistModel::loadOnlineSource(int playlistIndex, int itemIndex)
 {
-    //lazy show in watchlist
     auto playlist = m_playlists.at (playlistIndex);
-    if(playlist->link.ends_with (".m3u8"))
-    {
-        return QString::fromStdString (playlist->link);
-    }
     auto episode = playlist->at (itemIndex);
     QString episodeName = episode->fullName;
     qDebug()<<"Fetching servers for episode" << episodeName;
     qDebug()<<"Playlist index:" << itemIndex + 1 << "/" << playlist->count ();
+    if(playlist->provider.isEmpty ()) return QUrl(QString::fromStdString (episode->link));
     auto provider = ShowManager::instance ().getProvider (playlist->provider);
-    QVector<VideoServer> servers =  provider->loadServers (episode);
-    if(!servers.empty ())
+    QList<VideoServer> servers =  provider->loadServers (episode);
+    if (!servers.empty ())
     {
         qDebug()<<"Successfully fetched servers for" << episodeName;
         QUrl source = provider->extractSource(servers[0]);
-        if(playlist->link == ShowManager::instance().getCurrentShow ().link)
+        if (playlist->link == ShowManager::instance().getCurrentShow ().link)
         {
             ShowManager::instance().setLastWatchedIndex (itemIndex);
         }
@@ -84,7 +80,8 @@ void PlaylistModel::appendPlaylist(PlaylistItem *playlist)
     if (!playlist || playlistSet.contains (playlist->link)) return;
     beginResetModel();
     ++playlist->useCount;
-    qDebug() <<"playlist model" << playlist->useCount;
+    //used in the info and the playlist model
+    //    qDebug() <<"playlist model" << playlist->useCount;
     m_playlists.push_back (playlist);
     playlistSet.insert(playlist->link);
     endResetModel();
@@ -94,23 +91,24 @@ void PlaylistModel::appendPlaylist(PlaylistItem *playlist)
 void PlaylistModel::appendPlaylist(const QUrl &path)
 {
     auto playlist = PlaylistItem::fromLocalDir (path.toString ());
-    appendPlaylist (playlist);
+    if(playlist)
+        appendPlaylist (playlist);
 }
 
 void PlaylistModel::replaceCurrentPlaylist(PlaylistItem *playlist)
 {
     if (!playlist) return;
-    if(playlistSet.contains (playlist->link))
+    if (playlistSet.contains (playlist->link) && playlistSet.size () > 1)
     {
         beginResetModel();
         m_playlists.move (m_playlists.indexOf (playlist), 0);
         endResetModel();
         return;
     }
-    if(!m_playlists.isEmpty ())
+    if (!m_playlists.isEmpty ())
     {
         playlistSet.erase (m_playlists.first()->link);
-        if(--m_playlists.first ()->useCount == 0)
+        if (--m_playlists.first ()->useCount == 0)
         {
             delete m_playlists.first ();
         }
@@ -129,18 +127,21 @@ void PlaylistModel::replaceCurrentPlaylist(const QUrl &path)
 
 void PlaylistModel::play(int playlistIndex, int itemIndex)
 {
+    //check if the indices are valid
     if (playlistIndex < 0 || playlistIndex >= m_playlists.count ()) return;
     if (itemIndex < 0 || itemIndex >= m_playlists[playlistIndex]->count ()) return;
-    setLoading(true);
-    auto playlist = m_playlists.at (playlistIndex);
-    auto item = playlist->at (itemIndex);
     m_playlistIndex = playlistIndex;
-    switch(item->type)
-    {
+    emit playlistIndexChanged();
+
+    setLoading(true);
+    auto playlist = m_playlists.at (m_playlistIndex);
+    auto item = playlist->at (itemIndex);
+
+    switch(item->type) {
     case PlaylistItem::ONLINE:
     {
-        m_watcher.setFuture (QtConcurrent::run([playlistIndex, itemIndex, this]() {
-            return QUrl(loadOnlineSource (playlistIndex, itemIndex));
+        m_watcher.setFuture (QtConcurrent::run([itemIndex, this](){
+            return loadOnlineSource (m_playlistIndex, itemIndex);
         }));
         break;
     }
@@ -148,7 +149,7 @@ void PlaylistModel::play(int playlistIndex, int itemIndex)
     {
         qDebug() << playlist->name << playlist->count ();
         auto url = playlist->loadLocalSource (itemIndex);
-        m_watcher.setFuture (QtConcurrent::run([url]() {
+        m_watcher.setFuture (QtConcurrent::run([url](){
             return url;
         }));
         break;
@@ -161,15 +162,16 @@ void PlaylistModel::play(int playlistIndex, int itemIndex)
     }
 
     m_watcher.future ()
-        .then([this,playlistIndex,itemIndex,playlist](QUrl playUrl)
+        .then([this,itemIndex,playlist](QUrl playUrl)
               {
-                  if(!playUrl.isEmpty ())
+                  if (!playUrl.isEmpty ())
                   {
+                      // open the url in with mpv
                       MpvObject::instance()->open (playUrl);
                       emit sourceFetched ();
-                      if (m_playlists[playlistIndex]->m_watchListShowItem)
+                      // update the lastwatchedindex in watch list
+                      if (m_playlists[m_playlistIndex]->m_watchListShowItem)
                       {
-
                           playlist->m_watchListShowItem->at("lastWatchedIndex") = itemIndex;
                           if (ShowManager::instance().getCurrentShow().link == playlist->link)
                           {
@@ -177,20 +179,8 @@ void PlaylistModel::play(int playlistIndex, int itemIndex)
                           }
                           emit updatedLastWatchedIndex();
                       }
-                      bool emitted = false;
+                      playlist->currentIndex = itemIndex;
                       emit currentIndexChanged ();
-                      if (m_playlistIndex != playlistIndex)
-                      {
-                          m_playlistIndex = playlistIndex;
-                          emitted = true;
-                          emit playlistIndexChanged();
-                      }
-                      if (playlist->currentIndex != itemIndex)
-                      {
-                          playlist->currentIndex = itemIndex;
-                          if (!emitted) emit currentIndexChanged ();
-                          emit playlistItemIndexChanged();
-                      }
                   }
                   setLoading(false);
               })
@@ -205,12 +195,21 @@ void PlaylistModel::play(int playlistIndex, int itemIndex)
 
 void PlaylistModel::loadOffset(int offset)
 {
-    play(m_playlistIndex, m_playlists[m_playlistIndex]->currentIndex + offset); //todo check bound
+    if(m_playlistIndex >= m_playlists.count ()) return;
+    if(nextVideoSource.isValid ())
+    {
+        MpvObject::instance()->open (nextVideoSource);
+        emit sourceFetched ();
+        m_playlists[m_playlistIndex]->currentIndex += offset;
+        emit currentIndexChanged ();
+        emit playlistItemIndexChanged();
+    }
+    play(m_playlistIndex, m_playlists[m_playlistIndex]->currentIndex + offset);
 }
 
 QModelIndex PlaylistModel::getCurrentIndex()
 {
-    if(m_playlists.isEmpty () || m_playlists[m_playlistIndex]->currentIndex < 0) return QModelIndex();
+    if (m_playlists.isEmpty () || m_playlists[m_playlistIndex]->currentIndex < 0) return QModelIndex();
     return createIndex(m_playlists[m_playlistIndex]->currentIndex, 0, m_playlists[m_playlistIndex]->at (m_playlists[m_playlistIndex]->currentIndex));
 }
 
@@ -218,13 +217,7 @@ int PlaylistModel::rowCount(const QModelIndex &parent) const
 {
     if (parent.column() > 0)
         return 0;
-
-    if (!parent.isValid())
-    {
-        return m_playlists.count ();
-    }
-    else
-        return static_cast<PlaylistItem*>(parent.internalPointer())->count ();
+    return parent.isValid() ? static_cast<PlaylistItem*>(parent.internalPointer())->count () : m_playlists.count ();
 }
 
 QVariant PlaylistModel::data(const QModelIndex &index, int role) const

@@ -32,13 +32,13 @@
 //}
 
 namespace Functions{
-inline void httpsIfy(std::string& text) {
-    if (text.substr(0, 2) == "//") {
+inline void httpsIfy(std::string& text){
+    if (text.substr(0, 2) == "//"){
         text = "https:" + text;
     }
 }
 
-inline bool containsSubstring(const std::string& str, const std::string& substr) {
+inline bool containsSubstring(const std::string& str, const std::string& substr){
     return str.find(substr) != std::string::npos;
 }
 

@@ -10,39 +10,13 @@ class SearchResultsModel : public QAbstractListModel
 {
     Q_OBJECT
     Q_PROPERTY(bool loading READ isLoading NOTIFY loadingChanged)
-
     bool fetchingMore = false;
-    QTimer m_timeoutTimer;
-    const int timeoutDuration = 500;
     bool loading = false;
-    QFutureWatcher<QVector<ShowData>> m_watcher{};
-    QVector<ShowData> m_list;
+    QFutureWatcher<QList<ShowData>> m_watcher;
+    QList<ShowData> m_list;
     QString m_cancelReason;
 public:
-    explicit SearchResultsModel(QObject *parent = nullptr)
-        : QAbstractListModel(parent){
-        m_timeoutTimer.setSingleShot (true);
-        m_timeoutTimer.setInterval (5000);
-        connect(&m_timeoutTimer, &QTimer::timeout, this,[this](){
-            m_cancelReason = "Loading took too long";
-            m_watcher.future ().cancel ();
-        });
-    }
-
-    Q_INVOKABLE void search(const QString& query,int page,int type);
-    Q_INVOKABLE void latest(int page,int type);
-    Q_INVOKABLE void popular(int page,int type);
-    Q_INVOKABLE void loadShow(int index);
-    Q_INVOKABLE void cancel()
-    {
-        if(m_watcher.isRunning ())
-        {
-            m_watcher.cancel ();
-            setLoading (false);
-        }
-    }
-
-    Q_INVOKABLE void reload();
+    explicit SearchResultsModel(QObject *parent = nullptr);
     bool isLoading()
     {
         return loading;
@@ -52,16 +26,20 @@ public:
         loading = b;
         emit loadingChanged();
     }
-public:
-    Q_INVOKABLE void loadMore();;
-    Q_INVOKABLE bool canLoadMore()const;
+    Q_INVOKABLE bool canLoadMore() const;
 signals:
     void loadingChanged(void);
+public slots:
+    void search(const QString& query,int page,int type);
+    void latest(int page,int type);
+    void popular(int page,int type);
+    void loadShow(int index);
+    void cancel();
+    void reload();
+    void loadMore();
 
 private:
-    void setResults(QVector<ShowData> results);
-
-
+    void setResults(QList<ShowData> results);
 private:
     enum
     {

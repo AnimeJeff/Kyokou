@@ -22,7 +22,7 @@ Button {
 
     HoverHandler{
         onHoveredChanged: {
-            if(hovered)
+            if (hovered)
             {
                 app.cursor.shape = Qt.PointingHandCursor
             }

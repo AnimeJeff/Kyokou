@@ -8,7 +8,7 @@ Button {
     property bool selected: false
     HoverHandler {
         onHoveredChanged: {
-            if(hovered)
+            if (hovered)
             {
                 app.cursor.shape = Qt.PointingHandCursor
             }

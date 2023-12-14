@@ -17,7 +17,7 @@ class CSoup
 private:
     pugi::xml_document doc;
 public:
-    CSoup(std::string html) {
+    CSoup(std::string html){
         parse(tidy(html.data()).data());
     }
 

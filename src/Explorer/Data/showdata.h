@@ -6,7 +6,7 @@
 #include <QObject>
 #include <QString>
 #include <QVariant>
-#include <QVector>
+#include <QList>
 #include <iostream>
 #include "Player/playlistitem.h"
 #include "nlohmann/json.hpp"
@@ -35,7 +35,7 @@ struct ShowData
     QString getStatus() const {return status.isEmpty () ? "???" : status;}
 public:
     ShowData(const QString& title, const std::string& link, const QString& coverUrl, const QString& provider, const QString& latestTxt = "", int type = 0)
-        : title(title), link(link), coverUrl(coverUrl), provider(provider), latestTxt(latestTxt), type(type) {};
+        : title(title), link(link), coverUrl(coverUrl), provider(provider), latestTxt(latestTxt), type(type){};
 
     ShowData(){}
 
@@ -49,7 +49,7 @@ public:
     QString description = "";
     QString releaseDate = "";
     QString status = "";
-    QVector<QString> genres;
+    QList<QString> genres;
     QString updateTime = "";
     QString rating = "";
     QString views = "";
@@ -66,7 +66,7 @@ public:
     friend class DownloadModel;
     void addEpisode(int number, std::string link, QString name, bool online = true)
     {
-        if(!playlist)
+        if (!playlist)
         {
             playlist = new PlaylistItem (title, provider, this->link);
         }

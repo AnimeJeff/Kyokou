@@ -16,17 +16,17 @@
 //    };
 //    std::string hostUrl = "https://animepahe.ru";
 
-//    QVector<ShowData> search(QString query, int page, int type) override {
+//    QList<ShowData> search(QString query, int page, int type) override {
 //        std::string url = hostUrl + "/api?m=search&q=" + Functions::urlEncode(query.toStdString ()) ;
 //        NetworkClient::get(url); //TODO
 //    };
-//    QVector<ShowData> popular(int page, int type)
+//    QList<ShowData> popular(int page, int type)
 //    {
-//        return QVector<ShowData>();
+//        return QList<ShowData>();
 //    };
-//    QVector<ShowData> latest(int page, int type)
+//    QList<ShowData> latest(int page, int type)
 //    {
-//        return QVector<ShowData>();
+//        return QList<ShowData>();
 //    };
 //    void loadDetails(ShowData& show) override
 //        {
@@ -36,9 +36,9 @@
 //    {
 //        return 0;
 //    };
-//    QVector<VideoServer> loadServers(const PlaylistItem &episode)
+//    QList<VideoServer> loadServers(const PlaylistItem &episode)
 //    {
-//        return QVector<VideoServer>();
+//        return QList<VideoServer>();
 //    };
 //    QString extractSource(VideoServer &server){
 //        return "";

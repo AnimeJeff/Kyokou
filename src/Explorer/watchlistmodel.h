@@ -23,8 +23,10 @@ private:
         DROPPED,
         COMPLETED
     };
-    //hashmap containing json for fast indexing
+
     nlohmann::json m_jsonList;
+    std::unordered_map<std::string, int> jsonHashmap;
+    std::unordered_map<std::string, int> totalEpisodeMap;
     int m_currentListType = WATCHING;
     int getCurrentListType();
     void setDisplayingListType(int listType);
@@ -33,40 +35,51 @@ private:
         return loading;
     }
     bool loading = false;
+    QFutureWatcher<void>* m_watcher;
 private:
-    std::unordered_map<std::string,std::tuple<nlohmann::json*,int,int>> jsonHashmap;
+    // keeps track of the list type of each show
+    int findShowInJsonList(int listType, const std::string& showLink)
+    {
+        int index = 0;
+        bool found = false;
+        for (const auto& item : m_jsonList[listType]) {
+            if (item["link"] == showLink) {
+                found = true;
+                break;
+            }
+            ++index;
+        }
+        if (found) {
+            qDebug() << "found" << index;
+            return index;
+        } else {
+            return -1;
+        }
+
+    }
     void loadWatchList(QString filePath = "");
-    void changeListType(const ShowData& show,int listType);
-    void fetchUnwatchedEpisodes();
+    void changeListType(const ShowData& show, int listType);
+    void fetchUnwatchedEpisodes(int listType);
     QString watchListFilePath;
     QMutex mutex;
 public:
     explicit WatchListModel(QObject *parent = nullptr): QAbstractListModel(parent){
         loadWatchList ();
-        auto lol = QtConcurrent::run([this](){
-            fetchUnwatchedEpisodes ();
-        });
+        //m_watcher->setFuture (QtConcurrent::run(&WatchListModel::fetchUnwatchedEpisodes, this, WATCHING));
     };
-    Q_INVOKABLE void add(const ShowData& show, int listType = WATCHING);
-    Q_INVOKABLE void addCurrentShow(int listType = WATCHING);
-    Q_INVOKABLE void remove(const ShowData& show);
-    Q_INVOKABLE void removeCurrentShow();
-    Q_INVOKABLE void move(int from, int to);
-    Q_INVOKABLE void moveEnded();
-    Q_INVOKABLE void loadShow(int index);
 signals:
     void loadingChanged(void);
     void syncedCurrentShow(void);
 public slots:
     void syncCurrentShow();
-    void save()
-    {
-        QMutexLocker locker(&mutex);
-        std::ofstream output_file(watchListFilePath.toStdString ());
-        output_file << m_jsonList.dump (4);
-        output_file.close();
-        qDebug()<<"Saved";
-    }
+    void save();
+    void add(const ShowData& show, int listType);
+    void addCurrentShow(int listType);
+    void remove(const ShowData& show);
+    void removeCurrentShow();
+    void move(int from, int to);
+    void moveEnded();
+    void loadShow(int index);
 
 private:
     enum{

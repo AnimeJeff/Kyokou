@@ -33,7 +33,7 @@ public:
     {
         return isReversed;
     }
-    explicit EpisodeListModel(QObject *parent = nullptr) : QAbstractListModel(parent) {};
+    explicit EpisodeListModel(QObject *parent = nullptr) : QAbstractListModel(parent){};
 
     enum {
         TitleRole = Qt::UserRole,

@@ -16,16 +16,16 @@ public:
         return {ShowData::ANIME, ShowData::MOVIE, ShowData::TVSERIES, ShowData::VARIETY, ShowData::DOCUMENTARY};
     };
 
-    QVector<ShowData> search(QString query, int page, int type) override;
-    QVector<ShowData> popular(int page, int type) override;
-    QVector<ShowData> latest(int page, int type) override;
-    QVector<ShowData> filterSearch(const std::string& url);
+    QList<ShowData> search(QString query, int page, int type) override;
+    QList<ShowData> popular(int page, int type) override;
+    QList<ShowData> latest(int page, int type) override;
+    QList<ShowData> filterSearch(const std::string& url);
 
     void loadDetails(ShowData& show) const override;
-    int getTotalEpisodes(const ShowData &show) const override
+    int getTotalEpisodes(const std::string& link) const override
     {
         return 0;
     }
-    QVector<VideoServer> loadServers(const PlaylistItem* episode) const override;
+    QList<VideoServer> loadServers(const PlaylistItem* episode) const override;
     QString extractSource(VideoServer &server) const override;
 };

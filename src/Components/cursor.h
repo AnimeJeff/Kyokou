@@ -10,15 +10,15 @@
 class Cursor : public QObject
 {
     Q_OBJECT
-    Q_PROPERTY(bool visible READ isVisible WRITE setVisible CONSTANT)
-    Q_PROPERTY(Qt::CursorShape shape READ getCursorShape WRITE setCursorShape CONSTANT)
+    Q_PROPERTY(bool visible READ isVisible WRITE setVisible)
+    Q_PROPERTY(Qt::CursorShape shape READ getCursorShape WRITE setCursorShape)
     bool isVisible()
     {
         return shape != Qt::BlankCursor;
     }
     void setVisible(bool visible)
     {
-        if(visible)
+        if (visible)
         {
             QGuiApplication::setOverrideCursor(QCursor(shape));
         }
@@ -30,7 +30,7 @@ class Cursor : public QObject
 private:
     Qt::CursorShape shape = Qt::ArrowCursor;
 public:
-    explicit Cursor(QObject *parent = nullptr) : QObject(parent) {}
+    explicit Cursor(QObject *parent = nullptr) : QObject(parent){}
 
     Q_INVOKABLE QPointF pos()
     {

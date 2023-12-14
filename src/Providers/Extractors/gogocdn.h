@@ -41,7 +41,7 @@ private:
             "3134003223491201"
         };
 public:
-    GogoCDN() {};
+    GogoCDN(){};
     QString extract(std::string link)
     {
         auto response = NetworkClient::get(link);
@@ -76,10 +76,10 @@ public:
         }
         return "";
     }
-    static std::string getHostFromUrl(const std::string& url) {
+    static std::string getHostFromUrl(const std::string& url){
         std::regex regex("^(?:https?://)?(?:www\\.)?([^:/\\s]+)");
         std::smatch match;
-        if (std::regex_search(url, match, regex)) {
+        if (std::regex_search(url, match, regex)){
             return match[1];
         }
         return "";
@@ -111,21 +111,21 @@ public:
                                        new CryptoPP::StreamTransformationFilter(decryption,
                                                                                 new CryptoPP::StringSink(plaintext))));
         }
-        catch (const CryptoPP::Exception& e) {
+        catch (const CryptoPP::Exception& e){
             std::cerr << e.what() << std::endl;
             return "";
         }
         return plaintext;
     }
 
-//        std::string encrypt(const std::string& plaintext,std::string key,std::string iv) {
+//        std::string encrypt(const std::string& plaintext,std::string key,std::string iv){
 
 //            EVP_CIPHER_CTX *ctx;
 //            ctx = EVP_CIPHER_CTX_new();
 
 //            const EVP_CIPHER* cipher = EVP_aes_256_cbc();
 
-//            if(!EVP_EncryptInit_ex(ctx, cipher, NULL,
+//            if (!EVP_EncryptInit_ex(ctx, cipher, NULL,
 //                                    reinterpret_cast<const unsigned char*>(key.c_str()),
 //                                    reinterpret_cast<const unsigned char*>(iv.c_str()))){
 //                return "";
@@ -134,14 +134,14 @@ public:
 //            std::string ciphertext(plaintext.size() + AES_BLOCK_SIZE, '\0');
 
 //            int len = 0;
-//            if(!EVP_EncryptUpdate(ctx, reinterpret_cast<unsigned char*>(&ciphertext[0]), &len,
+//            if (!EVP_EncryptUpdate(ctx, reinterpret_cast<unsigned char*>(&ciphertext[0]), &len,
 //                                   reinterpret_cast<const unsigned char*>(plaintext.c_str()), plaintext.size())){
 //                return "";
 //            }
 
 //            int ciphertext_len = len;
 
-//            if(!EVP_EncryptFinal_ex(ctx, reinterpret_cast<unsigned char*>(&ciphertext[0])+len, &len)){
+//            if (!EVP_EncryptFinal_ex(ctx, reinterpret_cast<unsigned char*>(&ciphertext[0])+len, &len)){
 //                return "";
 //            }
 

@@ -27,7 +27,7 @@ int main(int argc, char *argv[]){
     QGuiApplication app(argc, argv);
     if (!Application::instance ().parseArgs(argc,argv))
     {
-        std::cout << "Failed to parse args";
+        std::cout << "Failed to parse args\n";
         return 1;
     }
     auto dllPath = QCoreApplication::applicationDirPath().toStdString () + "/dll";
@@ -56,7 +56,7 @@ int main(int argc, char *argv[]){
 
     const QUrl url(QStringLiteral("qrc:qml/src/qml/main.qml"));
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
-        &app, [url](QObject *obj, const QUrl &objUrl) {
+        &app, [url](QObject *obj, const QUrl &objUrl){
             if (!obj && url == objUrl)
                 QCoreApplication::exit(-1);
         }, Qt::QueuedConnection);
@@ -66,7 +66,7 @@ int main(int argc, char *argv[]){
 
 void setOneInstance(){
     QSharedMemory shared("62d60669-bb94-4a94-88bb-b964890a7e04");
-    if( !shared.create( 512, QSharedMemory::ReadWrite) )
+    if ( !shared.create( 512, QSharedMemory::ReadWrite) )
     {
         qWarning() << "Can't start more than one instance of the application.";
         exit(0);

@@ -1,5 +1,6 @@
 #pragma once
 #include <set>
+#include "Components/errorhandler.h"
 #include "Explorer/Data/showdata.h"
 #include <QDir>
 #include <QAbstractListModel>
@@ -9,22 +10,16 @@
 
 class PlaylistModel : public QAbstractItemModel
 {
+//    *.cpp,*.h,
     Q_OBJECT
-    Q_PROPERTY(QString currentItemName READ getCurrentItemName NOTIFY currentIndexChanged)
-    Q_PROPERTY(QString showName READ getTitle NOTIFY showNameChanged)
 
     Q_PROPERTY(int playlistIndex READ getPlaylistIndex NOTIFY showNameChanged)
-    Q_PROPERTY(int itemIndex READ getPlaylistItemIndex NOTIFY showNameChanged)
+    Q_PROPERTY(int playlistItemIndex READ getPlaylistItemIndex NOTIFY showNameChanged)
     Q_PROPERTY(QModelIndex currentIndex READ getCurrentIndex NOTIFY currentIndexChanged)
-
-
+    Q_PROPERTY(QString currentItemName READ getCurrentItemName NOTIFY currentIndexChanged)
     Q_PROPERTY(bool loading READ isLoading NOTIFY loadingChanged)
     Q_PROPERTY(QUrl launchPath READ getLaunchPath CONSTANT)
 
-    QString getTitle()
-    {
-        return "";
-    }
     QString getCurrentItemName() const
     {
         if (m_playlists.isEmpty ()) return "";
@@ -40,19 +35,23 @@ class PlaylistModel : public QAbstractItemModel
     }
 
     int m_playlistIndex = 0;
-    QVector<PlaylistItem*> m_playlists;
+    QList<PlaylistItem*> m_playlists;
     QUrl loadOnlineSource(int playlistIndex, int itemIndex);
     QUrl getLaunchPath()
     {
         return m_launchPath;
     }
+
+    QUrl nextVideoSource;
 signals:
     void playlistIndexChanged();
     void playlistItemIndexChanged();
 
 public:
-    explicit PlaylistModel(QObject *parent = nullptr) : QAbstractItemModel(parent) {};
-    ~PlaylistModel() { qDeleteAll(m_playlists); }
+    explicit PlaylistModel(QObject *parent = nullptr) {
+
+    };
+    ~PlaylistModel(){ qDeleteAll(m_playlists); }
 
     QModelIndex getCurrentIndex();
     Q_INVOKABLE bool load(QModelIndex index)
@@ -79,7 +78,7 @@ public:
 
     Q_INVOKABLE void loadFromEpisodeList(int index);
     Q_INVOKABLE void continueFromLastWatched();
-    void replaceCurrentPlaylist(const QUrl& path);
+    Q_INVOKABLE void replaceCurrentPlaylist(const QUrl& path);
     void appendPlaylist(const QUrl& path);
     void appendPlaylist(PlaylistItem *playlist);
     void replaceCurrentPlaylist(PlaylistItem *playlist);
@@ -136,7 +135,7 @@ class ServerListModel: public QAbstractListModel
 public:
     ServerListModel() = default;
     ~ServerListModel() = default;
-    void setServers(QVector<VideoServer> servers)
+    void setServers(QList<VideoServer> servers)
     {
         m_servers = servers;
         //testServers ();
@@ -150,21 +149,11 @@ public:
 
 
 
-    QVector<VideoServer> servers() const
+    QList<VideoServer> servers() const
     {
         return m_servers;
     }
 
-    //    VideoServer getFirstWorkingServer() const
-    //    {
-    //        for (const auto& server : m_servers)
-    //        {
-    //            if(server.working){
-    //                return server;
-    //            }
-    //        }
-    //        return "";
-    //    }
 
 
 private:
@@ -172,7 +161,7 @@ private:
         NameRole = Qt::UserRole,
     };
 
-    QVector<VideoServer> m_servers {};
+    QList<VideoServer> m_servers {};
 public:
     int rowCount(const QModelIndex &parent = QModelIndex()) const override
     {

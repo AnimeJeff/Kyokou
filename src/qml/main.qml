@@ -33,7 +33,6 @@ Window {
     property double lastX
     property double lastY
     property MpvObject mpv
-    property alias notifier: notifier
     property bool mpvWasPlaying
 
     ParallelAnimation {
@@ -74,14 +73,14 @@ Window {
             if (running)
             {
                 mpvWasPlaying = mpv.state == MpvObject.VIDEO_PLAYING
-                if(mpvWasPlaying)
+                if (mpvWasPlaying)
                 {
                     mpv.pause()
                 }
             }
             else
             {
-                if(mpvWasPlaying)
+                if (mpvWasPlaying)
                 {
                     mpv.play()
                 }
@@ -91,11 +90,11 @@ Window {
 
     onMaximisedChanged: {
         if (resizingAnimation.running) return
-        if(maximised)
+        if (maximised)
         {
             xanime.to = 0
             yanime.to = 0
-            if(root.x !== 0 && root.y !== 0)
+            if (root.x !== 0 && root.y !== 0)
             {
                 lastX = root.x
                 lastY = root.y
@@ -116,11 +115,11 @@ Window {
 
     onFullscreenChanged: {
         if (resizingAnimation.running) return
-        if(fullscreen)
+        if (fullscreen)
         {
             xanime.to = 0
             yanime.to = 0
-            if(root.x !== 0 && root.y !== 0)
+            if (root.x !== 0 && root.y !== 0)
             {
                 lastX = root.x
                 lastY = root.y
@@ -146,7 +145,7 @@ Window {
             mpvPage.progressBar.visible = false
             xanime.to = Screen.desktopAvailableWidth - Screen.width/3
             yanime.to = Screen.desktopAvailableHeight - Screen.height/2.3
-            if(root.x !== 0 && root.y !== 0)
+            if (root.x !== 0 && root.y !== 0)
             {
                 lastX = root.x
                 lastY = root.y
@@ -154,7 +153,7 @@ Window {
             widthanime.to = Screen.width/3
             heightanime.to = Screen.height/2.3
             flags |= Qt.WindowStaysOnTopHint
-            sideBar.gotoPage(2)
+            sideBar.gotoPage(3)
             playerFillWindow = true
         }
         else
@@ -183,13 +182,10 @@ Window {
         target: app.playlist
         function onSourceFetched()
         {
-            //            mpvPage.mpv.addSubtitle("https://cc.2cdns.com/58/b1/58b108555cd2fc6c93dfeafc08b5e657/58b108555cd2fc6c93dfeafc08b5e657.vtt")
             mpv.subVisible = true
-            sideBar.gotoPage(2)
+            sideBar.gotoPage(3)
         }
-
     }
-
 
     TitleBar {
         id:titleBar
@@ -227,55 +223,6 @@ Window {
         anchors.fill: root.playerFillWindow ? parent : stackView
     }
 
-    Dialog {
-        id: notifier
-        modal: true
-        width: parent.width / 3
-        height: parent.height / 4
-        anchors.centerIn: parent
-        property alias headerText:headerText.text
-        property alias text:notifierMessage.text
-
-        contentItem: Rectangle {
-            color: "#f2f2f2"
-            border.color: "#c2c2c2"
-            border.width: 1
-            radius: 10
-            anchors.centerIn: parent
-            Text {
-                id:headerText
-                text: "Error"
-                font.pointSize: 16
-                font.bold: true
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.top: parent.top
-                anchors.topMargin: 20
-            }
-            Text {
-                id: notifierMessage
-                text: "An error has occurred."
-                font.pointSize: 14
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.verticalCenter: parent.verticalCenter
-            }
-            Button {
-                text: "OK"
-                anchors.bottom: parent.bottom
-                anchors.bottomMargin: 10
-                anchors.horizontalCenter: parent.horizontalCenter
-                onClicked: notifier.close()
-            }
-        }
-        Connections {
-            target: errorHandler
-            function onShowWarning(msg){
-                notifierMessage.text = msg
-                notifier.open()
-            }
-        }
-
-    }
-
 
     MouseArea
     {
@@ -283,8 +230,8 @@ Window {
         acceptedButtons: Qt.ForwardButton | Qt.BackButton
         onClicked: (mouse)=>
                    {
-                       if(playerFillWindow) return;
-                       if(mouse.button === Qt.BackButton)
+                       if (playerFillWindow) return;
+                       if (mouse.button === Qt.BackButton)
                        {
                            let nextPage = sideBar.currentPage + 1
                            sideBar.gotoPage(nextPage === Object.keys(sideBar.pages).length ? 0 : nextPage)
@@ -297,11 +244,11 @@ Window {
                    }
     }
 
-    Rectangle {
+    Image {
         id:lol
         anchors.fill: parent
         visible: false
-        color: "black"
+        source: "qrc:/resources/images/periodic-table.jpg"
     }
 
     Shortcut{
@@ -334,20 +281,17 @@ Window {
         sequence: "5"
         onActivated: sideBar.gotoPage(4)
     }
-    Shortcut {
-        sequence: "0"
-        onActivated: notifier.open()
-    }
+
     Shortcut {
         sequence: "Ctrl+Tab"
         onActivated:
         {
             root.lower()
             root.showMinimized()
-            if(pipMode) pipMode = false
-            if(playerFillWindow) playerFillWindow = false
-            if(maximised) maximised = false
-            if(fullscreen) fullscreen = false
+            if (pipMode) pipMode = false
+            if (playerFillWindow) playerFillWindow = false
+            if (maximised) maximised = false
+            if (fullscreen) fullscreen = false
             lol.visible = true
             mpv.pause()
         }

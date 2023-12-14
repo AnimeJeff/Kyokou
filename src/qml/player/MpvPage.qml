@@ -8,6 +8,55 @@ Item{
     property alias progressBar:controlBar
     focus: true
     visible: false
+    Dialog {
+        id: notifier
+        modal: true
+        width: parent.width / 3
+        height: parent.height / 4
+        anchors.centerIn: parent
+        focus: false
+        property alias headerText:headerText.text
+        property alias text:notifierMessage.text
+
+        contentItem: Rectangle {
+            color: "#f2f2f2"
+            border.color: "#c2c2c2"
+            border.width: 1
+            radius: 10
+            anchors.centerIn: parent
+            Text {
+                id:headerText
+                text: "Error"
+                font.pointSize: 16
+                font.bold: true
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.top: parent.top
+                anchors.topMargin: 20
+            }
+            Text {
+                id: notifierMessage
+                text: "An error has occurred."
+                font.pointSize: 14
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.verticalCenter: parent.verticalCenter
+            }
+            Button {
+                text: "OK"
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: 10
+                anchors.horizontalCenter: parent.horizontalCenter
+                onClicked: notifier.close()
+            }
+        }
+        Connections {
+            target: errorHandler
+            function onShowWarning(msg){
+                notifierMessage.text = msg
+                notifier.open()
+            }
+        }
+
+    }
 
     PlayListSideBar {
         id:playlistBar
@@ -22,7 +71,7 @@ Item{
         function toggle()
         {
             playlistBar.visible = !playlistBar.visible
-            if(playlistBar.visible && mpv.state === MpvObject.VIDEO_PLAYING)
+            if (playlistBar.visible && mpv.state === MpvObject.VIDEO_PLAYING)
             {
                 mpv.pause()
             }
@@ -48,9 +97,9 @@ Item{
         Component.onCompleted: {
             root.mpv = mpvObject
 
-            if(app.playlist.launchPath.toString().trim() !== "")
+            if (app.playlist.launchPath.toString().trim() !== "")
             {
-                sideBar.gotoPage(2)
+                sideBar.gotoPage(3)
                 setTimeout(()=>mpv.open(app.playlist.launchPath), 100)
             }
             else
@@ -91,7 +140,7 @@ Item{
                 app.cursor.visible = true
             }
             onPositionChanged: {
-                if(!pipMode)
+                if (!pipMode)
                 {
                     controlBar.peak()
                     app.cursor.visible = true
@@ -101,16 +150,16 @@ Item{
             }
             acceptedButtons: Qt.LeftButton
             onClicked: (mouse)=> {
-                           if(doubleClickTimer.running)
+                           if (doubleClickTimer.running)
                            {
-                               if(pipMode)
+                               if (pipMode)
                                {
                                    pipMode = false
                                    return
                                }
                                root.playerFillWindow = !root.playerFillWindow
                                root.fullscreen = root.playerFillWindow
-                               if(mpv.state == MpvObject.VIDEO_PLAYING)
+                               if (mpv.state == MpvObject.VIDEO_PLAYING)
                                {
                                    mpv.pause()
                                }
@@ -122,7 +171,7 @@ Item{
                            }
                            else
                            {
-                               if(mpv.state == MpvObject.VIDEO_PLAYING) mpv.pause()
+                               if (mpv.state == MpvObject.VIDEO_PLAYING) mpv.pause()
                                else mpv.play()
 
                                doubleClickTimer.restart()
@@ -138,9 +187,9 @@ Item{
                 interval: 2000
                 onTriggered:
                 {
-                    if(!mpvPage.visible) return
+                    if (!mpvPage.visible) return
                     let newPos = app.cursor.pos()
-                    if(newPos === mpvObject.lastPos && controlBar)
+                    if (newPos === mpvObject.lastPos && !controlBar.hovered)
                     {
                         app.cursor.visible = false
                     }
@@ -161,14 +210,14 @@ Item{
                 anchors.fill: parent
                 property var clickPos
                 onPositionChanged: {
-                    if(clickPos)
+                    if (clickPos)
                     {
                         let newX = app.cursor.pos().x - clickPos.x
                         let newY = app.cursor.pos().y - clickPos.y
-                        if(newX < 0) newX = 0
-                        else if(newX > Screen.desktopAvailableWidth-root.width) newX = Screen.desktopAvailableWidth-root.width
-                        if(newY < 0) newY = 0
-                        else if(newY > Screen.desktopAvailableHeight-root.height) newY = Screen.desktopAvailableHeight-root.height
+                        if (newX < 0) newX = 0
+                        else if (newX > Screen.desktopAvailableWidth-root.width) newX = Screen.desktopAvailableWidth-root.width
+                        if (newY < 0) newY = 0
+                        else if (newY > Screen.desktopAvailableHeight-root.height) newY = Screen.desktopAvailableHeight-root.height
                         root.x = newX
                         root.y = newY
                     }
@@ -192,6 +241,7 @@ Item{
                 left: parent.left
                 right: parent.right
             }
+
             visible: false
             height: 30
             isPlaying: mpv.state === MpvObject.VIDEO_PLAYING || mpv.state === MpvObject.TV_PLAYING
@@ -209,11 +259,11 @@ Item{
             }
             onSidebarButtonClicked: playlistBar.toggle()
             onFolderButtonClicked: folderDialog.open()
-            function peak(time) {
-                if(pipMode) return
+            function peak(time){
+                if (pipMode) return
                 controlBar.visible = true
                 //                        && resizeAnime.running === false
-                if(time)
+                if (time)
                 {
                     timer.interval = time
                 }
@@ -229,16 +279,31 @@ Item{
             }
             property bool autoHideBars: true
 
+            hoverEnabled: true
+
+            Popup {
+                id: volumePopup
+                width: 40
+                height: 120
+                Slider
+                {
+                    id: volumeSlider
+                    from: 0
+                    to: 100
+                    value: 50
+                    stepSize: 1
+                    snapMode: Slider.SnapAlways
+                    anchors.fill: parent
+                    orientation: Qt.Vertical
+                }
+            }
+
             Timer {
                 id: timer
                 interval: 1000
                 onTriggered:
                 {
-                    if (mouseArea.pressed === true)
-                    {
-                        return;
-                    }
-                    if (!controlBar.contains(controlBar.mapFromItem(mouseArea, mouseArea.mouseX, mouseArea.mouseY)))
+                    if (!mouseArea.pressed && !controlBar.contains(controlBar.mapFromItem(mouseArea, mouseArea.mouseX, mouseArea.mouseY)))
                     {
                         mouseArea.cursorShape = Qt.BlankCursor;
                         controlBar.visible = false;
@@ -249,29 +314,12 @@ Item{
         }
     }
 
-    Popup {
-        id: volumePopup
-        width: 40
-        height: 120
-        Slider
-        {
-            id: volumeSlider
-            from: 0
-            to: 100
-            value: 50
-            stepSize: 1
-            snapMode: Slider.SnapAlways
-            anchors.fill: parent
-            orientation: Qt.Vertical
-        }
-    }
-
     FolderDialog {
         id:folderDialog
         currentFolder: "file:///D:/TV/"
         onAccepted:
         {
-            app.playlist.loadFolder(folderDialog.selectedFolder)
+            app.playlist.replaceCurrentPlaylist(folderDialog.selectedFolder)
 
         }
     }
@@ -326,14 +374,14 @@ Item{
 
     function handleKeyPress(event)
     {
-        if(event.modifiers & Qt.ControlModifier){
-            if(event.key === Qt.Key_W) return
+        if (event.modifiers & Qt.ControlModifier){
+            if (event.key === Qt.Key_W) return
             handleCtrlModifiedKeyPress(event.key)
         }else{
-            switch (event.key) {
+            switch (event.key){
             case Qt.Key_Escape:
                 if (resizeAnime.running) return
-                if(pipMode)
+                if (pipMode)
                 {
                     pipMode = false
                     return
@@ -361,7 +409,7 @@ Item{
                 break;
             case Qt.Key_Space:
             case Qt.Key_Clear:
-                if (mpv.state === MpvObject.VIDEO_PLAYING) {
+                if (mpv.state === MpvObject.VIDEO_PLAYING){
                     mpv.pause();
                 } else {
                     mpv.play();
@@ -395,7 +443,7 @@ Item{
                 break;
             case Qt.Key_F:
                 if (resizeAnime.running) return
-                if(pipMode)
+                if (pipMode)
                 {
                     pipMode = false
                     return

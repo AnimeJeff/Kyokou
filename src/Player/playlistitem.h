@@ -15,7 +15,7 @@ private:
     QTimer* m_fileCloseTimer = nullptr;
 
     PlaylistItem* m_parent = nullptr;
-    QVector<PlaylistItem*>* m_children = nullptr;
+    QList<PlaylistItem*>* m_children = nullptr;
 private:
     friend class PlaylistModel;
     friend class WatchListModel;
@@ -30,10 +30,11 @@ public:
     PlaylistItem(int number, const std::string& link, const QString& name, PlaylistItem *parent, bool online = true);
     ~PlaylistItem()
     {
-        qDebug() << "deleted" << name;
-        if(m_historyFile)
+//        qDebug() << "deleted" << name;
+        if (m_historyFile)
         {
             //m_fileCloseTimer is also deleted as it is a child of m_historyFile
+//            delete m_fileCloseTimer;
             delete m_historyFile;
         }
         clear();
@@ -49,7 +50,7 @@ public:
 
     void emplaceBack(int number, const std::string& link, const QString& name, PlaylistItem *parent, bool online = true)
     {
-        if (!m_children) m_children = new QVector<PlaylistItem*>();
+        if (!m_children) m_children = new QList<PlaylistItem*>();
         m_children->emplaceBack (new PlaylistItem(number, link, name, parent, online));
     }
     void clear();
@@ -69,14 +70,14 @@ public:
     const PlaylistItem* at(int i) const
     {
         Q_ASSERT(m_children || !m_children->isEmpty () || i >= 0 || i < m_children->count ());
-        if(!(m_children || !m_children->isEmpty () || i >= 0 || i < m_children->count ()))
+        if (!(m_children || !m_children->isEmpty () || i >= 0 || i < m_children->count ()))
             throw std::runtime_error("Index out of bounds");
         return m_children->at(i);
     }
     PlaylistItem* first()
     {
         Q_ASSERT(m_children || !m_children->isEmpty ());
-        if(!m_children || m_children->isEmpty ())
+        if (!m_children || m_children->isEmpty ())
             throw std::runtime_error("Children is empty");
         return m_children->operator[](0);
     }
@@ -102,13 +103,11 @@ public:
 public:
     int count() const
     {
-        if(!m_children) return 0;
+        if (!m_children) return 0;
         return m_children->count ();
     }
     QString getDisplayName(int index) const;
-
     bool isValidIndex(int index) const;
-
 };
 
 struct VideoServer {

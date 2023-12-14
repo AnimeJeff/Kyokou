@@ -24,10 +24,12 @@
 #include <QStandardPaths>
 #include <QMetaType>
 
+#include <QStringList>
 
 #include <QtOpenGL/QOpenGLFramebufferObject>
 #include <QQuickOpenGLUtils>
-
+#include "Components/errorhandler.h"
+#include <stdlib.h>
 
 
 /* MPV Renderer */
@@ -66,7 +68,7 @@ public:
             if (m_obj->m_mpv.renderer_initialize(params) < 0)
                 throw std::runtime_error("failed to initialize mpv GL context");
 
-            m_obj->m_mpv.set_render_callback([](void *ctx) {
+            m_obj->m_mpv.set_render_callback([](void *ctx){
                 MpvObject *obj = static_cast<MpvObject*>(ctx);
                 //                QMetaObject::invokeMethod(obj, "update", Qt::QueuedConnection);
                 QMetaObject::invokeMethod(obj, "testupdate", Qt::QueuedConnection);
@@ -138,13 +140,46 @@ MpvObject::MpvObject(QQuickItem * parent) : QQuickFramebufferObject(parent)
     m_mpv.set_option("cache-secs", "100");
     m_mpv.set_option("cache-unlink-files", "whendone");
 
-    char* appdata = getenv("APPDATA");
-    if(appdata){
-        std::string mpvDirectory = std::string(appdata)+"\\mpv";
-        std::string inputPath = mpvDirectory + "\\input.conf";
-        m_mpv.set_option( "config-dir", mpvDirectory.c_str ());
-        m_mpv.set_option( "input-conf", inputPath.c_str ());
+
+    auto mpvAppData = QDir(QStandardPaths::standardLocations(QStandardPaths::AppDataLocation).first ());
+    mpvAppData.cdUp ();
+    if (mpvAppData.cd ("mpv"))
+    {
+        //qDebug() << mpvAppData.absolutePath ().toLocal8Bit ().constData () << mpvAppData.absoluteFilePath ("input.conf").constData ();
+        m_mpv.set_option( "config-dir", mpvAppData.absolutePath ().toLocal8Bit ().constData ());
+        if (mpvAppData.exists ("input.conf"))
+            m_mpv.set_option( "input-conf", mpvAppData.absoluteFilePath ("input.conf").constData ());
     }
+
+    auto Anime4KShadersDir = QDir(QDir::cleanPath (QCoreApplication::applicationDirPath() + QDir::separator() + "shaders" + QDir::separator() + "Anime4K"));
+    if (Anime4KShadersDir.exists ())
+    {
+        QString Clamp_Highlights = Anime4KShadersDir.filePath ("Anime4K_Clamp_Highlights.glsl");
+        QString Restore_CNN_VL = Anime4KShadersDir.filePath ("Anime4K_Restore_CNN_VL.glsl");
+        QString Upscale_CNN_x2_VL = Anime4KShadersDir.filePath ("Anime4K_Upscale_CNN_x2_VL.glsl");
+        QString AutoDownscalePre_x2 = Anime4KShadersDir.filePath ("Anime4K_AutoDownscalePre_x2.glsl");
+        QString AutoDownscalePre_x4 = Anime4KShadersDir.filePath ("Anime4K_AutoDownscalePre_x4.glsl");
+        QString Upscale_CNN_x2_M = Anime4KShadersDir.filePath ("Anime4K_Upscale_CNN_x2_M.glsl");
+
+        QString Restore_CNN_Soft_VL = Anime4KShadersDir.filePath ("Anime4K_Restore_CNN_Soft_VL.glsl");
+        QString Restore_CNN_M = Anime4KShadersDir.filePath ("Anime4K_Restore_CNN_M.glsl");
+        QString Restore_CNN_Soft_M = Anime4KShadersDir.filePath ("Anime4K_Restore_CNN_Soft_M.glsl");
+        QString Upscale_Denoise_CNN_x2_VL = Anime4KShadersDir.filePath ("Anime4K_Upscale_Denoise_CNN_x2_VL.glsl");
+
+        auto modeA = "\"" + (QStringList {Clamp_Highlights, Restore_CNN_VL, Upscale_CNN_x2_VL, AutoDownscalePre_x2, AutoDownscalePre_x4, Upscale_CNN_x2_M}).join(";") + "\"";
+        anime4K.modeA = modeA.toStdString ();
+        auto modeB = "\"" + (QStringList { Clamp_Highlights, Restore_CNN_Soft_VL, Upscale_CNN_x2_VL, AutoDownscalePre_x2, AutoDownscalePre_x4, Upscale_CNN_x2_M}).join(";") + "\"";
+        anime4K.modeB = modeB.toStdString ();
+        auto modeC = "\"" + (QStringList {Clamp_Highlights, Upscale_Denoise_CNN_x2_VL, AutoDownscalePre_x2, AutoDownscalePre_x4, Upscale_CNN_x2_M}).join(";") + "\"";
+        anime4K.modeC = modeC.toStdString ();
+        auto modeAA = "\"" + (QStringList {Clamp_Highlights, Restore_CNN_VL, Upscale_CNN_x2_VL, Restore_CNN_M, AutoDownscalePre_x2, AutoDownscalePre_x4, Upscale_CNN_x2_M}).join(";") + "\"";
+        anime4K.modeAA = modeAA.toStdString ();
+        auto modeBB = "\"" + (QStringList {Clamp_Highlights, Restore_CNN_Soft_VL, Upscale_CNN_x2_VL, AutoDownscalePre_x2, AutoDownscalePre_x4, Restore_CNN_Soft_M, Upscale_CNN_x2_M}).join(";") + "\"";
+        anime4K.modeBB = modeBB.toStdString ();
+        auto modeCA = "\"" + (QStringList {Clamp_Highlights, Upscale_Denoise_CNN_x2_VL, AutoDownscalePre_x2, AutoDownscalePre_x4, Restore_CNN_M, Upscale_CNN_x2_M}).join(";") + "\"";
+        anime4K.modeCA = modeCA.toStdString ();
+    }
+
     m_mpv.observe_property("duration");
     m_mpv.observe_property("playback-time");
     m_mpv.observe_property("paused-for-cache");
@@ -206,7 +241,7 @@ MpvObject::MpvObject(QQuickItem * parent) : QQuickFramebufferObject(parent)
         throw std::runtime_error("could not initialize mpv context");
 
     // Set update callback
-    m_mpv.set_wakeup_callback([](void *ctx) {
+    m_mpv.set_wakeup_callback([](void *ctx){
         MpvObject *obj = static_cast<MpvObject *>(ctx);
         QMetaObject::invokeMethod(obj, "onMpvEvent", Qt::QueuedConnection);
     }, this);
@@ -219,31 +254,22 @@ MpvObject::MpvObject(QQuickItem * parent) : QQuickFramebufferObject(parent)
 void MpvObject::open(const QUrl& fileUrl, const QUrl& danmakuUrl, const QUrl& audioTrack)
 {
 
-//    m_mpv.set_option("referrer","");
-//    m_mpv.set_option("stream-lavf-o", "seekable=0");
-//    m_mpv.set_option("stream-lavf-o", "");
-//    m_mpv.set_option("force-seekable", false);
-//    m_mpv.set_option("http-proxy", "");
-//    qDebug() << fileUrl.isLocalFile();
-//    qDebug() << "localfile" << fileUrl.toLocalFile().toUtf8();
-//    qDebug() << "string" << ;
-//    QByteArray fileuri_str = fileUrl.toString().toUtf8();//(fileUrl.isLocalFile() ? fileUrl.toLocalFile() : fileUrl.toString()).toUtf8();
+    //    m_mpv.set_option("referrer","");
+    //    m_mpv.set_option("stream-lavf-o", "seekable=0");
+    //    m_mpv.set_option("stream-lavf-o", "");
+    //    m_mpv.set_option("force-seekable", false);
+    //    m_mpv.set_option("http-proxy", "");
+    //    qDebug() << fileUrl.isLocalFile();
+    //    qDebug() << "localfile" << fileUrl.toLocalFile().toUtf8();
+    //    qDebug() << "string" << ;
+    //    QByteArray fileuri_str = fileUrl.toString().toUtf8();//(fileUrl.isLocalFile() ? fileUrl.toLocalFile() : fileUrl.toString()).toUtf8();
 
-//    qDebug() << fileUrl.toString ().toUtf8 ().constData ();
+    //    qDebug() << fileUrl.toString ().toUtf8 ().constData ();
     const char *args[] = {"loadfile", fileUrl.toString().toUtf8().constData(), nullptr};
     currentVideoLink = fileUrl.toString ();
     m_mpv.command_async(args);
-
-//    std::string uri_str {"https://cc.2cdns.com/58/b1/58b108555cd2fc6c93dfeafc08b5e657/58b108555cd2fc6c93dfeafc08b5e657.vtt"};
-
-//    const char *subargs[] = {"sub-add", uri_str.data (), "select", nullptr};
-//    m_mpv.command_async(subargs);
-//      m_mpv.set_property_async("sub-file", uri_str);
-//    setProperty("sub-file", uri_str);
-//    setSubVisible(true);
-
-//    m_danmakuUrl = danmakuUrl;
-//    m_audioToBeAdded = audioTrack;
+    //    m_danmakuUrl = danmakuUrl;
+    //    m_audioToBeAdded = audioTrack;
 }
 
 
@@ -274,11 +300,21 @@ void MpvObject::stop()
     }
 }
 
+void MpvObject::setSpeed(float speed){
+    if (m_speed==speed)
+        return;
+    m_speed=speed;
+    m_mpv.set_property_async("speed", static_cast<double>(speed));
+    showText(QByteArrayLiteral("speed: ") + QByteArray::number (speed));
+    emit speedChanged();
+}
+
 // Seek
-void MpvObject::seek ( qint64 time, bool absolute )
+void MpvObject::seek (qint64 time, bool absolute)
 {
     if (m_state != STOPPED && time != m_time)
     {
+        if(absolute && time <= 0) time = 0;
         QByteArray time_str = QByteArray::number(time);
         const char *args[] = {"seek", time_str.constData(), (absolute ? "absolute" : "relative"), nullptr};
         m_mpv.command_async(args);
@@ -291,7 +327,6 @@ void MpvObject::setVolume(int volume)
 {
     if (m_volume == volume)
         return;
-
     m_volume = volume;
     m_mpv.set_property_async("volume", static_cast<double>(volume));
     showText(QByteArrayLiteral("Volume: ") + QByteArray::number(volume));
@@ -309,7 +344,6 @@ void MpvObject::setSubVisible(bool subVisible)
     emit subVisibleChanged();
 }
 
-
 // Add audio track
 void MpvObject::addAudioTrack(const QUrl& url)
 {
@@ -323,13 +357,12 @@ void MpvObject::addAudioTrack(const QUrl& url)
 // Add subtitle
 void MpvObject::addSubtitle(const QUrl& url)
 {
-//    if (m_state == STOPPED)
-//        return;
+    //    if (m_state == STOPPED)
+    //        return;
     QByteArray uri_str = (url.isLocalFile() ? url.toLocalFile() : url.toString()).toUtf8();
     const char *args[] = {"sub-add", uri_str.constData(), "select", nullptr};
     m_mpv.command_async(args);
 }
-
 
 // Take screenshot
 void MpvObject::screenshot()
@@ -448,6 +481,14 @@ void MpvObject::onMpvEvent()
                 {
                     m_time = newTime;
                     emit timeChanged();
+//                    if(OPStart > -1 && m_time > OPStart && m_time < OPStart + OPLength)
+//                    {
+//                        seek(OPStart + OPLength);
+//                    }
+//                    else if(EDStart > -1 && m_time > EDStart && m_time < EDStart + EDLength)
+//                    {
+//                        seek(EDStart + EDLength);
+//                    }
                 }
             }
 

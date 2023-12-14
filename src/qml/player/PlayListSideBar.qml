@@ -12,13 +12,15 @@ Rectangle{
         target:app.playlist
         function onCurrentIndexChanged()
         {
-            if(!app.playlist.currentIndex.valid) return
+            if (!app.playlist.currentIndex.valid) return
             sel.setCurrentIndex(app.playlist.currentIndex, ItemSelectionModel.SelectCurrent)
             treeView.expandToIndex(app.playlist.currentIndex)
-            let halfHeight = treeView.height / 2
-            let contentY = 45 * (app.playlist.itemIndex-12) + 26.25 * (app.playlist.playlistIndex + 1)// - halfHeight
-            if(contentY < 0) contentY = 0
-            treeView.contentY = contentY
+            treeView.forceLayout()
+//            let halfHeight = treeView.height / 2
+//            let contentY = 45 * (app.playlist.itemIndex-12) + 26.25 * (app.playlist.playlistIndex + 1)// - halfHeight
+//            if (contentY < 0) contentY = 0
+//            treeView.contentY = contentY
+
         }
 
     }
@@ -34,15 +36,16 @@ Rectangle{
             left: parent.left
             bottom: bottomBar.top
         }
+        keyNavigationEnabled:false
 
         selectionModel: ItemSelectionModel {
             id:sel
             model: app.playlist
             onCurrentChanged:(current, previous)=>
                              {
-                                 if(!current.parent.valid)
+                                 if (!current.parent.valid)
                                  {
-                                     if(previous.parent.valid)
+                                     if (previous.parent.valid)
                                      {
                                          setCurrentIndex(previous, ItemSelectionModel.SelectCurrent)
                                      }
@@ -52,7 +55,7 @@ Rectangle{
                                      }
                                      return
                                  }
-                                 if(current === app.playlist.currentIndex) return;
+                                 if (current === app.playlist.currentIndex) return;
                                  app.playlist.load(current)
                              }
         }
@@ -68,7 +71,7 @@ Rectangle{
                 acceptedModifiers: Qt.NoModifier
                 onTapped:
                 {
-                    if(treeDelegate.hasChildren)
+                    if (treeDelegate.hasChildren)
                     {
                         if (treeView.isExpanded(row))
                         {

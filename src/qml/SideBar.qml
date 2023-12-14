@@ -25,7 +25,7 @@ Rectangle {
     // Positionate all buttons
     Connections{
         target: showManager
-        function onCurrentShowChanged() {
+        function onCurrentShowChanged(){
             gotoPage(1)
         }
     }
@@ -34,20 +34,20 @@ Rectangle {
     property var pages: {
         0: "explorer/SearchPage.qml",
         1: "info/InfoPage.qml",
-//        2: mpvPage,
-        3: "watchlist/WatchListPage.qml",
+        2: "watchlist/WatchListPage.qml",
+        //        3: mpvPage,
         4: "download/DownloadPage.qml",
         5: "settings.qml"
     }
 
     function gotoPage(index)
     {
-        if(fullscreen) return;
-        if(index === 1 && !showManager.hasCurrentShow) return;
-        if(currentPage!==index)
+        if (fullscreen) return;
+        if (index === 1 && !showManager.hasCurrentShow) return;
+        if (currentPage!==index)
         {
             currentPage = index
-            if(index===2)
+            if (index===3)
             {
                 mpvPage.progressBar.peak(2000)
                 mpvPage.visible = true
@@ -89,24 +89,25 @@ Rectangle {
             selected: currentPage == 1
         }
         ImageButton {
-            id:playerPageButton
-            image: selected ? "qrc:/resources/images/tv_selected.png" :"qrc:/resources/images/tv.png"
-            hoverImage: selected ? "qrc:/resources/images/tv_selected.png" :"qrc:/resources/images/tv.png"
-            Layout.preferredWidth: sideBar.width
-            Layout.preferredHeight: sideBar.width
-            onClicked: gotoPage(2)
-            selected: currentPage === 2
-        }
-        ImageButton {
             id:libraryPageButton
             image: selected ? "qrc:/resources/images/library_selected.png" :"qrc:/resources/images/library.png"
             hoverImage: selected ? "qrc:/resources/images/library_selected.png" :"qrc:/resources/images/library.png"
             Layout.preferredWidth: sideBar.width
             Layout.preferredHeight: sideBar.width
 
+            onClicked: gotoPage(2)
+            selected: currentPage === 2
+        }
+        ImageButton {
+            id:playerPageButton
+            image: selected ? "qrc:/resources/images/tv_selected.png" :"qrc:/resources/images/tv.png"
+            hoverImage: selected ? "qrc:/resources/images/tv_selected.png" :"qrc:/resources/images/tv.png"
+            Layout.preferredWidth: sideBar.width
+            Layout.preferredHeight: sideBar.width
             onClicked: gotoPage(3)
             selected: currentPage === 3
         }
+
         ImageButton {
             id: downloadPageButton
             image: selected ? "qrc:/resources/images/download_selected.png" :"qrc:/resources/images/download.png"

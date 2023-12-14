@@ -2,12 +2,8 @@
 #include <QAbstractListModel>
 #include <QObject>
 #include "Explorer/Data/showdata.h"
-#include "Providers/testprovider.h"
-#include "Providers/tangrenjie.h"
-#include "Providers/gogoanime.h"
-#include "Providers/nivod.h"
-#include "Providers/haitu.h"
-#include "Providers/allanime.h"
+#include "Providers/showprovider.h"
+
 
 class ShowProvider;
 class ShowManager: public QAbstractListModel
@@ -18,9 +14,8 @@ class ShowManager: public QAbstractListModel
     Q_PROPERTY(bool loading READ isLoading NOTIFY loadingChanged)
     // ShowData is not a QObject so these dynamic data which are mutable must be provided by this proxy class
     Q_PROPERTY(int currentShowListType READ getCurrentShowListType NOTIFY listTypeChanged)
-    Q_PROPERTY(int currentShowLastWatchedIndex READ getLastWatchedIndex NOTIFY lastWatchedIndexChanged)
     Q_PROPERTY(bool currentShowIsInWatchList READ isInWatchList NOTIFY listTypeChanged)
-
+    Q_PROPERTY(int currentShowLastWatchedIndex READ getLastWatchedIndex NOTIFY lastWatchedIndexChanged)
     Q_PROPERTY(QList<int> availableShowTypes READ getAvailableShowTypes NOTIFY searchProviderChanged)
 
     ShowData currentShow{"Undefined","","",""};
@@ -64,7 +59,7 @@ public:
 
     ShowProvider* getProvider(const QString& provider)
     {
-        if(providersHashMap.contains(provider))
+        if (providersHashMap.contains(provider))
             return providersHashMap[provider];
         return nullptr;
     }
@@ -77,26 +72,21 @@ public:
         Q_ASSERT(m_currentSearchProvider != nullptr);
         return m_currentSearchProvider;
     }
-    Q_INVOKABLE void changeSearchProvider(int index);
     void setLastWatchedIndex(int index);
     int getLastWatchedIndex() const;
     void setListType(int listType);
     int getCurrentShowListType() const;
 
-    Q_INVOKABLE void cancel()
-    {
-        if(m_watcher.isRunning ())
-        {
-            m_watcher.cancel ();
-            setLoading (false);
-        }
-    }
+
 signals:
     void currentShowChanged(void);
     void lastWatchedIndexChanged(void);
     void listTypeChanged(void);
     void loadingChanged(void);
     void searchProviderChanged(void);
+public slots:
+    void cancel();
+    void changeSearchProvider(int index);
 public:
     static ShowManager& instance()
     {
@@ -105,7 +95,7 @@ public:
     }
 private:
     QHash<QString, ShowProvider*> providersHashMap;
-    QVector<ShowProvider*> providers;
+    QList<ShowProvider*> providers;
     ShowProvider* m_currentSearchProvider;
     QString currentSearchProviderName();
 private:

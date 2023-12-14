@@ -57,7 +57,7 @@ Item{
             color:
             {
                 let lastWatchedIndex = showManager.currentShowLastWatchedIndex
-                if(lastWatchedIndex === -1)return "black"
+                if (lastWatchedIndex === -1)return "black"
                 lastWatchedIndex = app.episodeListModel.reversed ? list.count -  lastWatchedIndex - 1 : lastWatchedIndex;
                 return lastWatchedIndex === index ? "red":"black"
             }
@@ -98,8 +98,8 @@ Item{
                 hoverImage: "qrc:/resources/images/download-button.png"
                 width: height
                 onClicked: {
-                    console.log("downloading " + index)
-                    app.downloader.downloadCurrentShow(index)
+                    console.log("downloading " + app.episodeListModel.reversed ? list.count - index - 1: index)
+                    app.downloader.downloadCurrentShow(app.episodeListModel.reversed ? list.count - index - 1: index)
                 }
             }
 
@@ -107,7 +107,7 @@ Item{
 
         }
         onCountChanged: {
-            if(showManager.currentShowLastWatchedIndex > -1)
+            if (showManager.currentShowLastWatchedIndex > -1)
             {
                 list.positionViewAtIndex(app.episodeListModel.reversed ? list.count - showManager.currentShowLastWatchedIndex - 1 : showManager.currentShowLastWatchedIndex,ListView.Beginning)
             }

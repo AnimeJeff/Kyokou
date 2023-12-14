@@ -14,7 +14,7 @@
 
 //    };
 //public:
-//    QString name() { return "AllAnime"; }
+//    QString name(){ return "AllAnime"; }
 //    std::string hostUrl = "https://allanime.to";
 //private:
 //    const std::string apiHost = "api.allanime.day";
@@ -28,9 +28,9 @@
 //    const std::string videoServerHash = "5f1a64b73793cc2234a389cf3a8f93ad82de7043017dd551f38f65b89daa65e0";
 //public:
 
-//    QVector<ShowData> search(QString query, int page, int type = 0){
-//        QVector<ShowData> shows;
-//        if(query.isEmpty ()){
+//    QList<ShowData> search(QString query, int page, int type = 0){
+//        QList<ShowData> shows;
+//        if (query.isEmpty ()){
 //            m_canFetchMore = false;
 //            return shows;
 //        }
@@ -43,7 +43,7 @@
 
 //        std::string url = hostUrl + "/search.html?keyword=" + Functions::urlEncode (query.toStdString ())+ "&page="+ std::to_string (page);
 //        auto showNodes = NetworkClient::get(url).document().select("//ul[@class='items']/li");
-//        if(showNodes.empty ()){
+//        if (showNodes.empty ()){
 //            m_canFetchMore = false;
 //            return shows;
 //        }
@@ -62,7 +62,7 @@
 //        };
 //        return shows;
 //    }
-//    nlohmann::json graphqlQuery(std::string variables, std::string persistHash) {
+//    nlohmann::json graphqlQuery(std::string variables, std::string persistHash){
 
 //        std::string extensions = "{\"persistedQuery\":{\"version\":1,\"sha256Hash\":\"" + persistHash + "\"}}";
 
@@ -73,7 +73,7 @@
 
 
 //        qDebug() << QString::fromStdString (res.body);
-////        if (res.data.empty()) {
+////        if (res.data.empty()){
 ////            throw std::exception("Var: " + variables + "\\nError: " + res.errors[0].message);
 ////        }
 
@@ -81,12 +81,12 @@
 //    }
 
 
-//    QVector<ShowData> popular(int page, int type){
-//        QVector<ShowData> shows;
+//    QList<ShowData> popular(int page, int type){
+//        QList<ShowData> shows;
 //        std::string url = "";
 //        auto showNodes = NetworkClient::get(url).document().select("//ul[@class='items']/li");
         
-//        if(showNodes.empty ()){
+//        if (showNodes.empty ()){
 //            m_canFetchMore = false;
 //            return shows;
 //        }
@@ -106,11 +106,11 @@
 //        };
 //        return shows;
 //    }
-//    QVector<ShowData> latest(int page, int type){
-//        QVector<ShowData> shows;
+//    QList<ShowData> latest(int page, int type){
+//        QList<ShowData> shows;
 //        std::string url = "";
 //        auto showNodes = NetworkClient::get(url).document().select("//ul[@class='items']/li");
-//        if(showNodes.empty ()){
+//        if (showNodes.empty ()){
 //            m_canFetchMore = false;
 //            return shows;
 
@@ -139,8 +139,8 @@
 //    int getTotalEpisodes(const ShowData &show){
 //        return 0;
 //    }
-//    QVector<VideoServer> loadServers(const Episode &episode){
-//        QVector<VideoServer> servers;
+//    QList<VideoServer> loadServers(const Episode &episode){
+//        QList<VideoServer> servers;
 //        NetworkClient::get(episode.link).document();
 //        return servers;
 //    }

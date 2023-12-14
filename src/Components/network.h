@@ -7,6 +7,7 @@
 #include <iostream>
 #include <memory>
 #include <QDebug>
+#include <QMutex>
 #define StringMap std::map<std::string, std::string>
 
 class NetworkClient
@@ -14,12 +15,15 @@ class NetworkClient
 private:
     static constexpr int maxCurls = 10;
 
-    static std::vector<CURL*> curls;
+    static QList<CURL*> curls;
 
-    static void createHandles(){
-        for( int i=0; i<maxCurls; ){
+    static void createHandles()
+    {
+        for (int i = 0; i < maxCurls;)
+        {
             CURL *curl = curl_easy_init ();
-            if (curl){
+            if (curl)
+            {
                 initHandle(curl);
                 curls.push_back(curl);
                 i++;
@@ -35,7 +39,7 @@ private:
         curl_easy_setopt(curl, CURLOPT_VERBOSE, 0L);
 
         // Set the user agent
-        //            curl_easy_setopt(curl, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3");
+        // curl_easy_setopt(curl, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3");
 
         // Set SSL options
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
@@ -48,19 +52,15 @@ private:
     }
 
     static CURL* getCurl(){
-        static std::mutex mutex;
-        mutex.lock();
+        QMutexLocker locker(&mutex);
         CURL* curl = curls.back ();
         curls.pop_back ();
-        mutex.unlock();
         return curl;
     }
-
+    static QMutex mutex;
     static void returnCurl(CURL* curl){
-        static std::mutex mutex;
-        mutex.lock();
+        QMutexLocker locker(&mutex);
         curls.push_back(curl);
-        mutex.unlock();
     }
 
     static bool initialised;
@@ -76,15 +76,15 @@ private:
     };
 public:
     static void init(){
-        if(initialised) return;
+        if (initialised) return;
         curl_global_init(CURL_GLOBAL_ALL);
         createHandles();
         initialised = true;
     }
 
     static void shutdown(){
-        if(!initialised) return;
-        for(auto& curl: curls){
+        if (!initialised) return;
+        for (auto& curl: curls){
             curl_easy_cleanup(curl);
         }
         curl_global_cleanup ();
@@ -122,9 +122,9 @@ public:
         std::string queryParams;
 
         // Build the query parameters
-        if (!params.empty()) {
+        if (!params.empty()){
             ss << "?";
-            for (auto const& [key, value] : params) {
+            for (auto const& [key, value] : params){
                 ss << key << "=" << value << "&";
             }
             queryParams = ss.str();
@@ -137,10 +137,10 @@ public:
         return request(GET,fullUrl.c_str ());
     }
 
-    static Response post(const std::string& url, const StringMap& headers={}, const StringMap& data={}) {
+    static Response post(const std::string& url, const StringMap& headers={}, const StringMap& data={}){
         // Set the post data
         std::string postData;
-        for (auto const& x : data) {
+        for (auto const& x : data){
             postData += std::string(x.first) + "=" + std::string(x.second) + "&";
         }
         return request(POST, url.c_str (), headers, postData.c_str());
@@ -155,17 +155,17 @@ public:
         // Set the headers
         struct curl_slist* headerLista = NULL;
         StringMap _headers = headers;
-        if(headers.empty ()){
+        if (headers.empty ()){
             _headers = defaultHeaders;
         }
-        for (auto const& [key, value] : _headers) {
+        for (auto const& [key, value] : _headers){
             std::string header = std::string(key) + ":" + std::string(value);
             headerLista = curl_slist_append(headerLista, header.c_str());
         }
 
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headerLista);
 
-        if(type == POST)
+        if (type == POST)
         {
             curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
             curl_easy_setopt(curl, CURLOPT_POST, 1L);
@@ -192,7 +192,7 @@ public:
         curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &code);
 
         // Check for errors
-        if (res != CURLE_OK) {
+        if (res != CURLE_OK){
             qDebug() << "curl_easy_perform() failed: " << curl_easy_strerror(res);
         }
 
@@ -211,13 +211,13 @@ private:
     NetworkClient() = default;
     ~NetworkClient() = default;
     // WriteCallback function to handle the response body
-    static size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp) {
+    static size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp){
         ((std::string*) userp)->append((char*) contents, size * nmemb);
         return size * nmemb;
     }
 
     // HeaderCallback function to handle the response headers
-    static size_t HeaderCallback(char* buffer, size_t size, size_t nitems, void* userdata) {
+    static size_t HeaderCallback(char* buffer, size_t size, size_t nitems, void* userdata){
         size_t numbytes = size * nitems;
         std::string* header = static_cast<std::string*>(userdata);
         header->append(buffer, numbytes);

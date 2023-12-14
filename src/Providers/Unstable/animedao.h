@@ -18,10 +18,10 @@
 //    };
 //    std::string hostUrl = "https://animedao.to";
 
-//    QVector<ShowData> search(QString query, int page, int type) override {
+//    QList<ShowData> search(QString query, int page, int type) override {
 //        std::string url = hostUrl + "/search/?search=" + query.toStdString ()+ "&page=" + std::to_string (page);
 //        auto animeNodes = NetworkClient::get( url ).document ().select("//div[@class='card-body']");
-//        QVector<ShowData> animes;
+//        QList<ShowData> animes;
 //        for (pugi::xpath_node_set::const_iterator it = animeNodes.begin(); it != animeNodes.end(); ++it)
 //        {
 //            auto title = it->selectFirst(".//span[@class='animename']").node ().child_value ();
@@ -31,11 +31,11 @@
 //        }
 //        return animes;
 //    };
-//    QVector<ShowData> popular(int page, int type){
-//        return QVector<ShowData>{};
+//    QList<ShowData> popular(int page, int type){
+//        return QList<ShowData>{};
 //    };
-//    QVector<ShowData> latest(int page, int type) override {
-//        return QVector<ShowData>{};
+//    QList<ShowData> latest(int page, int type) override {
+//        return QList<ShowData>{};
 //    };
 //    void loadDetails(ShowData& show) override {
 
@@ -43,8 +43,8 @@
 //    int getTotalEpisodes(const ShowData &show) override {
 //        return 0;
 //    };
-//    QVector<VideoServer> loadServers(const PlaylistItem *episode) override {
-//        return QVector<VideoServer>{};
+//    QList<VideoServer> loadServers(const PlaylistItem *episode) override {
+//        return QList<VideoServer>{};
 //    };
 //    QString extractSource(VideoServer &server) override {
 //        return "";

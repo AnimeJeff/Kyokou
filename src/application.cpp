@@ -16,7 +16,7 @@ Application::Application(QObject *parent): QObject(parent)
     connect(&ShowManager::instance (), &ShowManager::lastWatchedIndexChanged, &m_episodeListModel, &EpisodeListModel::updateLastWatchedName);
     N_m3u8DLPathExists = QFile(QDir::cleanPath (QCoreApplication::applicationDirPath() + QDir::separator() + "N_m3u8DL-CLI_v3.0.2.exe")).exists ();
 //    ;;
-//    if(QFile(N_m3u8DLPath).exists ())
+//    if (QFile(N_m3u8DLPath).exists ())
 //    {
 //        DownloadRunnable::setN_m3u8DLPath (N_m3u8DLPath);
 //        DownloadModel::setDownloadFolderPath (downloadDirectory);
@@ -25,7 +25,7 @@ Application::Application(QObject *parent): QObject(parent)
 
 bool Application::parseArgs(int argc, char *argv[])
 {
-    if(argc == 1) return true;
+    if (argc == 1) return true;
     return m_playlistModel.setLaunchPath (QString::fromLocal8Bit (argv[1]));
 }
 

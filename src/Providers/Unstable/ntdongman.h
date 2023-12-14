@@ -20,8 +20,8 @@
 //    QString hostUrl {
 //        return "http://www.ntdm8.com/";
 //    };
-//    QVector<ShowResponse> filterSearch(int page, std::string sortBy,std::string channel,std::string regionId = "0",std::string langId="0",std::string yearRange=" ") {
-//        QVector<ShowResponse> animes;
+//    QList<ShowResponse> filterSearch(int page, std::string sortBy,std::string channel,std::string regionId = "0",std::string langId="0",std::string yearRange=" "){
+//        QList<ShowResponse> animes;
 
 //        //        NetworkClient::get("http://www.ntdm8.com"/show/riben---%E6%90%9E%E7%AC%91--------2023.html")
 
@@ -29,20 +29,20 @@
 //        return animes;
 //    };
 
-//    QVector<ShowResponse> search(QString query, int page, int type){
-//        QVector<ShowResponse> animes;
+//    QList<ShowResponse> search(QString query, int page, int type){
+//        QList<ShowResponse> animes;
 
 
 
 //        return animes;
 //    };
-//    QVector<ShowResponse> popular(int page, int type){
-//        QVector<ShowResponse> animes;
+//    QList<ShowResponse> popular(int page, int type){
+//        QList<ShowResponse> animes;
 
 //        return animes;
 //    };
-//    QVector<ShowResponse> latest(int page, int type){
-//        QVector<ShowResponse> animes;
+//    QList<ShowResponse> latest(int page, int type){
+//        QList<ShowResponse> animes;
 //        NetworkClient::get ("http://www.ntdm8.com/label/new/page/"+std::to_string (page)+".html").document ().select ("//li[@class='anime_icon2']").forEach([&](pugi::xpath_node element){
 //            ShowResponse anime;
 //            pugi::xpath_node anchor = element.selectFirst (".//a");
@@ -57,8 +57,8 @@
 //        return animes;
 //    };
 
-//    QVector<ShowResponse> fetchMore(){
-//        QVector<ShowResponse> animes;
+//    QList<ShowResponse> fetchMore(){
+//        QList<ShowResponse> animes;
 
 //        return animes;
 //    };
@@ -79,11 +79,11 @@
 //        return show;
 //    };
 
-//    QVector<VideoServer> loadServers(const Episode &episode){
+//    QList<VideoServer> loadServers(const Episode &episode){
 //        VideoServer server;
 //        server.name = "danmu";
 //        server.link = NetworkClient::get (episode.link).document ().selectText ("//*[@id='ageframediv']/script[1]");
-//        return QVector<VideoServer>{server};
+//        return QList<VideoServer>{server};
 //    };
 
 //    QString extractSource(VideoServer& server){

@@ -94,10 +94,10 @@ RowLayout {
                 {
                     showTypeModel.append({text : typeComboBox.typeName[showType - 1], type: showType})
                 }
-                if(showManager.availableShowTypes.includes(typeComboBox.type)){
-                    for(var i = 0; i < showTypeModel.count; ++i)
+                if (showManager.availableShowTypes.includes(typeComboBox.type)){
+                    for (var i = 0; i < showTypeModel.count; ++i)
                     {
-                        if(showTypeModel.get(i).type === typeComboBox.type)
+                        if (showTypeModel.get(i).type === typeComboBox.type)
                         {
                             typeComboBox.currentIndex = i
                         }
@@ -114,7 +114,7 @@ RowLayout {
 
         currentIndex: 0
         onCurrentIndexChanged: {
-            if(showTypeModel.count === 0) return
+            if (showTypeModel.count === 0) return
             typeComboBox.type = showTypeModel.get(typeComboBox.currentIndex).type
             typeComboBox.displayText = showTypeModel.get(typeComboBox.currentIndex).text
         }

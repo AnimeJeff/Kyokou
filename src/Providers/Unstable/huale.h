@@ -20,8 +20,8 @@
 //    QString hostUrl {
 //        return "https://www.huale.org";
 //    };
-//    QVector<ShowResponse> filterSearch(int page, QString sortBy = "time",int type = 1,QString subType = "", QString region = "",QString genre = "",QString language = "",QString letter= "",QString year= "" ) {
-//        QVector<ShowResponse> shows;
+//    QList<ShowResponse> filterSearch(int page, QString sortBy = "time",int type = 1,QString subType = "", QString region = "",QString genre = "",QString language = "",QString letter= "",QString year= ""){
+//        QList<ShowResponse> shows;
 //        // 全部类型 = 1 动作片 喜剧片 爱情片 科幻片 伦理片 恐怖片 剧情片 战争片 冒险片 动画电影 同性片 奇幻片 悬疑片 惊悚片 歌舞片 灾难片 犯罪片 经典片 网络电影
 //        // regions 大陆 香港 台湾 美国 法国 英国 日本 韩国 德国 泰国 印度 意大利 西班牙 加拿大 其他
 //        // 喜剧 爱情 恐怖 动作 科幻 剧情 战争 警匪 犯罪 动画 奇幻 武侠 冒险 枪战 恐怖 悬疑 惊悚 经典 青春 文艺 微电影 古装 历史 运动 农村 儿童 网络电影
@@ -46,23 +46,23 @@
 //        return shows;
 //    };
 
-//    QVector<ShowResponse> search(QString query, int page, int type){
-//        QVector<ShowResponse> animes;
+//    QList<ShowResponse> search(QString query, int page, int type){
+//        QList<ShowResponse> animes;
 
 
 
 //        return animes;
 //    };
 
-//    QVector<ShowResponse> popular(int page, int type){
+//    QList<ShowResponse> popular(int page, int type){
 //        return filterSearch (page,"hits");
 //    };
-//    QVector<ShowResponse> latest(int page, int type){
+//    QList<ShowResponse> latest(int page, int type){
 //        return filterSearch (page,"time");
 //    };
 
-//    QVector<ShowResponse> fetchMore(){
-//        QVector<ShowResponse> animes;
+//    QList<ShowResponse> fetchMore(){
+//        QList<ShowResponse> animes;
 
 //        return animes;
 //    };
@@ -84,11 +84,11 @@
 //        return show;
 //    };
 
-//    QVector<VideoServer> loadServers(const Episode &episode){
+//    QList<VideoServer> loadServers(const Episode &episode){
 //        VideoServer server;
 //        server.name = "danmu";
 //        server.link = NetworkClient::get (episode.link).document ().selectText ("//*[@id='ageframediv']/script[1]");
-//        return QVector<VideoServer>{server};
+//        return QList<VideoServer>{server};
 //    };
 
 //    QString extractSource(VideoServer& server){

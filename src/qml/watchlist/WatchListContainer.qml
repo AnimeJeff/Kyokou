@@ -76,7 +76,7 @@ GridView {
                     drag.target: held ? content : undefined
                     drag.axis: Drag.XAndYAxis
                     drag.onActiveChanged: {
-                        if(drag.active)
+                        if (drag.active)
                         {
                             //todo change grab
                             app.cursor.shape = Qt.ClosedHandCursor
@@ -99,10 +99,10 @@ GridView {
                         onEntered: (drag) => {
                                        let oldIndex = drag.source.DelegateModel.itemsIndex
                                        let newIndex = dragArea.DelegateModel.itemsIndex
-                                       //                                       if(container.lastLoadedIndex === oldIndex){
+                                       //                                       if (container.lastLoadedIndex === oldIndex){
                                        //                                           container.lastLoadedIndex = newIndex
                                        //                                       }
-                                       if(Math.abs(newIndex-oldIndex) < container.itemPerRow * 2){
+                                       if (Math.abs(newIndex-oldIndex) < container.itemPerRow * 2){
                                            app.watchList.move(oldIndex,newIndex)
                                            visualModel.items.move(oldIndex,newIndex)
                                        }
@@ -111,7 +111,7 @@ GridView {
                     }
                     hoverEnabled: true
                     onContainsMouseChanged: {
-                        if(containsMouse && !drag.active)
+                        if (containsMouse && !drag.active)
                         {
                             app.cursor.shape = Qt.PointingHandCursor
                         }

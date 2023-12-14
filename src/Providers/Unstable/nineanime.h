@@ -62,10 +62,10 @@
 //        std::string output = str;
 //        auto process = [&](const std::vector<std::string>& steps)
 //        {
-//            for(const std::string& step:steps){
-//                if(step == "rot13"){
+//            for (const std::string& step:steps){
+//                if (step == "rot13"){
 //                    output = Functions::rot13 (str);
-//                }else if(step == "reverse"){
+//                }else if (step == "reverse"){
 //                    std::reverse(output.begin(), output.end());
 //                }
 //            }
@@ -74,30 +74,30 @@
 //        std::string u = "";
 //        std::vector<std::string> operation;
 //        const int mod = operations.size ();
-//        for(unsigned int i=0;i<output.length ();i++){
+//        for (unsigned int i=0;i<output.length ();i++){
 //            unsigned int o = output[i];
 //            unsigned int index = i % mod;
 //            operation = operations[index];
 //            const std::string operative = operation[0];
 //            const int operand = std::stoi (operation[1]);
-//            if(operative == "+"){
+//            if (operative == "+"){
 //                o += operand;
-//            }else if(operative == "-"){
+//            }else if (operative == "-"){
 //                o -= operand;
-//            }else if(operative == "*"){
+//            }else if (operative == "*"){
 //                o *= operand;
-//            }else if(operative == "/"){
+//            }else if (operative == "/"){
 //                o /= operand;
-//            }else if(operative == "<<"){
+//            }else if (operative == "<<"){
 //                o <<= operand;
-//            }else if(operative == ">>"){
+//            }else if (operative == ">>"){
 //                o >>= operand;
-//            }else if(operative == "^"){
+//            }else if (operative == "^"){
 //                o ^= operand;
-//            }else if(operative == "%"){
+//            }else if (operative == "%"){
 //                o %= operand;
 //            }
-//            u+=static_cast<unsigned char>(o);
+//            u += static_cast<unsigned char>(o);
 //        }
 //        output = u;
 //        process(post);
@@ -108,17 +108,17 @@
 //    QString name() override {return "9anime";};
 //    QString hostUrl override {return "https://9anime.id";};
 
-//    QVector<ShowResponse> search(QString query, int page, int type) override{
+//    QList<ShowResponse> search(QString query, int page, int type) override{
 //        Q_UNUSED(type);
 //        m_widgetSearched=false;
 //        m_lastSearch = query.toStdString ();
 //        return search(m_lastSearch,page);
 //    };
-//    QVector<ShowResponse> search(std::string query, int page){
+//    QList<ShowResponse> search(std::string query, int page){
 //        m_widgetSearched=false;
 //        m_lastSearch = query;
 //        QString url = "https://9anime.pl/filter?keyword="+m_lastSearch+"&page="+std:QString::numberge);
-//        QVector<ShowResponse> animes;
+//        QList<ShowResponse> animes;
 //        NetworkClient::get(url).document()
 //            .select("//div[@id='list-items']/div[@class='item']").forEach ([&](pugi::xpath_node item) {
 //                ShowResponse anime;
@@ -135,23 +135,23 @@
 //    };
 
 
-//    QVector<ShowResponse> popular(int page,int type)override{
+//    QList<ShowResponse> popular(int page,int type)override{
 //        Q_UNUSED(type);
 //        return widgetSearch("trending",page);
 //    };
 
-//    QVector<ShowResponse> latest(int page,int type)override{
+//    QList<ShowResponse> latest(int page,int type)override{
 //        Q_UNUSED(type);
 //        return widgetSearch ("updated-sub",page);
 //    };
 
-//    QVector<ShowResponse> widgetSearch(std::string path,int page)
+//    QList<ShowResponse> widgetSearch(std::string path,int page)
 //    {
 //        m_widgetSearched = true;
 //        m_currentPage = page;
 //        m_lastSearch = path;
 //        std::string url = "https://9anime.id/ajax/home/widget/" + path +"?page=" + QString::number (page);
-//        QVector<ShowResponse> animes = parseAnimes (url);
+//        QList<ShowResponse> animes = parseAnimes (url);
 //        return animes;
 //    };
 
@@ -211,7 +211,7 @@
 //        std::string serverDataUrl =hostUrl+"/ajax/server/"+sourceID+"?vrf="+encodeVrf(sourceID, keys);
 //        auto episodeBody= NetworkClient::get (serverDataUrl).json ()["result"];//todo add headers
 //        nlohmann::json skip_data = episodeBody["skip_data"];
-//        if(!skip_data.empty ()){
+//        if (!skip_data.empty ()){
 //            server->skipData = new VideoServer::SkipData;
 //            server->skipData->introBegin=skip_data["intro_begin"].get<int> ();
 //            server->skipData->introEnd=skip_data["intro_end"].get<int> ();
@@ -223,9 +223,9 @@
 //    }
 
 //private:
-//    QVector<ShowResponse> parseAnimes(std::string url){
+//    QList<ShowResponse> parseAnimes(std::string url){
 //        CSoup document(NetworkClient::get(url).json ()["result"]);
-//        QVector<ShowResponse> animes;
+//        QList<ShowResponse> animes;
 //        auto items =document.select("//div[@class='item']");
 //        items.forEach ([&](pugi::xpath_node node){
 //            ShowResponse anime;
@@ -242,37 +242,37 @@
 //    Status parseStatus(std::string statusString){
 //        if (statusString=="Releasing") {
 //            return Status::Ongoing;}
-//        else if(statusString=="Completed"){
+//        else if (statusString=="Completed"){
 //            return Status::Completed;
 //        }
 //        return Status::Completed;
 //    }
 //public:
-//    QVector<VideoServer> loadServers(Episode *episode) override{
+//    QList<VideoServer> loadServers(Episode *episode) override{
 //        CSoup document(NetworkClient::get(episode->link).json ()["result"]);
-//        QVector<VideoServer> servers;
+//        QList<VideoServer> servers;
 //        document.select("//ul/li").forEach ([&](pugi::xpath_node element){
 //            VideoServer server;
 //            std::string serverID = element.attr("data-sv-id").as_string ();
 //            //            auto linkID = element.attr("data-link-id").as_string ();
 //            //            server.link = linkID;
 //            server.link = episode->link;
-//            if(serverID.compare("41") == 0){
+//            if (serverID.compare("41") == 0){
 //                server.name = "vidstream";
 //            }
-//            else if(serverID.compare("28") == 0){
+//            else if (serverID.compare("28") == 0){
 //                server.name = "mycloud";
 //            }
-//            else if(serverID.compare("43") == 0){
+//            else if (serverID.compare("43") == 0){
 //                server.name = "videovard";
 //            }
-//            else if(serverID.compare("40") == 0){
+//            else if (serverID.compare("40") == 0){
 //                server.name = "streamtape";
 //            }
-//            else if(serverID.compare("35") == 0){
+//            else if (serverID.compare("35") == 0){
 //                server.name = "mp4upload";
 //            }
-//            else if(serverID.compare("44") == 0){
+//            else if (serverID.compare("44") == 0){
 //                server.name = "filemoon";
 //            }
 //            else{
@@ -283,7 +283,7 @@
 //        return servers;
 //    };
 //    void extractSource(VideoServer *server) override{
-//        if(server->name.compare ("vidstream") == 0){
+//        if (server->name.compare ("vidstream") == 0){
 //            auto url = "https://api.consumet.org/anime/9anime/watch/"+server->link+"?server=vizcloud";
 //            qDebug()<<url;
 //            auto json = nlohmann::json::parse(NetworkClient::get ("https://api.consumet.org/anime/9anime/watch/"+server->link+"?server=vizcloud").body);
@@ -293,8 +293,8 @@
 //        }
 //    }
 //public:
-//    QVector<ShowResponse> fetchMore() override{
-//        if(m_widgetSearched){
+//    QList<ShowResponse> fetchMore() override{
+//        if (m_widgetSearched){
 //            return widgetSearch (m_lastSearch,++m_currentPage);
 //        }else{
 //            return search(m_lastSearch,++m_currentPage);

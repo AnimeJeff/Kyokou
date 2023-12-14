@@ -45,7 +45,7 @@ Rectangle {
                        clickPos  = Qt.point(mouse.x,mouse.y)
                    }
         onPositionChanged: (mouse)=> {
-                               if(!root.maximised && clickPos !== null){
+                               if (!root.maximised && clickPos !== null){
                                    root.x = app.cursor.pos().x - clickPos.x
                                    root.y = app.cursor.pos().y - clickPos.y
                                }

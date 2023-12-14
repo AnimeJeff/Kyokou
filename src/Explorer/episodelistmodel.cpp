@@ -3,18 +3,18 @@
 QString EpisodeListModel::getContinueEpisodeName()
 {
     const auto* playlist = ShowManager::instance ().getCurrentShow ().getPlaylist ();
-    if(!playlist || continueIndex < 0 || continueIndex >= playlist->count ()) return "";
+    if (!playlist || continueIndex < 0 || continueIndex >= playlist->count ()) return "";
     const PlaylistItem *episode = playlist->at(continueIndex);
     return episode->name.isEmpty () ? QString::number (episode->number) : episode->number < 0 ? episode->name : QString::number (episode->number) + "\n" + episode->name;
 }
 
 void EpisodeListModel::updateLastWatchedName()
 {
-    if(const auto* playlist = ShowManager::instance ().getCurrentShow ().getPlaylist ())
+    if (const auto* playlist = ShowManager::instance ().getCurrentShow ().getPlaylist ())
     {
         continueIndex = ShowManager::instance ().getLastWatchedIndex ();
-        if(continueIndex == playlist->count () - 2) ++continueIndex;
-        qDebug() << "continue index" << continueIndex << "count" << playlist->count ();
+        if (continueIndex == playlist->count () - 2) ++continueIndex;
+        else if(continueIndex >= playlist->count ()) continueIndex=playlist->count () - 1;
         emit continueIndexChanged();
     }
 }

@@ -12,10 +12,10 @@ public:
     QString name() const override { return "TestProvider"; }
     std::string hostUrl = "";
 
-    QVector<ShowData> search(QString query, int page, int type) override
+    QList<ShowData> search(QString query, int page, int type) override
     {
-        QVector<ShowData> shows;
-        if(query.isEmpty ()){
+        QList<ShowData> shows;
+        if (query.isEmpty ()){
             m_canFetchMore = false;
             return shows;
         }
@@ -31,9 +31,9 @@ public:
         return shows;
     }
 
-    QVector<ShowData> popular(int page, int type) override
+    QList<ShowData> popular(int page, int type) override
     {
-        QVector<ShowData> shows;
+        QList<ShowData> shows;
         std::string url = "";
         shows.push_back (ShowData("One Piece","https://gogocdn.net/images/anime/One-piece.jpg","https://gogocdn.net/images/anime/One-piece.jpg",name()));
         shows.push_back (ShowData("Detective Conan","https://gogocdn.net/cover/detective-conan.png","https://gogocdn.net/cover/detective-conan.png",name()));
@@ -46,9 +46,9 @@ public:
         return shows;
     }
 
-    QVector<ShowData> latest(int page, int type)override
+    QList<ShowData> latest(int page, int type)override
     {
-        QVector<ShowData> shows;
+        QList<ShowData> shows;
         std::string url = "";
         shows.push_back (ShowData("One Piece","https://gogocdn.net/images/anime/One-piece.jpg","https://gogocdn.net/images/anime/One-piece.jpg",name()));
         shows.push_back (ShowData("Detective Conan","https://gogocdn.net/cover/detective-conan.png","https://gogocdn.net/cover/detective-conan.png",name()));
@@ -72,14 +72,14 @@ public:
         }
     }
 
-    int getTotalEpisodes(const ShowData &show)const override
+    int getTotalEpisodes(const std::string& link)const override
     {
         return 0;
     }
 
-    QVector<VideoServer> loadServers(const PlaylistItem *episode)const override
+    QList<VideoServer> loadServers(const PlaylistItem *episode)const override
     {
-        QVector<VideoServer> servers;
+        QList<VideoServer> servers;
         servers.push_back (VideoServer(episode->name,episode->link));
         return servers;
     }
