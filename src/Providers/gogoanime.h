@@ -20,7 +20,7 @@ public:
     void loadDetails(ShowData& anime) const override;
     int getTotalEpisodes(const std::string& link) const override;
     QList<VideoServer> loadServers(const PlaylistItem* episode) const override;
-    QString extractSource(VideoServer& server) const override;
+    QString extractSource(const VideoServer& server) const override;
 private:
     CSoup getInfoPage(const std::string& link) const;
     std::string getEpisodesLink(const CSoup& doc) const;

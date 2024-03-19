@@ -12,6 +12,12 @@ RowLayout {
         root.lastSearch = searchTextField.text
         parent.forceActiveFocus()
     }
+    function latest(){
+        app.showExplorer.latest(1, typeComboBox.type)
+    }
+    function popular(){
+        app.showExplorer.popular(1, typeComboBox.type)
+    }
 
     CustomTextField {
         checkedColor: "#727CF5"
@@ -44,7 +50,7 @@ RowLayout {
         fontSize:20 * root.aspectRatio
         Layout.preferredWidth: parent.width * 0.08
         focusPolicy: Qt.NoFocus
-        onClicked: app.showExplorer.latest(1, typeComboBox.type)
+        onClicked:latest()
     }
     
     CustomButton {
@@ -55,10 +61,9 @@ RowLayout {
         radius: 20
         Layout.preferredWidth: parent.width * 0.08
         focusPolicy: Qt.NoFocus
-        onClicked: {
-            app.showExplorer.popular(1, typeComboBox.type)
-        }
+        onClicked: popular()
     }
+
     CustomComboBox {
         id:providersComboBox
 //        Layout.preferredWidth: parent.width * 0.28
@@ -71,9 +76,9 @@ RowLayout {
         onCurrentIndexChanged: {
             showManager.changeSearchProvider(currentIndex)
             providersComboBox.currentIndex = showManager.rowCount() - 1
-
         }
     }
+
     CustomComboBox {
         id:typeComboBox
 //        Layout.preferredWidth: parent.width * 0.15
@@ -103,8 +108,7 @@ RowLayout {
                         }
                     }
                 }
-                else
-                {
+                else{
                     typeComboBox.currentIndex = 0
                     typeComboBox.type = showTypeModel.get(currentIndex).type
                     typeComboBox.displayText = showTypeModel.get(currentIndex).text
@@ -118,7 +122,7 @@ RowLayout {
             typeComboBox.type = showTypeModel.get(typeComboBox.currentIndex).type
             typeComboBox.displayText = showTypeModel.get(typeComboBox.currentIndex).text
         }
-        Component.onCompleted: {
+        Component.onCompleted:{
             for (let showType of showManager.availableShowTypes)
             {
                 showTypeModel.append({text : typeComboBox.typeName[showType - 1], type: showType})

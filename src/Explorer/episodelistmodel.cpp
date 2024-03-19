@@ -50,7 +50,7 @@ QVariant EpisodeListModel::data(const QModelIndex &index, int role) const
     }
 }
 
-QHash<int, QByteArray> EpisodeListModel::roleNames() const{
+QHash<int, QByteArray> EpisodeListModel::roleNames() const {
     QHash<int, QByteArray> names;
     names[TitleRole] = "title";
     names[NumberRole] = "number";

@@ -17,8 +17,7 @@ Item {
 
     LoadingScreen {
         id:loadingScreen
-        anchors.fill: parent
-        z:parent.z+1
+        anchors.centerIn: parent
         loading: app.showExplorer.loading || showManager.loading
         onCancelled: {
             app.showExplorer.cancel()
@@ -109,13 +108,16 @@ Item {
                 searchBar.textField.forceActiveFocus()
                 break;
             case Qt.Key_P:
-                app.showExplorer.popular(1,4)
+                searchBar.popular()
                 break;
             case Qt.Key_L:
-                app.showExplorer.latest(1,4)
+                searchBar.latest()
                 break;
             case Qt.Key_Up:
                 showContainer.flick(0,500)
+                break;
+            case Qt.Key_Down:
+                showContainer.flick(0,-500)
                 break;
 
             }

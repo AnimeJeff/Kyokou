@@ -8,12 +8,14 @@ GridView {
     property real spacing: 5
     property real lastY:0
     property real fontSize: 18 * root.aspectRatio
+    boundsBehavior: Flickable.StopAtBounds
     model: visualModel
     clip: true
     cellWidth: width / itemPerRow
     cellHeight: cellWidth * aspectRatio + fontSize * 2 * root.aspectRatio
     anchors.topMargin: spacing
     anchors.leftMargin: spacing
+    onContentYChanged: watchListViewLastScrollY = contentY
 
     DelegateModel {
         id:visualModel
@@ -55,7 +57,7 @@ GridView {
                     height: parent.height / 10
                     color: "red"
                     radius: 1
-                    anchors{
+                    anchors {
                         right: parent.right
                         top: parent.top
                     }

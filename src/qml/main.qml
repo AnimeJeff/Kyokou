@@ -1,4 +1,4 @@
-import QtQuick
+    import QtQuick
 import QtQuick.Window 2.2
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
@@ -35,9 +35,14 @@ Window {
     property MpvObject mpv
     property bool mpvWasPlaying
 
+
+
+
+
+
     ParallelAnimation {
         id: resizingAnimation
-        property real speed:6000
+        property real speed:6666
         SmoothedAnimation {
             id:widthanime
             target: root
@@ -70,24 +75,11 @@ Window {
         // hide mpv then reshow
         property bool mpvVisible:false
         onRunningChanged: {
-            if (running)
-            {
-                mpvWasPlaying = mpv.state == MpvObject.VIDEO_PLAYING
-                if (mpvWasPlaying)
-                {
-                    mpv.pause()
-                }
-            }
-            else
-            {
-                if (mpvWasPlaying)
-                {
-                    mpv.play()
-                }
-            }
+            if (!running && mpvWasPlaying) mpv.play()
         }
     }
 
+    // does not cover the taskbar
     onMaximisedChanged: {
         if (resizingAnimation.running) return
         if (maximised)
@@ -109,14 +101,14 @@ Window {
             widthanime.to = 1080
             heightanime.to = 720
         }
+        root.mpvWasPlaying = mpv.state == MpvObject.VIDEO_PLAYING
+        if (root.mpvWasPlaying) mpv.pause()
         resizingAnimation.running = true
-
     }
 
     onFullscreenChanged: {
         if (resizingAnimation.running) return
-        if (fullscreen)
-        {
+        if (fullscreen) {
             xanime.to = 0
             yanime.to = 0
             if (root.x !== 0 && root.y !== 0)
@@ -126,14 +118,14 @@ Window {
             }
             widthanime.to = Screen.width
             heightanime.to = Screen.height
-        }
-        else
-        {
+        } else {
             xanime.to = maximised ? 0 : lastX
             yanime.to = maximised ? 0 : lastY
             widthanime.to = maximised ? Screen.desktopAvailableWidth : 1080
             heightanime.to = maximised ? Screen.desktopAvailableHeight : 720
         }
+        root.mpvWasPlaying = mpv.state == MpvObject.VIDEO_PLAYING
+        if (root.mpvWasPlaying) mpv.pause()
         resizingAnimation.running = true
 
     }
@@ -165,6 +157,8 @@ Window {
             flags &= ~Qt.WindowStaysOnTopHint
             playerFillWindow = fullscreen
         }
+        root.mpvWasPlaying = mpv.state == MpvObject.VIDEO_PLAYING
+        if (root.mpvWasPlaying) mpv.pause()
         resizingAnimation.running = true
 
     }
@@ -224,8 +218,7 @@ Window {
     }
 
 
-    MouseArea
-    {
+    MouseArea {
         anchors.fill: parent
         acceptedButtons: Qt.ForwardButton | Qt.BackButton
         onClicked: (mouse)=>

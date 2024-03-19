@@ -15,10 +15,10 @@ public:
     QList<ShowData> popular(int page, int type) override;
     QList<ShowData> latest(int page, int type) override;
 
-    void loadDetails(ShowData& show) const override;;
-    QList<VideoServer> loadServers(const PlaylistItem* episode) const override;;
+    void loadDetails(ShowData& show) const override;
+    QList<VideoServer> loadServers(const PlaylistItem* episode) const override;
     int getTotalEpisodes(const std::string& link) const override;
-    QString extractSource(VideoServer& server) const override;;
+    QString extractSource(const VideoServer& server) const override;
 
 private:
     QMap<QString, QString> objKeySort(const QMap<QString, QString>& inputMap) const;

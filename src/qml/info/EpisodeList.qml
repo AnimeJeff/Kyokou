@@ -28,8 +28,8 @@ Item{
                 Layout.preferredWidth: height
                 Layout.rightMargin: 10
                 id:reverseButton
-                image: "qrc:/resources/images/sorting-arrows.png"
-                hoverImage: "qrc:/resources/images/sorting-arrows.png"
+                source: "qrc:/resources/images/sorting-arrows.png"
+                // hoverImage: "qrc:/resources/images/sorting-arrows.png"
                 onClicked: {
                     app.episodeListModel.reversed = !app.episodeListModel.reversed
                 }
@@ -94,8 +94,8 @@ Item{
                     rightMargin: 10
                     bottom: parent.bottom
                 }
-                image: "qrc:/resources/images/download-button.png"
-                hoverImage: "qrc:/resources/images/download-button.png"
+                source: "qrc:/resources/images/download-button.png"
+                // hoverImage: "qrc:/resources/images/download-button.png"
                 width: height
                 onClicked: {
                     console.log("downloading " + app.episodeListModel.reversed ? list.count - index - 1: index)
@@ -109,7 +109,7 @@ Item{
         onCountChanged: {
             if (showManager.currentShowLastWatchedIndex > -1)
             {
-                list.positionViewAtIndex(app.episodeListModel.reversed ? list.count - showManager.currentShowLastWatchedIndex - 1 : showManager.currentShowLastWatchedIndex,ListView.Beginning)
+                list.positionViewAtIndex(app.episodeListModel.reversed ? list.count - showManager.currentShowLastWatchedIndex - 1 : showManager.currentShowLastWatchedIndex, app.episodeListModel.reversed? ListView.End: ListView.Beginning)
             }
         }
     }

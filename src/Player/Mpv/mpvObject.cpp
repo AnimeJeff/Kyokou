@@ -15,70 +15,74 @@
  */
 
 #include "mpvObject.h"
-#include <stdexcept>
-#include <clocale>
 #include <QDebug>
 #include <QDir>
+#include <QMetaType>
 #include <QOpenGLContext>
 #include <QSettings>
 #include <QStandardPaths>
-#include <QMetaType>
+#include <clocale>
+#include <stdexcept>
 
 #include <QStringList>
 
-#include <QtOpenGL/QOpenGLFramebufferObject>
-#include <QQuickOpenGLUtils>
 #include "Components/errorhandler.h"
+#include <QQuickOpenGLUtils>
+#include <QtOpenGL/QOpenGLFramebufferObject>
 #include <stdlib.h>
 
-
 /* MPV Renderer */
-class MpvRenderer : public QQuickFramebufferObject::Renderer
-{
+class MpvRenderer : public QQuickFramebufferObject::Renderer {
     MpvObject *m_obj;
+
 public:
-    MpvRenderer(MpvObject *obj) : m_obj(obj){}
+    MpvRenderer(MpvObject *obj) : m_obj(obj) {}
 
     // This function is called when a new FBO is needed.
     // This happens on the initial frame.
-    QOpenGLFramebufferObject * createFramebufferObject(const QSize & size)
-    {
+    QOpenGLFramebufferObject *createFramebufferObject(const QSize &size) {
         Q_ASSERT(m_obj != nullptr);
         // init mpv_gl
-        if (!m_obj->m_mpv.renderer_initialized())
-        {
+        if (!m_obj->m_mpv.renderer_initialized()) {
             mpv_opengl_init_params gl_init_params {
-                [](void *, const char *name) -> void* {
+                [](void *, const char *name) -> void * {
                     QOpenGLContext *glctx = QOpenGLContext::currentContext();
-                    return glctx ? reinterpret_cast<void *>(glctx->getProcAddress(QByteArray(name))) : nullptr;
+                    return glctx ? reinterpret_cast<void *>(
+                               glctx->getProcAddress(QByteArray(name)))
+                                 : nullptr;
                 }
 #if MPV_CLIENT_API_VERSION < MPV_MAKE_VERSION(2, 0)
-                , nullptr, nullptr
+                ,
+                    nullptr, nullptr
 #endif
             };
 
-            mpv_render_param params[] {
-                { MPV_RENDER_PARAM_API_TYPE,           const_cast<char *>(MPV_RENDER_API_TYPE_OPENGL) },
-                { MPV_RENDER_PARAM_OPENGL_INIT_PARAMS, &gl_init_params},
-                //                { MPV_RENDER_PARAM_X11_DISPLAY,        Graphics::x11Display() },
-                //                { MPV_RENDER_PARAM_WL_DISPLAY,         Graphics::waylandDisplay() },
-                { MPV_RENDER_PARAM_INVALID, nullptr}
-            };
+            mpv_render_param params[]{
+                                      {MPV_RENDER_PARAM_API_TYPE,
+                                       const_cast<char *>(MPV_RENDER_API_TYPE_OPENGL)},
+                                      {MPV_RENDER_PARAM_OPENGL_INIT_PARAMS, &gl_init_params},
+                                      //                { MPV_RENDER_PARAM_X11_DISPLAY,
+                                      //                Graphics::x11Display() }, {
+                                      //                MPV_RENDER_PARAM_WL_DISPLAY,
+                                      //                Graphics::waylandDisplay() },
+                                      {MPV_RENDER_PARAM_INVALID, nullptr}};
 
             if (m_obj->m_mpv.renderer_initialize(params) < 0)
                 throw std::runtime_error("failed to initialize mpv GL context");
 
-            m_obj->m_mpv.set_render_callback([](void *ctx){
-                MpvObject *obj = static_cast<MpvObject*>(ctx);
-                //                QMetaObject::invokeMethod(obj, "update", Qt::QueuedConnection);
-                QMetaObject::invokeMethod(obj, "testupdate", Qt::QueuedConnection);
-            }, m_obj);
+            m_obj->m_mpv.set_render_callback(
+                [](void *ctx) {
+                    MpvObject *obj = static_cast<MpvObject *>(ctx);
+                    //                QMetaObject::invokeMethod(obj, "update",
+                    //                Qt::QueuedConnection);
+                    QMetaObject::invokeMethod(obj, "testupdate", Qt::QueuedConnection);
+                },
+                m_obj);
         }
         return QQuickFramebufferObject::Renderer::createFramebufferObject(size);
     }
 
-    void render()
-    {
+    void render() {
         Q_ASSERT(m_obj != nullptr);
         Q_ASSERT(m_obj->window() != nullptr);
 
@@ -91,19 +95,13 @@ public:
         QOpenGLFramebufferObject *fbo = framebufferObject();
         Q_ASSERT(fbo != nullptr);
 
-        mpv_opengl_fbo mpfbo {
-            static_cast<int>(fbo->handle()),
-            fbo->width(),
-            fbo->height(),
-            0
-        };
+        mpv_opengl_fbo mpfbo{static_cast<int>(fbo->handle()), fbo->width(),
+                             fbo->height(), 0};
         int flip_y = 0;
 
-        mpv_render_param params[] = {
-            {MPV_RENDER_PARAM_OPENGL_FBO, &mpfbo},
-            {MPV_RENDER_PARAM_FLIP_Y, &flip_y},
-            {MPV_RENDER_PARAM_INVALID, nullptr}
-        };
+        mpv_render_param params[] = {{MPV_RENDER_PARAM_OPENGL_FBO, &mpfbo},
+                                     {MPV_RENDER_PARAM_FLIP_Y, &flip_y},
+                                     {MPV_RENDER_PARAM_INVALID, nullptr}};
         m_obj->m_mpv.render(params);
 
 #if QT_VERSION_MAJOR >= 6
@@ -114,10 +112,9 @@ public:
     }
 };
 
-MpvObject* MpvObject::s_instance = nullptr;
+MpvObject *MpvObject::s_instance = nullptr;
 
-MpvObject::MpvObject(QQuickItem * parent) : QQuickFramebufferObject(parent)
-{
+MpvObject::MpvObject(QQuickItem *parent) : QQuickFramebufferObject(parent) {
     Q_ASSERT(s_instance == nullptr);
     s_instance = this;
 
@@ -128,56 +125,32 @@ MpvObject::MpvObject(QQuickItem * parent) : QQuickFramebufferObject(parent)
     QSettings settings;
 
     // set mpv options
-    m_mpv.set_option("ytdl", false);           // We handle video url parsing
-    m_mpv.set_option("pause", false);          // Always play when a new file is opened
-    m_mpv.set_option("softvol", true);         // mpv handles the volume
-    m_mpv.set_option("vo", "libmpv");          // Force to use libmpv
-    m_mpv.set_option("keep-open", true);      // Keeps the video open after EOF
-    m_mpv.set_option("screenshot-directory", QStandardPaths::writableLocation(QStandardPaths::PicturesLocation).toUtf8().constData());
-    m_mpv.set_option("reset-on-next-file", "video-aspect-override,af,audio-delay,pause");
-    m_mpv.set_option("hwdec", "auto");        // Hardware acceleration
+    m_mpv.set_option("ytdl", false);     // We handle video url parsing
+    m_mpv.set_option("pause", false);    // Always play when a new file is opened
+    m_mpv.set_option("softvol", true);   // mpv handles the volume
+    m_mpv.set_option("vo", "libmpv");    // Force to use libmpv
+    m_mpv.set_option("keep-open", true); // Keeps the video open after EOF
+    m_mpv.set_option("screenshot-directory", QStandardPaths::writableLocation(
+                                                 QStandardPaths::PicturesLocation)
+                                                 .toUtf8()
+                                                 .constData());
+    m_mpv.set_option("reset-on-next-file",
+                     "video-aspect-override,af,audio-delay,pause");
+    m_mpv.set_option("hwdec", "auto"); // Hardware acceleration
     m_mpv.set_option("cache", "yes");
     m_mpv.set_option("cache-secs", "100");
     m_mpv.set_option("cache-unlink-files", "whendone");
+    m_mpv.set_option("config", "yes");
 
 
-    auto mpvAppData = QDir(QStandardPaths::standardLocations(QStandardPaths::AppDataLocation).first ());
-    mpvAppData.cdUp ();
-    if (mpvAppData.cd ("mpv"))
-    {
-        //qDebug() << mpvAppData.absolutePath ().toLocal8Bit ().constData () << mpvAppData.absoluteFilePath ("input.conf").constData ();
-        m_mpv.set_option( "config-dir", mpvAppData.absolutePath ().toLocal8Bit ().constData ());
-        if (mpvAppData.exists ("input.conf"))
-            m_mpv.set_option( "input-conf", mpvAppData.absoluteFilePath ("input.conf").constData ());
-    }
-
-    auto Anime4KShadersDir = QDir(QDir::cleanPath (QCoreApplication::applicationDirPath() + QDir::separator() + "shaders" + QDir::separator() + "Anime4K"));
-    if (Anime4KShadersDir.exists ())
-    {
-        QString Clamp_Highlights = Anime4KShadersDir.filePath ("Anime4K_Clamp_Highlights.glsl");
-        QString Restore_CNN_VL = Anime4KShadersDir.filePath ("Anime4K_Restore_CNN_VL.glsl");
-        QString Upscale_CNN_x2_VL = Anime4KShadersDir.filePath ("Anime4K_Upscale_CNN_x2_VL.glsl");
-        QString AutoDownscalePre_x2 = Anime4KShadersDir.filePath ("Anime4K_AutoDownscalePre_x2.glsl");
-        QString AutoDownscalePre_x4 = Anime4KShadersDir.filePath ("Anime4K_AutoDownscalePre_x4.glsl");
-        QString Upscale_CNN_x2_M = Anime4KShadersDir.filePath ("Anime4K_Upscale_CNN_x2_M.glsl");
-
-        QString Restore_CNN_Soft_VL = Anime4KShadersDir.filePath ("Anime4K_Restore_CNN_Soft_VL.glsl");
-        QString Restore_CNN_M = Anime4KShadersDir.filePath ("Anime4K_Restore_CNN_M.glsl");
-        QString Restore_CNN_Soft_M = Anime4KShadersDir.filePath ("Anime4K_Restore_CNN_Soft_M.glsl");
-        QString Upscale_Denoise_CNN_x2_VL = Anime4KShadersDir.filePath ("Anime4K_Upscale_Denoise_CNN_x2_VL.glsl");
-
-        auto modeA = "\"" + (QStringList {Clamp_Highlights, Restore_CNN_VL, Upscale_CNN_x2_VL, AutoDownscalePre_x2, AutoDownscalePre_x4, Upscale_CNN_x2_M}).join(";") + "\"";
-        anime4K.modeA = modeA.toStdString ();
-        auto modeB = "\"" + (QStringList { Clamp_Highlights, Restore_CNN_Soft_VL, Upscale_CNN_x2_VL, AutoDownscalePre_x2, AutoDownscalePre_x4, Upscale_CNN_x2_M}).join(";") + "\"";
-        anime4K.modeB = modeB.toStdString ();
-        auto modeC = "\"" + (QStringList {Clamp_Highlights, Upscale_Denoise_CNN_x2_VL, AutoDownscalePre_x2, AutoDownscalePre_x4, Upscale_CNN_x2_M}).join(";") + "\"";
-        anime4K.modeC = modeC.toStdString ();
-        auto modeAA = "\"" + (QStringList {Clamp_Highlights, Restore_CNN_VL, Upscale_CNN_x2_VL, Restore_CNN_M, AutoDownscalePre_x2, AutoDownscalePre_x4, Upscale_CNN_x2_M}).join(";") + "\"";
-        anime4K.modeAA = modeAA.toStdString ();
-        auto modeBB = "\"" + (QStringList {Clamp_Highlights, Restore_CNN_Soft_VL, Upscale_CNN_x2_VL, AutoDownscalePre_x2, AutoDownscalePre_x4, Restore_CNN_Soft_M, Upscale_CNN_x2_M}).join(";") + "\"";
-        anime4K.modeBB = modeBB.toStdString ();
-        auto modeCA = "\"" + (QStringList {Clamp_Highlights, Upscale_Denoise_CNN_x2_VL, AutoDownscalePre_x2, AutoDownscalePre_x4, Restore_CNN_M, Upscale_CNN_x2_M}).join(";") + "\"";
-        anime4K.modeCA = modeCA.toStdString ();
+    auto appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    QDir mpvAppData(appDataPath);
+    if (mpvAppData.cdUp() && mpvAppData.cd("mpv")) {
+        m_mpv.set_option("config-dir", mpvAppData.absolutePath().toLocal8Bit().constData());
+        auto inputConfPath = mpvAppData.absoluteFilePath("input.conf");
+        if (QFileInfo::exists(inputConfPath)) {
+            m_mpv.set_option("input-conf", inputConfPath.toLocal8Bit().constData());
+        }
     }
 
     m_mpv.observe_property("duration");
@@ -189,18 +162,20 @@ MpvObject::MpvObject(QQuickItem * parent) : QQuickFramebufferObject(parent)
     m_mpv.request_log_messages("warn");
 
     // Configure cache
-    if (settings.value(QStringLiteral("network/limit_cache"), false).toBool())
-    {
-        int64_t forwardBytes = settings.value(QStringLiteral("network/forward_cache")).toLongLong() << 20;
-        int64_t backwardBytes = settings.value(QStringLiteral("network/backward_cache")).toLongLong() << 20;
+    if (settings.value(QStringLiteral("network/limit_cache"), false).toBool()) {
+        int64_t forwardBytes =
+            settings.value(QStringLiteral("network/forward_cache")).toLongLong()
+            << 20;
+        int64_t backwardBytes =
+            settings.value(QStringLiteral("network/backward_cache")).toLongLong()
+            << 20;
         m_mpv.set_option("demuxer-max-bytes", forwardBytes);
         m_mpv.set_option("demuxer-max-back-bytes", backwardBytes);
     }
 
 #if defined(Q_OS_UNIX) && !defined(Q_OS_MAC)
-    Hwdec hwdec = (Hwdec) settings.value(QStringLiteral("video/hwdec"), 0).toInt();
-    switch (hwdec)
-    {
+    Hwdec hwdec = (Hwdec)settings.value(QStringLiteral("video/hwdec"), 0).toInt();
+    switch (hwdec) {
     case AUTO:
         m_mpv.set_option("gpu-hwdec-interop", "auto");
         m_mpv.set_option("hwdec", "auto");
@@ -216,7 +191,8 @@ MpvObject::MpvObject(QQuickItem * parent) : QQuickFramebufferObject(parent)
     case NVDEC:
         m_mpv.set_option("hwdec", "nvdec");
         break;
-    default: break;
+    default:
+        break;
     }
 
 #elif defined(Q_OS_MAC)
@@ -224,14 +200,12 @@ MpvObject::MpvObject(QQuickItem * parent) : QQuickFramebufferObject(parent)
     m_mpv.set_option("hwdec", "videotoolbox");
 
 #elif defined(Q_OS_WIN)
-    if (QSysInfo::productVersion() == QStringLiteral("8.1") || QSysInfo::productVersion() == QStringLiteral("10") ||
-        QSysInfo::productVersion() == QStringLiteral("11"))
-    {
+    if (QSysInfo::productVersion() == QStringLiteral("8.1") ||
+        QSysInfo::productVersion() == QStringLiteral("10") ||
+        QSysInfo::productVersion() == QStringLiteral("11")) {
         m_mpv.set_option("hwdec", "d3d11va");
         m_mpv.set_option("gpu-context", "d3d11");
-    }
-    else
-    {
+    } else {
         m_mpv.set_option("hwdec", "dxva2");
         m_mpv.set_option("gpu-context", "dxinterop");
     }
@@ -241,18 +215,18 @@ MpvObject::MpvObject(QQuickItem * parent) : QQuickFramebufferObject(parent)
         throw std::runtime_error("could not initialize mpv context");
 
     // Set update callback
-    m_mpv.set_wakeup_callback([](void *ctx){
-        MpvObject *obj = static_cast<MpvObject *>(ctx);
-        QMetaObject::invokeMethod(obj, "onMpvEvent", Qt::QueuedConnection);
-    }, this);
+    m_mpv.set_wakeup_callback(
+        [](void *ctx) {
+            MpvObject *obj = static_cast<MpvObject *>(ctx);
+            QMetaObject::invokeMethod(obj, "onMpvEvent", Qt::QueuedConnection);
+        },
+        this);
 
-    loadAnime4K (4);
+    loadAnime4K(4);
 }
 
-
 // Open file
-void MpvObject::open(const QUrl& fileUrl, const QUrl& danmakuUrl, const QUrl& audioTrack)
-{
+void MpvObject::open(const QUrl &fileUrl, const QUrl &danmakuUrl, const QUrl &audioTrack) {
 
     //    m_mpv.set_option("referrer","");
     //    m_mpv.set_option("stream-lavf-o", "seekable=0");
@@ -262,69 +236,62 @@ void MpvObject::open(const QUrl& fileUrl, const QUrl& danmakuUrl, const QUrl& au
     //    qDebug() << fileUrl.isLocalFile();
     //    qDebug() << "localfile" << fileUrl.toLocalFile().toUtf8();
     //    qDebug() << "string" << ;
-    //    QByteArray fileuri_str = fileUrl.toString().toUtf8();//(fileUrl.isLocalFile() ? fileUrl.toLocalFile() : fileUrl.toString()).toUtf8();
+    //    QByteArray fileuri_str =
+    //    fileUrl.toString().toUtf8();//(fileUrl.isLocalFile() ?
+    //    fileUrl.toLocalFile() : fileUrl.toString()).toUtf8();
 
     //    qDebug() << fileUrl.toString ().toUtf8 ().constData ();
-    const char *args[] = {"loadfile", fileUrl.toString().toUtf8().constData(), nullptr};
-    currentVideoLink = fileUrl.toString ();
+    const char *args[] = {"loadfile", fileUrl.toString().toUtf8().constData(),
+                          nullptr};
+    currentVideoLink = fileUrl.toString();
     m_mpv.command_async(args);
     //    m_danmakuUrl = danmakuUrl;
     //    m_audioToBeAdded = audioTrack;
 }
 
-
-
 // Play, Pause, Stop & Get state
-void MpvObject::play()
-{
-    if (m_state == VIDEO_PAUSED)
-    {
+void MpvObject::play() {
+    if (m_state == VIDEO_PAUSED) {
         m_mpv.set_property_async("pause", false);
     }
 }
 
-void MpvObject::pause()
-{
-    if (m_state == VIDEO_PLAYING)
-    {
+void MpvObject::pause() {
+    if (m_state == VIDEO_PLAYING) {
         m_mpv.set_property_async("pause", true);
     }
 }
 
-void MpvObject::stop()
-{
-    if (m_state != STOPPED)
-    {
+void MpvObject::stop() {
+    if (m_state != STOPPED) {
         const char *args[] = {"stop", nullptr};
         m_mpv.command_async(args);
     }
 }
 
-void MpvObject::setSpeed(float speed){
-    if (m_speed==speed)
+void MpvObject::setSpeed(float speed) {
+    if (m_speed == speed)
         return;
-    m_speed=speed;
+    m_speed = speed;
     m_mpv.set_property_async("speed", static_cast<double>(speed));
-    showText(QByteArrayLiteral("speed: ") + QByteArray::number (speed));
+    showText(QByteArrayLiteral("speed: ") + QByteArray::number(speed));
     emit speedChanged();
 }
 
 // Seek
-void MpvObject::seek (qint64 time, bool absolute)
-{
-    if (m_state != STOPPED && time != m_time)
-    {
-        if(absolute && time <= 0) time = 0;
+void MpvObject::seek(qint64 time, bool absolute) {
+    if (m_state != STOPPED && time != m_time) {
+        if (absolute && time <= 0)
+            time = 0;
         QByteArray time_str = QByteArray::number(time);
-        const char *args[] = {"seek", time_str.constData(), (absolute ? "absolute" : "relative"), nullptr};
+        const char *args[] = {"seek", time_str.constData(),
+                              (absolute ? "absolute" : "relative"), nullptr};
         m_mpv.command_async(args);
     }
 }
 
-
 // Set volume
-void MpvObject::setVolume(int volume)
-{
+void MpvObject::setVolume(int volume) {
     if (m_volume == volume)
         return;
     m_volume = volume;
@@ -334,8 +301,7 @@ void MpvObject::setVolume(int volume)
 }
 
 // Set subtitle visibility
-void MpvObject::setSubVisible(bool subVisible)
-{
+void MpvObject::setSubVisible(bool subVisible) {
     if (m_subVisible == subVisible)
         return;
     m_subVisible = subVisible;
@@ -345,50 +311,45 @@ void MpvObject::setSubVisible(bool subVisible)
 }
 
 // Add audio track
-void MpvObject::addAudioTrack(const QUrl& url)
-{
+void MpvObject::addAudioTrack(const QUrl &url) {
     if (m_state == STOPPED)
         return;
-    QByteArray uri_str = (url.isLocalFile() ? url.toLocalFile() : url.toString()).toUtf8();
+    QByteArray uri_str =
+        (url.isLocalFile() ? url.toLocalFile() : url.toString()).toUtf8();
     const char *args[] = {"audio-add", uri_str.constData(), "select", nullptr};
     m_mpv.command_async(args);
 }
 
 // Add subtitle
-void MpvObject::addSubtitle(const QUrl& url)
-{
+void MpvObject::addSubtitle(const QUrl &url) {
     //    if (m_state == STOPPED)
     //        return;
-    QByteArray uri_str = (url.isLocalFile() ? url.toLocalFile() : url.toString()).toUtf8();
+    QByteArray uri_str =
+        (url.isLocalFile() ? url.toLocalFile() : url.toString()).toUtf8();
     const char *args[] = {"sub-add", uri_str.constData(), "select", nullptr};
     m_mpv.command_async(args);
 }
 
 // Take screenshot
-void MpvObject::screenshot()
-{
+void MpvObject::screenshot() {
     if (m_state == STOPPED)
         return;
     const char *args[] = {"osd-msg", "screenshot", nullptr};
     m_mpv.command_async(args);
 }
 
+void MpvObject::onMpvEvent() {
 
-void MpvObject::onMpvEvent()
-{
-
-    while (true)
-    {
+    while (true) {
         const mpv_event *event = m_mpv.wait_event();
         if (event == NULL)
             break;
         if (event->event_id == MPV_EVENT_NONE)
             break;
 
-        switch (event->event_id)
-        {
+        switch (event->event_id) {
         case MPV_EVENT_START_FILE:
-            m_videoWidth = m_videoHeight = 0;    // Set videoSize invalid
+            m_videoWidth = m_videoHeight = 0; // Set videoSize invalid
             m_time = 0;
             m_subVisible = true;
             emit timeChanged();
@@ -401,21 +362,18 @@ void MpvObject::onMpvEvent()
             emit stateChanged();
             break;
 
-        case MPV_EVENT_END_FILE:
-        {
-            mpv_event_end_file *ef = static_cast<mpv_event_end_file*>(event->data);
+        case MPV_EVENT_END_FILE: {
+            mpv_event_end_file *ef = static_cast<mpv_event_end_file *>(event->data);
             handleMpvError(ef->error);
             m_endFileReason = static_cast<mpv_end_file_reason>(ef->reason);
             break;
-
         }
 
-        case MPV_EVENT_IDLE:
-        {
+        case MPV_EVENT_IDLE: {
             //            Q_ASSERT(playlistModel != nullptr);
-            if (m_endFileReason == MPV_END_FILE_REASON_EOF){
+            if (m_endFileReason == MPV_END_FILE_REASON_EOF) {
                 emit playNext();
-            }else{
+            } else {
                 m_state = STOPPED;
                 emit stateChanged();
             }
@@ -424,115 +382,89 @@ void MpvObject::onMpvEvent()
             break;
         }
 
-        case MPV_EVENT_VIDEO_RECONFIG:
-        {
+        case MPV_EVENT_VIDEO_RECONFIG: {
             Mpv::Node width = m_mpv.get_property("dwidth");
             Mpv::Node height = m_mpv.get_property("dheight");
 
-            if (width.type() != MPV_FORMAT_NONE)
-            {
+            if (width.type() != MPV_FORMAT_NONE) {
                 m_videoWidth = width;
                 m_videoHeight = height;
                 emit videoSizeChanged();
 
                 // Load audio track
-                if (!m_audioToBeAdded.isEmpty())
-                {
+                if (!m_audioToBeAdded.isEmpty()) {
                     addAudioTrack(m_audioToBeAdded);
                     m_audioToBeAdded = QUrl();
-                }
-
-                // Load danmaku
-                if (!m_danmakuUrl.isEmpty())
-                {
-                    //                    Q_ASSERT(DanmakuLoader::instance() != nullptr);
-                    //                    DanmakuLoader::instance()->start(m_danmakuUrl, m_videoWidth, m_videoHeight);
                 }
             }
             break;
         }
 
-        case MPV_EVENT_LOG_MESSAGE:
-        {
-            mpv_event_log_message *msg = static_cast<mpv_event_log_message*>(event->data);
+        case MPV_EVENT_LOG_MESSAGE: {
+            mpv_event_log_message *msg =
+                static_cast<mpv_event_log_message *>(event->data);
             fprintf(stderr, "[%s] %s", msg->prefix, msg->text);
             break;
         }
 
-        case MPV_EVENT_PROPERTY_CHANGE:
-        {
-            mpv_event_property *prop = (mpv_event_property*) event->data;
+        case MPV_EVENT_PROPERTY_CHANGE: {
+            mpv_event_property *prop = (mpv_event_property *)event->data;
 
-            if (prop->data == nullptr)
-            {
+            if (prop->data == nullptr) {
                 break;
             }
 
-            const Mpv::Node &propValue = *static_cast<Mpv::Node*>(prop->data);
-            if (propValue.type() == MPV_FORMAT_NONE)
-            {
+            const Mpv::Node &propValue = *static_cast<Mpv::Node *>(prop->data);
+            if (propValue.type() == MPV_FORMAT_NONE) {
                 break;
             }
 
-            if (strcmp(prop->name, "playback-time") == 0)
-            {
-                int64_t newTime = static_cast<double>(propValue);  // It's double in mpv
-                if (newTime != m_time)
-                {
+            if (strcmp(prop->name, "playback-time") == 0) {
+                int64_t newTime = static_cast<double>(propValue); // It's double in mpv
+                if (newTime != m_time) {
                     m_time = newTime;
                     emit timeChanged();
-//                    if(OPStart > -1 && m_time > OPStart && m_time < OPStart + OPLength)
-//                    {
-//                        seek(OPStart + OPLength);
-//                    }
-//                    else if(EDStart > -1 && m_time > EDStart && m_time < EDStart + EDLength)
-//                    {
-//                        seek(EDStart + EDLength);
-//                    }
+                    //                    if(OPStart > -1 && m_time > OPStart && m_time <
+                    //                    OPStart + OPLength)
+                    //                    {
+                    //                        seek(OPStart + OPLength);
+                    //                    }
+                    //                    else if(EDStart > -1 && m_time > EDStart &&
+                    //                    m_time < EDStart + EDLength)
+                    //                    {
+                    //                        seek(EDStart + EDLength);
+                    //                    }
                 }
             }
 
-            else if (strcmp(prop->name, "duration") == 0)
-            {
-                m_duration = static_cast<double>(propValue);  // It's double in mpv
+            else if (strcmp(prop->name, "duration") == 0) {
+                m_duration = static_cast<double>(propValue); // It's double in mpv
                 emit durationChanged();
             }
 
-            else if (strcmp(prop->name, "pause") == 0)
-            {
-                if (propValue && m_state == VIDEO_PLAYING)
-                {
+            else if (strcmp(prop->name, "pause") == 0) {
+                if (propValue && m_state == VIDEO_PLAYING) {
                     m_state = VIDEO_PAUSED;
                     SetThreadExecutionState(ES_CONTINUOUS);
-                }
-                else if (!propValue && m_state == VIDEO_PAUSED)
-                {
+                } else if (!propValue && m_state == VIDEO_PAUSED) {
                     m_state = VIDEO_PLAYING;
                     SetThreadExecutionState(ES_CONTINUOUS | ES_DISPLAY_REQUIRED);
                 }
                 emit stateChanged();
             }
 
-            else if (strcmp(prop->name,"paused-for-cache") == 0)
-            {
-                if (propValue && m_state != STOPPED)
-                {
+            else if (strcmp(prop->name, "paused-for-cache") == 0) {
+                if (propValue && m_state != STOPPED) {
                     showText(QByteArrayLiteral("Network is slow..."));
-                }
-                else
-                {
+                } else {
                     showText(QByteArrayLiteral(""));
                 }
             }
 
-            else if (strcmp(prop->name, "core-idle") == 0)
-            {
-                if (propValue && m_state == VIDEO_PLAYING)
-                {
-                    showText(QByteArrayLiteral("Buffering..."));
-                }
-                else
-                {
+            else if (strcmp(prop->name, "core-idle") == 0) {
+                if (propValue && m_state == VIDEO_PLAYING) {
+                    showText(QByteArrayLiteral("Pausing..."));
+                } else {
                     showText(QByteArrayLiteral(""));
                 }
             }
@@ -541,32 +473,29 @@ void MpvObject::onMpvEvent()
             {
                 m_subtitles.clear();
                 m_audioTracks.clear();
-                for (const auto& track : propValue)
-                {
-                    try
-                    {
+                for (const auto &track : propValue) {
+                    try {
                         if (track["type"] == "sub") // Subtitles
                         {
                             int64_t id = track["id"];
                             QString title;
-                            try
-                            {
-                                title = QString::fromUtf8(static_cast<const char*>(track["title"]));
-                            }
-                            catch (std::exception&)
-                            {
+                            try {
+                                title = QString::fromUtf8(
+                                    static_cast<const char *>(track["title"]));
+                            } catch (std::exception &) {
                                 title = tr("Untitled ") + QString::number(id);
                             }
 
-                            if (m_subtitles.count() <= id)
-                            {
+                            if (m_subtitles.count() <= id) {
                                 for (int j = m_subtitles.count(); j < id; j++)
                                     m_subtitles.append(QLatin1Char('#') + QString::number(j));
-                                m_subtitles.append(title.isEmpty() ? QLatin1Char('#') + QString::number(id) : title);
-                            }
-                            else
-                            {
-                                m_subtitles[id] = title.isEmpty() ? QLatin1Char('#') + QString::number(id) : title;
+                                m_subtitles.append(title.isEmpty()
+                                                       ? QLatin1Char('#') + QString::number(id)
+                                                       : title);
+                            } else {
+                                m_subtitles[id] = title.isEmpty()
+                                                      ? QLatin1Char('#') + QString::number(id)
+                                                      : title;
                             }
                         }
 
@@ -574,29 +503,26 @@ void MpvObject::onMpvEvent()
                         {
                             int64_t id = track["id"];
                             QString title;
-                            try
-                            {
-                                title = QString::fromUtf8(static_cast<const char*>(track["title"]));
-                            }
-                            catch (std::exception&)
-                            {
+                            try {
+                                title = QString::fromUtf8(
+                                    static_cast<const char *>(track["title"]));
+                            } catch (std::exception &) {
                                 title = tr("Untitled ") + QString::number(id);
                             }
 
-                            if (m_audioTracks.count() <= id)
-                            {
+                            if (m_audioTracks.count() <= id) {
                                 for (int j = m_audioTracks.count(); j < id; j++)
                                     m_audioTracks.append(QLatin1Char('#') + QString::number(j));
-                                m_audioTracks.append(title.isEmpty() ? QLatin1Char('#') + QString::number(id) : title);
-                            }
-                            else
-                            {
-                                m_audioTracks[id] = title.isEmpty() ? QLatin1Char('#') + QString::number(id) : title;
+                                m_audioTracks.append(title.isEmpty() ? QLatin1Char('#') +
+                                                                           QString::number(id)
+                                                                     : title);
+                            } else {
+                                m_audioTracks[id] = title.isEmpty()
+                                                        ? QLatin1Char('#') + QString::number(id)
+                                                        : title;
                             }
                         }
-                    }
-                    catch(const std::exception&)
-                    {
+                    } catch (const std::exception &) {
                         continue;
                     }
                 }
@@ -606,46 +532,39 @@ void MpvObject::onMpvEvent()
             break;
         }
 
-        default: break;
+        default:
+            break;
         }
     }
 }
 
-
 // setProperty() exposed to QML
-void MpvObject::setProperty(const QString &name, const QVariant &value)
-{
-    switch ((int) value.typeId())
-    {
-    case (int) QMetaType::Bool:
-    {
+void MpvObject::setProperty(const QString &name, const QVariant &value) {
+    switch ((int)value.typeId()) {
+    case (int)QMetaType::Bool: {
         bool v = value.toBool();
-        m_mpv.set_property_async (name.toLatin1().constData(), v);
+        m_mpv.set_property_async(name.toLatin1().constData(), v);
         break;
     }
-    case (int) QMetaType::Int:
-    case (int) QMetaType::Long:
-    case (int) QMetaType::LongLong:
-    {
+    case (int)QMetaType::Int:
+    case (int)QMetaType::Long:
+    case (int)QMetaType::LongLong: {
         int64_t v = value.toLongLong();
         m_mpv.set_property_async(name.toLatin1().constData(), v);
         break;
     }
-    case (int) QMetaType::Float:
-    case (int) QMetaType::Double:
-    {
+    case (int)QMetaType::Float:
+    case (int)QMetaType::Double: {
         double v = value.toDouble();
         m_mpv.set_property_async(name.toLatin1().constData(), v);
         break;
     }
-    case (int) QMetaType::QByteArray:
-    {
+    case (int)QMetaType::QByteArray: {
         QByteArray v = value.toByteArray();
         m_mpv.set_property_async(name.toLatin1().constData(), v.constData());
         break;
     }
-    case (int) QMetaType::QString:
-    {
+    case (int)QMetaType::QString: {
         QByteArray v = value.toString().toUtf8();
         m_mpv.set_property_async(name.toLatin1().constData(), v.constData());
         break;
@@ -653,26 +572,20 @@ void MpvObject::setProperty(const QString &name, const QVariant &value)
     }
 }
 
-void MpvObject::handleMpvError (int code)
-{
-    if (code < 0)
-    {
+void MpvObject::handleMpvError(int code) {
+    if (code < 0) {
         QString errorString = mpv_error_string(code);
         qDebug() << "MPV Error: " << errorString;
-        ErrorHandler::instance ().show (errorString);
+        ErrorHandler::instance().show(errorString);
     }
 }
 
-void MpvObject::showText(const QByteArray& text)
-{
+void MpvObject::showText(const QByteArray &text) {
     const char *args[] = {"show-text", text.constData(), nullptr};
     m_mpv.command_async(args);
 }
 
-
-
-QQuickFramebufferObject::Renderer *MpvObject::createRenderer() const
-{
+QQuickFramebufferObject::Renderer *MpvObject::createRenderer() const {
     QQuickWindow *win = window();
     Q_ASSERT(win != nullptr);
 
@@ -683,7 +596,5 @@ QQuickFramebufferObject::Renderer *MpvObject::createRenderer() const
 #endif
     win->setPersistentSceneGraph(true);
 
-    return new MpvRenderer(const_cast<MpvObject*>(this));
+    return new MpvRenderer(const_cast<MpvObject *>(this));
 }
-
-

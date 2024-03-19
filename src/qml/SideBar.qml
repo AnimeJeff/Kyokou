@@ -3,7 +3,7 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls.Material 2.15
 import MpvPlayer 1.0
-
+import Qt5Compat.GraphicalEffects
 import "components"
 
 Rectangle {
@@ -40,22 +40,17 @@ Rectangle {
         5: "settings.qml"
     }
 
-    function gotoPage(index)
-    {
+    function gotoPage(index){
         if (fullscreen) return;
         if (index === 1 && !showManager.hasCurrentShow) return;
-        if (currentPage!==index)
-        {
+
+        if (currentPage!==index){
             currentPage = index
-            if (index===3)
-            {
+            if (index===3) {
                 mpvPage.progressBar.peak(2000)
                 mpvPage.visible = true
                 mpvPage.forceActiveFocus()
-            }
-            else
-            {
-
+            } else {
                 stackView.replace(pages[index])
                 stackView.forceActiveFocus()
                 setTimeout(()=>{mpvPage.visible = false},100)
@@ -68,8 +63,8 @@ Rectangle {
         height: sideBar.height
         spacing: 5
         ImageButton {
-            image: selected ? "qrc:/resources/images/search_selected.png" :"qrc:/resources/images/search.png"
-            hoverImage: selected ? "qrc:/resources/images/search_selected.png" :"qrc:/resources/images/search.png"
+            source: selected ? "qrc:/resources/images/search_selected.png" :"qrc:/resources/images/search.png"
+            // hoverImage: selected ? "qrc:/resources/images/search_selected.png" :"qrc:/resources/images/search.png"
             Layout.preferredWidth: sideBar.width
             Layout.preferredHeight: sideBar.width
             onClicked: {
@@ -81,8 +76,8 @@ Rectangle {
         ImageButton {
             id: detailsPageButton
             enabled: showManager.hasCurrentShow
-            image: selected ? "qrc:/resources/images/details_selected.png" : "qrc:/resources/images/details.png"
-            hoverImage: selected ? "qrc:/resources/images/details_selected.png" : "qrc:/resources/images/details.png"
+            source: selected ? "qrc:/resources/images/details_selected.png" : "qrc:/resources/images/details.png"
+            // hoverImage: selected ? "qrc:/resources/images/details_selected.png" : "qrc:/resources/images/details.png"
             Layout.preferredWidth: sideBar.width
             Layout.preferredHeight: sideBar.width
             onClicked:gotoPage(1)
@@ -90,8 +85,8 @@ Rectangle {
         }
         ImageButton {
             id:libraryPageButton
-            image: selected ? "qrc:/resources/images/library_selected.png" :"qrc:/resources/images/library.png"
-            hoverImage: selected ? "qrc:/resources/images/library_selected.png" :"qrc:/resources/images/library.png"
+            source: selected ? "qrc:/resources/images/library_selected.png" :"qrc:/resources/images/library.png"
+            // hoverImage: selected ? "qrc:/resources/images/library_selected.png" :"qrc:/resources/images/library.png"
             Layout.preferredWidth: sideBar.width
             Layout.preferredHeight: sideBar.width
 
@@ -100,8 +95,8 @@ Rectangle {
         }
         ImageButton {
             id:playerPageButton
-            image: selected ? "qrc:/resources/images/tv_selected.png" :"qrc:/resources/images/tv.png"
-            hoverImage: selected ? "qrc:/resources/images/tv_selected.png" :"qrc:/resources/images/tv.png"
+            source: selected ? "qrc:/resources/images/tv_selected.png" :"qrc:/resources/images/tv.png"
+            // hoverImage: selected ? "qrc:/resources/images/tv_selected.png" :"qrc:/resources/images/tv.png"
             Layout.preferredWidth: sideBar.width
             Layout.preferredHeight: sideBar.width
             onClicked: gotoPage(3)
@@ -110,8 +105,8 @@ Rectangle {
 
         ImageButton {
             id: downloadPageButton
-            image: selected ? "qrc:/resources/images/download_selected.png" :"qrc:/resources/images/download.png"
-            hoverImage: selected ? "qrc:/resources/images/download_selected.png" :"qrc:/resources/images/download.png"
+            source: selected ? "qrc:/resources/images/download_selected.png" :"qrc:/resources/images/download.png"
+            // hoverImage: selected ? "qrc:/resources/images/download_selected.png" :"qrc:/resources/images/download.png"
 
             Layout.preferredWidth: sideBar.width
             Layout.preferredHeight: sideBar.width
@@ -132,15 +127,56 @@ Rectangle {
             Layout.fillWidth: orientation == "horizontal"
             Layout.fillHeight: orientation == "vertical"
         }
-        ImageButton {
-            image: selected ? "qrc:/resources/images/settings_selected.png" :"qrc:/resources/images/settings.png"
-            hoverImage: selected ? "qrc:/resources/images/settings_selected.png" :"qrc:/resources/images/settings.png"
 
+
+
+
+
+        Item {
             Layout.preferredWidth: sideBar.width
             Layout.preferredHeight: sideBar.width
 
-            onClicked: gotoPage(5)
-            selected: currentPage === 4
+            Image {
+                id: settingsImage
+                source: "qrc:/resources/images/settings.png"
+                anchors.fill: parent
+                visible: true // Hide this and use the layer as the visible entity
+                layer.enabled: true
+                layer.effect: BrightnessContrast {
+                    brightness: 1.0 // Adjust these values as needed
+                    contrast: 0.5
+                }
+            }
+
+            // Use a MouseArea for interaction, if needed
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    onClicked: gotoPage(5)
+                    //     // selected: currentPage === 4
+                    // Your click handling logic here
+                }
+            }
         }
+
+        // BrightnessContrast {
+        //     anchors.fill: lol
+        //     source: lol
+        //     brightness: 1.0
+        //     contrast: 1.0
+        // }
+
+        // Image {
+        //     id:lol
+        //     // image: selected ? "qrc:/resources/images/settings_selected.png" :"qrc:/resources/images/settings.png"
+        //     // hoverImage: selected ? "qrc:/resources/images/settings_selected.png" :"qrc:/resources/images/settings.png"
+
+        //     Layout.preferredWidth: sideBar.width
+        //     Layout.preferredHeight: sideBar.width
+
+        //     // onClicked: gotoPage(5)
+        //     // selected: currentPage === 4
+        //     source: "qrc:/resources/images/settings.png"
+        // }
     }
 }

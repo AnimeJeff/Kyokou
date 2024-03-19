@@ -49,6 +49,7 @@
         <file>resources/gifs/image-loading.gif</file>
         <file>resources/images/download-button.png</file>
         <file>resources/images/periodic-table.jpg</file>
+        <file>resources/images/servers.png</file>
     </qresource>
     <qresource prefix="/qml">
         <file>src/qml/main.qml</file>
@@ -62,8 +63,6 @@
         <file>src/qml/components/HoverCursorArea.qml</file>
         <file>src/qml/components/CustomComboBox.qml</file>
         <file>src/qml/components/CustomButton.qml</file>
-        <file>src/qml/components/CustomSwitch.qml</file>
-        <file>src/qml/components/CustomSlider.qml</file>
         <file>src/qml/watchlist/WatchListPage.qml</file>
         <file>src/qml/download/DownloadPage.qml</file>
         <file>src/qml/player/PlayListSideBar.qml</file>
@@ -74,5 +73,7 @@
         <file>src/qml/explorer/SearchBar.qml</file>
         <file>src/qml/explorer/ShowContainer.qml</file>
         <file>src/qml/watchlist/WatchListContainer.qml</file>
+        <file>src/qml/player/ServerListPopup.qml</file>
+        <file>src/qml/player/SettingsPopup.qml</file>
     </qresource>
 </RCC>

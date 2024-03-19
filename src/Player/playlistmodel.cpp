@@ -53,16 +53,16 @@ QUrl PlaylistModel::loadOnlineSource(int playlistIndex, int itemIndex)
 {
     auto playlist = m_playlists.at (playlistIndex);
     auto episode = playlist->at (itemIndex);
-    QString episodeName = episode->fullName;
+    QString episodeName = episode->getFullName ();
     qDebug()<<"Fetching servers for episode" << episodeName;
     qDebug()<<"Playlist index:" << itemIndex + 1 << "/" << playlist->count ();
-    if(playlist->provider.isEmpty ()) return QUrl(QString::fromStdString (episode->link));
-    auto provider = ShowManager::instance ().getProvider (playlist->provider);
-    QList<VideoServer> servers =  provider->loadServers (episode);
-    if (!servers.empty ())
+    if(playlist->getProviderName ().isEmpty ()) return QUrl(QString::fromStdString (episode->link));
+    auto provider = ShowManager::instance ().getProvider (playlist->getProviderName ());
+    m_serverList.setServers (provider->loadServers (episode));
+    if (!m_serverList.isEmpty ())
     {
         qDebug()<<"Successfully fetched servers for" << episodeName;
-        QUrl source = provider->extractSource(servers[0]);
+        QUrl source = provider->extractSource(m_serverList.at(0));
         if (playlist->link == ShowManager::instance().getCurrentShow ().link)
         {
             ShowManager::instance().setLastWatchedIndex (itemIndex);
@@ -127,7 +127,7 @@ void PlaylistModel::replaceCurrentPlaylist(const QUrl &path)
 
 void PlaylistModel::play(int playlistIndex, int itemIndex)
 {
-    //check if the indices are valid
+    // check if the indices are valid
     if (playlistIndex < 0 || playlistIndex >= m_playlists.count ()) return;
     if (itemIndex < 0 || itemIndex >= m_playlists[playlistIndex]->count ()) return;
     m_playlistIndex = playlistIndex;
@@ -167,12 +167,13 @@ void PlaylistModel::play(int playlistIndex, int itemIndex)
                   if (!playUrl.isEmpty ())
                   {
                       // open the url in with mpv
+                      qDebug() << "Attempting to play" << playUrl;
                       MpvObject::instance()->open (playUrl);
                       emit sourceFetched ();
                       // update the lastwatchedindex in watch list
-                      if (m_playlists[m_playlistIndex]->m_watchListShowItem)
+                      if (m_playlists[m_playlistIndex]->getJsonPtr ())
                       {
-                          playlist->m_watchListShowItem->at("lastWatchedIndex") = itemIndex;
+                          playlist->getJsonPtr ()->at("lastWatchedIndex") = itemIndex;
                           if (ShowManager::instance().getCurrentShow().link == playlist->link)
                           {
                               ShowManager::instance().setLastWatchedIndex (itemIndex);

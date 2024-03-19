@@ -7,7 +7,8 @@ QRegularExpression DownloadModel::percentRegex = QRegularExpression(R"(\d+\.\d+(
 DownloadModel::DownloadModel(QObject *parent): QAbstractListModel(parent)
 {
     N_m3u8DLPath = QDir::cleanPath (QCoreApplication::applicationDirPath() + QDir::separator() + "N_m3u8DL-CLI_v3.0.2.exe");
-    m_workDir = QDir::cleanPath (QCoreApplication::applicationDirPath() + QDir::separator() + "Downloads");
+    //m_workDir = QDir::cleanPath (QCoreApplication::applicationDirPath() + QDir::separator() + "Downloads");
+    m_workDir = QDir::cleanPath("D:\\TV\\Downloads");
     constexpr int threadCount = 4 ;
     //        pool.setMaxThreadCount(threadCount);
     for (int i = 0; i < threadCount; ++i)

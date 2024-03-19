@@ -7,9 +7,9 @@
 #include <QString>
 #include <QVariant>
 #include <QList>
-#include <iostream>
 #include "Player/playlistitem.h"
 #include "nlohmann/json.hpp"
+#include <memory>
 
 struct ShowData
 {
@@ -55,7 +55,7 @@ public:
     QString views = "";
     int totalEpisodes = 0;
 
-    const PlaylistItem *getPlaylist() const
+    const PlaylistItem* getPlaylist() const
     {
         return playlist;
     }
@@ -64,13 +64,13 @@ public:
     friend class WatchListModel;
     friend class PlaylistModel;
     friend class DownloadModel;
-    void addEpisode(int number, std::string link, QString name, bool online = true)
+    void addEpisode(int number, std::string link, QString name, bool isLocal = false)
     {
         if (!playlist)
         {
             playlist = new PlaylistItem (title, provider, this->link);
         }
-        playlist->emplaceBack (number, link, name, playlist, online);
+        playlist->emplaceBack (number, link, name, isLocal);
     }
 
     bool isInWatchList() const
@@ -126,7 +126,7 @@ public:
     };
 
 private:
-    PlaylistItem* playlist = nullptr;
+    PlaylistItem* playlist = nullptr; //deletion handled by showmanager and playlistmodel
     int listType = -1;
 };
 

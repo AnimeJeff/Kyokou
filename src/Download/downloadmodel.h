@@ -62,6 +62,9 @@ class DownloadModel: public QAbstractListModel
     QRecursiveMutex mutex;
     QRegularExpression folderNameCleanerRegex = QRegularExpression("[/\\:*?\"<>|]");
 public:
+    QString getWorkDir(){
+        return m_workDir;
+    }
     explicit DownloadModel(QObject *parent = nullptr);
     void removeTask(QFutureWatcher<bool> *watcher);
 
@@ -71,14 +74,13 @@ public:
 
     Q_INVOKABLE void downloadCurrentShow(int startIndex, int count = 1);
 
-    Q_INVOKABLE void openFolder(const QString& path)
-    {
-        QProcess::startDetached("explorer.exe", QStringList() << path);
+    Q_INVOKABLE void downloadLink(QString link) {
+        QString headers = "authority:\"AUTHORITY\"|origin:\"https://REFERER\"|referer:\"https://REFERER/\"|user-agent:\"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36\"sec-ch-ua:\"Not A;Brand\";v=\"99\", \"Chromium\";v=\"102\", \"Google Chrome\";v=\"102\"";
+        DownloadTask *task = new DownloadTask(link.mid (0,5), m_workDir, link, headers, link.mid (0,5) , link);
+        addTask (task);
+        startTasks ();
+        emit layoutChanged ();
     }
-    QString getWorkDir(){
-        return m_workDir;
-    }
-    bool setWorkDir(const QString& path);
 
     void download(QPromise<bool> &promise, const QStringList &command)
     {
@@ -164,6 +166,16 @@ public:
 
         }
     }
+
+    Q_INVOKABLE void openFolder(const QString& path)
+    {
+        QProcess::startDetached("explorer.exe", QStringList() << path);
+    }
+
+
+
+    bool setWorkDir(const QString& path);
+
 public:
     int rowCount(const QModelIndex &parent) const
     {

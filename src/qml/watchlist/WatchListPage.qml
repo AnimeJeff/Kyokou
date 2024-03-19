@@ -7,8 +7,8 @@ Rectangle{
 
     LoadingScreen {
         id:loadingScreen
-        anchors.fill: parent
-        z:parent.z+1
+        anchors.centerIn: parent
+        z: parent.z + 1
         loading: showManager.loading
     }
     //https://doc.qt.io/qt-6/qtquick-tutorials-dynamicview-dynamicview3-example.html
@@ -56,6 +56,10 @@ Rectangle{
             top: listTypeComboBox.bottom
             bottom: parent.bottom
             right: parent.right
+        }
+        Component.onCompleted: {
+            contentY = root.watchListViewLastScrollY
+            forceActiveFocus()
         }
     }
 

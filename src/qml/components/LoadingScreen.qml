@@ -1,15 +1,17 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
-Rectangle {
+Popup {
     id: overlay
-    color: "#80000000"
+    dim: true
     visible: loading
-    z: parent.z + 1
     signal cancelled()
     signal timedOut()
     property bool loading:false
     property bool timeoutEnabled:true
     property int timeoutInterval:5000
+    background: Rectangle {
+        color: "black"
+    }
     onLoadingChanged: {
         if (loading && timeoutEnabled)
         {
@@ -27,6 +29,7 @@ Rectangle {
         preventStealing: true
         onClicked: {
             cancelled()
+            overlay.close()
         }
     }
 
@@ -49,6 +52,7 @@ Rectangle {
         onTriggered: {
             cancelled()
             timedOut()
+            overlay.close()
         }
     }
 }

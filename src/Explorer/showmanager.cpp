@@ -1,11 +1,11 @@
 #include "showmanager.h"
 #include "Providers/testprovider.h"
-#include "Providers/tangrenjie.h"
+#include "Providers/kimcartoon.h"
 #include "Providers/gogoanime.h"
 #include "Providers/nivod.h"
 #include "Providers/haitu.h"
 #include "Providers/allanime.h"
-
+#include <QtConcurrent>
 
 ShowManager::ShowManager()
 {
@@ -13,8 +13,8 @@ ShowManager::ShowManager()
         {
             new Nivod,
             new Gogoanime,
-            new Tangrenjie,
             new Haitu,
+            new Kimcartoon,
 #ifdef QT_DEBUG
             new TestProvider
 #endif
@@ -26,7 +26,7 @@ ShowManager::ShowManager()
     }
 
 #ifdef QT_DEBUG
-    m_currentSearchProvider = providersHashMap["TestProvider"];
+    m_currentSearchProvider = providersHashMap["泥巴影院"];
 #else
     m_currentSearchProvider = providersHashMap["泥巴影院"];
 #endif
@@ -39,10 +39,11 @@ ShowManager::ShowManager()
     });
 }
 
-ShowManager::~ShowManager(){
-    if (currentShow.playlist)
+ShowManager::~ShowManager() {
+    if (currentShow.playlist && --currentShow.playlist->useCount == 0) // might have already been deleted by playlistmodel
     {
         delete currentShow.playlist;
+        currentShow.playlist = nullptr;
     }
     qDeleteAll (providers);
 }
@@ -56,8 +57,7 @@ void ShowManager::setCurrentShow(const ShowData &show)
         return;
     }
     // delete the previous show playlist that is being held in info tab
-    if (currentShow.playlist) qDebug() << currentShow.playlist->useCount;
-    if (currentShow.playlist && --currentShow.playlist->useCount <= 0)
+    if (currentShow.playlist && --currentShow.playlist->useCount == 0) // <0 means that it has already been deleted
     {
         delete currentShow.playlist;
     }
@@ -69,7 +69,7 @@ void ShowManager::setCurrentShow(const ShowData &show)
             {
                 if (currentShow.provider.isEmpty ())
                 {
-                    currentShow.addEpisode(1, currentShow.link,"", TRUE);
+                    currentShow.addEpisode(1, currentShow.link,"");
                     return;
                 }
                 if (ShowProvider *provider = getProvider(currentShow.provider))
@@ -84,7 +84,8 @@ void ShowManager::setCurrentShow(const ShowData &show)
     m_watcher.future ()
         .then ([this](){
             setLoading(false);
-            ++currentShow.playlist->useCount;
+            if (currentShow.playlist != nullptr)
+                ++currentShow.playlist->useCount;
             emit currentShowChanged();})
         .onFailed ([](const std::exception &e){
             qDebug() << e.what();

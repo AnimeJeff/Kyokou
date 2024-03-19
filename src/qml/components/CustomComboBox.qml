@@ -1,13 +1,12 @@
 import QtQuick 2.0
 import QtQuick.Controls 2.0
-
+import Qt5Compat.GraphicalEffects
 
 ComboBox {
     id: comboBox
 
     property color checkedColor: "#4E5BF2"
     property int fontSize: 15
-    property var onClickedFun
     property int hAlignment: Text.AlignHCenter
     property int vAlignment: Text.AlignVCenter
     property int contentRadius: 5
@@ -27,7 +26,7 @@ ComboBox {
             width: parent.width
             height: parent.height
             color: comboBox.highlightedIndex === index ? comboBox.checkedColor : "#F3F4F5"
-            radius:contentRadius
+            radius: 20
         }
     }
 
@@ -76,14 +75,14 @@ ComboBox {
         implicitWidth: 102
         implicitHeight: 41
         color: comboBox.down ? Qt.darker(comboBox.checkedColor, 1.2) : comboBox.checkedColor
-        radius: contentRadius
+        radius: height/2
 
         layer.enabled: comboBox.hovered | comboBox.down
-        //        layer.effect: DropShadow {
-        //            transparentBorder: true
-        //            color: comboBox.checkedColor
-        //            samples: 10 /*20*/
-        //        }
+        layer.effect: DropShadow {
+            transparentBorder: true
+            color: comboBox.checkedColor
+            samples: 10 /*20*/
+        }
     }
 
     popup: Popup {
@@ -102,7 +101,7 @@ ComboBox {
         }
         background: Rectangle {
             color: "#F3F4F5"
-            radius: 5
+            radius: 20
             clip: true
             layer.enabled: comboBox.hovered | comboBox.down
         }

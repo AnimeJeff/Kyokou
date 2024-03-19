@@ -6,6 +6,9 @@
 
 
 class ShowProvider;
+
+
+
 class ShowManager: public QAbstractListModel
 {
     Q_OBJECT
@@ -76,7 +79,6 @@ public:
     int getLastWatchedIndex() const;
     void setListType(int listType);
     int getCurrentShowListType() const;
-
 
 signals:
     void currentShowChanged(void);

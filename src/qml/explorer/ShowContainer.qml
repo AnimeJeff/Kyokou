@@ -8,7 +8,6 @@ GridView {
     boundsBehavior:Flickable.StopAtBounds
     boundsMovement: Flickable.StopAtBounds
     anchors.topMargin: spacing
-//    anchors.rightMargin: spacing
     clip: true
     cellHeight: cellWidth * aspectRatio + 35
     cellWidth: width/itemPerRow
@@ -78,9 +77,6 @@ GridView {
             }
         }
     }
-
-
-
 
     onContentYChanged: {
         searchResultsViewlastScrollY = contentY

@@ -2,84 +2,66 @@ cmake_minimum_required(VERSION 3.16)
 
 project(kyokou VERSION 0.1 LANGUAGES CXX)
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Quick )
-find_package(Qt6 REQUIRED COMPONENTS QuickControls2)
-find_package(Qt6 REQUIRED COMPONENTS Qml)
-find_package(Qt6 REQUIRED COMPONENTS Concurrent)
-find_package(Qt6 REQUIRED COMPONENTS Core5Compat)
 
-#set(CMAKE_BUILD_TYPE Debug)
-#set(CMAKE_BUILD_TYPE Release)
+# Qt packages
+find_package(Qt6 REQUIRED COMPONENTS Quick QuickControls2 Qml Concurrent Core5Compat)
+
+# Automatically handle the Qt MOC, UIC, and RCC
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Additional CMake modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake;C:/msys64/mingw64/share/cmake/Modules")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Og")
 
-FILE(GLOB_RECURSE FILES ${PROJECT_SOURCE_DIR}/src/*.cpp  ${PROJECT_SOURCE_DIR}/src/*.h ${PROJECT_SOURCE_DIR}/src/*.hpp)
-FILE(GLOB_RECURSE QML ${PROJECT_SOURCE_DIR}/src/qml/*.qml)
-set(app_icon_resource_windows kyokou.rc)
+# Source and resource files
+file(GLOB_RECURSE SOURCES ${PROJECT_SOURCE_DIR}/src/*.cpp ${PROJECT_SOURCE_DIR}/src/*.h ${PROJECT_SOURCE_DIR}/src/*.hpp)
+file(GLOB_RECURSE QML_FILES ${PROJECT_SOURCE_DIR}/src/qml/*.qml)
+set(APP_ICON_RESOURCE_WINDOWS kyokou.rc)
 
+# Define executable
 qt_add_executable(kyokou
-    kyokou.qrc
-    src/main.cpp
-    ${FILES}
+    ${SOURCES}
+    ${QML_FILES}
     ${PROJECT_SOURCE_DIR}/dependencies/includes/pugixml/pugixml.cpp
-    ${app_icon_resource_windows}
+    ${APP_ICON_RESOURCE_WINDOWS}
+    kyokou.qrc
 )
 
-include_directories(${PROJECT_SOURCE_DIR}/dependencies/includes)
-target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/dependencies/includes)
-include_directories(${PROJECT_SOURCE_DIR}/src)
+# Include directories
+target_include_directories(kyokou PRIVATE
+    ${PROJECT_SOURCE_DIR}/dependencies/includes
+    ${PROJECT_SOURCE_DIR}/src
+    ${TIDY_INCLUDE_DIRS}
+    ${CURL_INCLUDE_DIRS}
+    ${OPENSSL_INCLUDE_DIR}
+)
 
-include_directories(${PROJECT_SOURCE_DIR}/dependencies/includes/mpv)
-target_link_libraries(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/dependencies/lib/libmpv.dll.a)
-
+# Find and link dependencies
 find_package(TIDY REQUIRED)
-IF(TIDY_FOUND)
-include_directories(${TIDY_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${TIDY_LIBRARIES})
-message("** Found Tidy ${TIDY_INCLUDE_DIRS} ${TIDY_LIBRARIES}")
-ENDIF()
-
 find_package(CURL REQUIRED)
-IF(CURL_FOUND)
-include_directories(${CURL_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${CURL_LIBRARIES})
-message("** Found libcurl ${CURL_INCLUDE_DIRS} ${CURL_LIBRARIES}")
-ENDIF()
-
 find_package(CryptoPP REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE cryptopp-static)
-message("** Found CryptoPP ${cryptopp-static}")
+find_package(OpenSSL REQUIRED)
 
-find_package(OpenSSL  REQUIRED)
-
-IF(OPENSSL_FOUND)
-include_directories(${OPENSSL_INCLUDE_DIR})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${OPENSSL_LIBRARIES})
-message("** Found OpenSSL ${OPENSSL_SSL_LIBRARY}")
-ENDIF()
-
-set_target_properties(kyokou PROPERTIES
-#    MACOSX_BUNDLE_GUI_IDENTIFIER my.example.com
-#    MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
-#    MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
-#    MACOSX_BUNDLE TRUE
-    WIN32_EXECUTABLE TRUE
+target_link_libraries(kyokou PRIVATE
+    Qt6::Quick
+    Qt6::QuickControls2
+    Qt6::Qml
+    Qt6::Concurrent
+    Qt6::Core5Compat
+    ${PROJECT_SOURCE_DIR}/dependencies/lib/libmpv.dll.a
+    ${TIDY_LIBRARIES}
+    ${CURL_LIBRARIES}
+    cryptopp-static
+    ${OPENSSL_LIBRARIES}
 )
 
-
-#if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-#    set_target_properties(kyokou PROPERTIES
-#        WIN32_EXECUTABLE FALSE
-#    )
-#    set(CMAKE_BUILD_TYPE Release)
-#else ()
-#    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O1")
-#endif()
+# Debug and Release specific settings
+target_compile_options(kyokou PRIVATE
+    "$<$<CONFIG:DEBUG>:-Og>"
+)
 
 add_executable(launcher
     launcher/main.cpp
@@ -87,13 +69,7 @@ add_executable(launcher
 )
 add_subdirectory(${PROJECT_SOURCE_DIR}/launcher/)
 
-target_link_libraries(kyokou
-    PRIVATE Qt6::Quick
-    PRIVATE Qt6::QuickControls2
-    PRIVATE Qt6::Qml
-    PRIVATE Qt6::Concurrent
-    PRIVATE Qt6::Core5Compat
-)
+
 if (Qt6_FOUND)
     message("** Found Qt6")
     qt6_add_qml_module(${PROJECT_NAME}
@@ -105,8 +81,16 @@ if (Qt6_FOUND)
     )
 endif()
 
+# Executable properties
+set_target_properties(kyokou PROPERTIES
+    WIN32_EXECUTABLE TRUE
+)
+
+
+# Installation settings
 install(TARGETS kyokou
     BUNDLE DESTINATION .
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
 
 

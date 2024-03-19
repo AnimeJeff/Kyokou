@@ -3,15 +3,21 @@
 QList<ShowData> Haitu::search(QString query, int page, int type)
 {
     QList<ShowData> shows;
-    std::string url = hostUrl + "/vod/search/page/"+std::to_string (page)+"/wd/"+query.toStdString ()+".html";
+    std::string url = hostUrl + "vodsearch/" + query.toStdString () + "----------" + std::to_string (page) + "---.html";
+    qDebug() << url;
+    // /vod/search/page/"++"/wd/"+query.toStdString ()+".html";
     auto showNodes = NetworkClient::get(url).document().select("//div[@class='module-search-item']");
     for (pugi::xpath_node_set::const_iterator it = showNodes.begin(); it != showNodes.end(); ++it)
     {
         auto img = it->selectFirst(".//img");
         QString title = img.attr("alt").as_string();
-        QString coverUrl = QString::fromStdString (hostUrl) + img.attr("data-src").as_string();
+        QString coverUrl = img.attr("data-src").as_string();
+        if (!coverUrl.startsWith ("http"))
+        {
+            coverUrl = QString::fromStdString (hostUrl) + coverUrl;
+        }
         std::string link = it->selectFirst(".//div[@class='module-item-pic']/a").attr ("href").as_string ();
-        shows.emplaceBack(ShowData(title, link, coverUrl, name ()));
+        shows.emplaceBack(title, link, coverUrl, name ());
     }
     m_canFetchMore = !showNodes.empty();
     if (!m_canFetchMore) return shows;
@@ -24,7 +30,7 @@ QList<ShowData> Haitu::search(QString query, int page, int type)
 
 QList<ShowData> Haitu::popular(int page, int type)
 {
-    std::string url = hostUrl + "/vod/show/by/hits/id/4/page/" + std::to_string(page) + ".html";
+    std::string url = hostUrl + "vodshow/" + std::to_string (type) + "--hits------" + std::to_string(page) + "---.html";
     QList<ShowData> shows = filterSearch(url);
     lastSearch = [type, this](int page){
         return popular(page, type);
@@ -35,7 +41,7 @@ QList<ShowData> Haitu::popular(int page, int type)
 
 QList<ShowData> Haitu::latest(int page, int type)
 {
-    std::string url = hostUrl + "/vod/show/by/time/id/4/page/" + std::to_string(page) + ".html";
+    std::string url = hostUrl + "vodshow/" + std::to_string (type) + "--time------" + std::to_string(page) + "---.html";
     QList<ShowData> shows = filterSearch(url);
     lastSearch = [type, this](int page){
         return latest(page, type);
@@ -52,7 +58,11 @@ QList<ShowData> Haitu::filterSearch(const std::string &url)
     {
         auto img = it->selectFirst(".//div[@class='module-item-pic']/img");
         QString title = img.attr("alt").as_string();
-        QString coverUrl = QString::fromStdString (hostUrl) + img.attr("data-src").as_string();
+        QString coverUrl = img.attr("data-src").as_string();
+        if(coverUrl.startsWith ('/'))
+        {
+            coverUrl = QString::fromStdString (hostUrl) + coverUrl;
+        }
         qDebug() << title <<coverUrl;
         std::string link = it->selectFirst (".//div[@class='module-item-pic']/a").attr ("href").as_string ();
         QString latestText = it->selectFirst (".//div[@class='module-item-text']").node ().child_value ();
@@ -88,7 +98,7 @@ QList<VideoServer> Haitu::loadServers(const PlaylistItem *episode) const
     return QList<VideoServer>{{"default",episode->link}};;
 }
 
-QString Haitu::extractSource(VideoServer &server) const
+QString Haitu::extractSource(const VideoServer &server) const
 {
     std::string response = NetworkClient::get(hostUrl + server.link).body;
     std::smatch match;

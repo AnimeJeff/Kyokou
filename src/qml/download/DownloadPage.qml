@@ -18,7 +18,7 @@ Item {
         anchors.fill: parent
         Layout.alignment: Qt.AlignTop | Qt.AlignLeft
         columns: 3
-        rows: 2
+        rows: 3
         CustomTextField {
             id: workDirTextField
             checkedColor: "#727CF5"
@@ -135,7 +135,29 @@ Item {
                     }
                 }
             }
-
+        }
+        CustomTextField {
+            id: downloadUrlField
+            checkedColor: "#727CF5"
+            Layout.row: 2
+            Layout.column: 0
+            Layout.columnSpan: 2
+            Layout.fillWidth: true
+            Layout.preferredHeight: infoPage.height*0.05
+            Layout.preferredWidth: infoPage.width*0.8
+            color: "white"
+            placeholderText: qsTr("Enter m3u8 link")
+            font.pixelSize: 20 * root.aspectRatio
+            onAccepted: () => {
+                            // app.downloader.workDir = text
+                            // text = app.downloader.workDir
+                        }
+        }
+        CustomButton{
+            Layout.row: 2
+            Layout.column: 2
+            text: "Download"
+            onClicked: {app.downloader.downloadLink(downloadUrlField.text)}
         }
 
 

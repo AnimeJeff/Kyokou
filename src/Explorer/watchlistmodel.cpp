@@ -150,7 +150,7 @@ void WatchListModel::syncCurrentShow()
             int lastWatchedIndex = m_jsonList[listType][index]["lastWatchedIndex"].get<int> ();
             ShowManager::instance().setLastWatchedIndex(lastWatchedIndex);
             ShowManager::instance().setListType(listType);
-            ShowManager::instance().getCurrentShow().playlist->m_watchListShowItem = &m_jsonList[listType][index];
+            ShowManager::instance().getCurrentShow().playlist->setJsonPtr (&m_jsonList[listType][index]);
         }
     }
     emit syncedCurrentShow();

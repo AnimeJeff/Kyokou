@@ -3,6 +3,7 @@
 #include <mpv/render_gl.h>
 #include <cstring>
 #include <stdexcept>
+#include <assert.h>
 
 namespace Mpv
 {

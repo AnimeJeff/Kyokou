@@ -11,9 +11,9 @@ public:
     };
 public:
     QString name() const override { return "海兔影院"; }
-    std::string hostUrl = "https://www.haitu.tv";
+    std::string hostUrl = "https://www.haituu.tv/";
     QList<int> getAvailableTypes() const override {
-        return {ShowData::ANIME, ShowData::MOVIE, ShowData::TVSERIES, ShowData::VARIETY, ShowData::DOCUMENTARY};
+        return {ShowData::ANIME, ShowData::MOVIE, ShowData::TVSERIES, ShowData::VARIETY};
     };
 
     QList<ShowData> search(QString query, int page, int type) override;
@@ -27,5 +27,5 @@ public:
         return 0;
     }
     QList<VideoServer> loadServers(const PlaylistItem* episode) const override;
-    QString extractSource(VideoServer &server) const override;
+    QString extractSource(const VideoServer &server) const override;
 };

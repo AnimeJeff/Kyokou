@@ -7,7 +7,6 @@ add advanced search
 handle connection timeout
 if error emit error string
 cancel slot
-showprovider method to return types available
 
 
 info page
@@ -41,6 +40,10 @@ minimise before opening folder
 load dub?
 
 maybe a mangareader
+
+kyokou
+when changing provider, click search to change otherwise fetch more fails
+update playlistmodel isinwatchlist
 
 fix 9anime
 

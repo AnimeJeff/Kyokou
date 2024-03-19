@@ -8,7 +8,7 @@ Item {
     LoadingScreen {
         id:loadingScreen
         z:10
-        anchors.fill: parent
+        anchors.centerIn: parent
         loading: app.playlist.loading
     }
     focus: false

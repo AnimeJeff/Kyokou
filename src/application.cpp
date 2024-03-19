@@ -13,6 +13,7 @@ Application::Application(QObject *parent): QObject(parent)
                 m_episodeListModel.setIsReversed(true);
                 m_episodeListModel.updateLastWatchedName();
             });
+
     connect(&ShowManager::instance (), &ShowManager::lastWatchedIndexChanged, &m_episodeListModel, &EpisodeListModel::updateLastWatchedName);
     N_m3u8DLPathExists = QFile(QDir::cleanPath (QCoreApplication::applicationDirPath() + QDir::separator() + "N_m3u8DL-CLI_v3.0.2.exe")).exists ();
 //    ;;
