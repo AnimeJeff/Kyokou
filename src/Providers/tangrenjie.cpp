@@ -9,7 +9,6 @@
 //     lastSearch = [query,type,this](int page){
 //         return search(query, page, type);
 //     };
-//     m_canFetchMore=!results.empty ();
 //     return results;
 // }
 
@@ -75,8 +74,6 @@
 //     url += ".html";
 
 //     QList<ShowData> results = selectShow(url);
-//     m_canFetchMore = !results.isEmpty ();
-//     if (m_canFetchMore) m_currentPage = page;
 //     lastSearch = [sortBy,type,area,year,language,this](int page){
 //         return filterSearch(page,type, sortBy, area,year,language);
 //     };

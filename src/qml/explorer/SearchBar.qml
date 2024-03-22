@@ -8,15 +8,15 @@ RowLayout {
     id:searchBar
     property alias textField: searchTextField
     function search(){
-        app.showExplorer.search(searchTextField.text, 1, typeComboBox.type)
+        showManager.search(encodeURIComponent(searchTextField.text), 1, typeComboBox.type)
         root.lastSearch = searchTextField.text
         parent.forceActiveFocus()
     }
     function latest(){
-        app.showExplorer.latest(1, typeComboBox.type)
+        showManager.latest(1, typeComboBox.type)
     }
     function popular(){
-        app.showExplorer.popular(1, typeComboBox.type)
+        showManager.popular(1, typeComboBox.type)
     }
 
     CustomTextField {
@@ -24,8 +24,10 @@ RowLayout {
         id:searchTextField
         color: "white"
         Layout.fillHeight: true
-        Layout.preferredWidth: parent.width * 0.3
+        Layout.fillWidth: true
+        Layout.preferredWidth: 5
         placeholderText: qsTr("Enter query!")
+        placeholderTextColor: "gray"
         text: root.lastSearch
         font.pixelSize: 20 * root.aspectRatio
         onAccepted: search()
@@ -35,20 +37,22 @@ RowLayout {
         id: searchButton
         text: "Search"
         Layout.fillHeight: true
-        Layout.preferredWidth: parent.width * 0.08
+        Layout.preferredWidth: 1
+        Layout.fillWidth: true
         fontSize:20 * root.aspectRatio
         radius: 20
         focusPolicy: Qt.NoFocus
         onClicked: search()
     }
-    
+
     CustomButton {
         id: latestButton
         text: "Latest"
         Layout.fillHeight: true
+        Layout.fillWidth: true
         radius: 20
         fontSize:20 * root.aspectRatio
-        Layout.preferredWidth: parent.width * 0.08
+        Layout.preferredWidth: 1
         focusPolicy: Qt.NoFocus
         onClicked:latest()
     }
@@ -57,31 +61,52 @@ RowLayout {
         id: popularButton
         text: "Popular"
         Layout.fillHeight: true
+        Layout.fillWidth: true
         fontSize:20 * root.aspectRatio
         radius: 20
-        Layout.preferredWidth: parent.width * 0.08
+        Layout.preferredWidth: 1
         focusPolicy: Qt.NoFocus
         onClicked: popular()
     }
 
     CustomComboBox {
         id:providersComboBox
-//        Layout.preferredWidth: parent.width * 0.28
         Layout.fillWidth: true
         Layout.fillHeight: true
+        Layout.preferredWidth: 2
         contentRadius: 20
         fontSize:20 * root.aspectRatio
+
         model: showManager
-        currentIndex: showManager.rowCount() - 1
+        currentIndex: 0
+        text: "text"
         onCurrentIndexChanged: {
             showManager.changeSearchProvider(currentIndex)
-            providersComboBox.currentIndex = showManager.rowCount() - 1
+            showTypeModel.clear()
+            for (let showType of showManager.availableShowTypes) {
+                showTypeModel.append({text : typeComboBox.typeName[showType - 1], type: showType})
+            }
+            if (showManager.availableShowTypes.includes(typeComboBox.type)){
+                for (var i = 0; i < showTypeModel.count; ++i)
+                {
+                    if (showTypeModel.get(i).type === typeComboBox.type)
+                    {
+                        typeComboBox.currentIndex = i
+                    }
+                }
+            }
+            else{
+                typeComboBox.currentIndex = 0
+                typeComboBox.type = showTypeModel.get(typeComboBox.currentIndex).type
+                typeComboBox.displayText = showTypeModel.get(typeComboBox.currentIndex).text
+            }
+
         }
     }
 
     CustomComboBox {
         id:typeComboBox
-//        Layout.preferredWidth: parent.width * 0.15
+        Layout.preferredWidth: 2
         Layout.fillWidth: true
         Layout.fillHeight: true
         contentRadius: 20
@@ -89,32 +114,10 @@ RowLayout {
         model: ListModel{
             id:showTypeModel
         }
+        text: "text"
         property var typeName: ["Movie", "Tv Series", "Variety", "Anime", "Documentary", "None"];
         property int type
-        Connections {
-            target:showManager
-            function onSearchProviderChanged(){
-                showTypeModel.clear()
-                for (let showType of showManager.availableShowTypes)
-                {
-                    showTypeModel.append({text : typeComboBox.typeName[showType - 1], type: showType})
-                }
-                if (showManager.availableShowTypes.includes(typeComboBox.type)){
-                    for (var i = 0; i < showTypeModel.count; ++i)
-                    {
-                        if (showTypeModel.get(i).type === typeComboBox.type)
-                        {
-                            typeComboBox.currentIndex = i
-                        }
-                    }
-                }
-                else{
-                    typeComboBox.currentIndex = 0
-                    typeComboBox.type = showTypeModel.get(currentIndex).type
-                    typeComboBox.displayText = showTypeModel.get(currentIndex).text
-                }
-            }
-        }
+
 
         currentIndex: 0
         onCurrentIndexChanged: {

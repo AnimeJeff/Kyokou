@@ -1,41 +1,23 @@
 #include "episodelistmodel.h"
-#include "Explorer/showmanager.h"
-QString EpisodeListModel::getContinueEpisodeName()
-{
-    const auto* playlist = ShowManager::instance ().getCurrentShow ().getPlaylist ();
-    if (!playlist || continueIndex < 0 || continueIndex >= playlist->count ()) return "";
-    const PlaylistItem *episode = playlist->at(continueIndex);
-    return episode->name.isEmpty () ? QString::number (episode->number) : episode->number < 0 ? episode->name : QString::number (episode->number) + "\n" + episode->name;
-}
 
-void EpisodeListModel::updateLastWatchedName()
-{
-    if (const auto* playlist = ShowManager::instance ().getCurrentShow ().getPlaylist ())
-    {
-        continueIndex = ShowManager::instance ().getLastWatchedIndex ();
-        if (continueIndex == playlist->count () - 2) ++continueIndex;
-        else if(continueIndex >= playlist->count ()) continueIndex=playlist->count () - 1;
-        emit continueIndexChanged();
-    }
-}
+
 
 int EpisodeListModel::rowCount(const QModelIndex &parent) const
 {
     if (parent.isValid())
         return 0;
-    const PlaylistItem* playlist = ShowManager::instance ().getCurrentShow ().getPlaylist();
-    if (!playlist) return 0;
-    return playlist->count ();
+
+    if (!m_playlist) return 0;
+    return m_playlist->count ();
 }
 
 QVariant EpisodeListModel::data(const QModelIndex &index, int role) const
 {
     if (!index.isValid())
         return QVariant();
-    const PlaylistItem* playlist = ShowManager::instance ().getCurrentShow ().getPlaylist();
-    if (!playlist) return QVariant();
-    int i = isReversed ? playlist->count () - index.row() - 1 : index.row();
-    const PlaylistItem* episode = playlist->at(i);
+    if (!m_playlist) return QVariant();
+    int i = isReversed ? m_playlist->count () - index.row() - 1 : index.row();
+    const PlaylistItem* episode = m_playlist->at(i);
 
     switch (role)
     {

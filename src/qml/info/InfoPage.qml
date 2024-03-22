@@ -9,7 +9,7 @@ Item {
         id:loadingScreen
         z:10
         anchors.centerIn: parent
-        loading: app.playlist.loading
+        loading: showManager.playList.loading
     }
     focus: false
     property real aspectRatio: root.width/root.height
@@ -37,6 +37,8 @@ Item {
             font.bold: true
             color: "white"
             wrapMode: Text.Wrap
+            Layout.row: 0
+            Layout.column: 1
             Layout.columnSpan: 2
             Layout.fillWidth: true
             Layout.preferredHeight: contentHeight
@@ -51,6 +53,8 @@ Item {
             Layout.alignment: Qt.AlignTop
             Layout.preferredHeight: labelFontSize
             Layout.columnSpan: 2
+            Layout.row: 1
+            Layout.column: 1
         }
         Flickable{
             Layout.alignment: Qt.AlignTop
@@ -58,6 +62,8 @@ Item {
             boundsBehavior: Flickable.StopAtBounds
             contentHeight: descriptionLabel.contentHeight + 10
             clip: true
+            Layout.row: 2
+            Layout.column: 1
             Layout.columnSpan: 2
             Layout.preferredHeight: Math.min(descriptionLabel.contentHeight + 10,100)
             Layout.fillWidth: true
@@ -75,69 +81,78 @@ Item {
         Text {
             id:scoresText
             Layout.alignment: Qt.AlignTop
-            text: "<b>SCORE:</b> " + currentShow.rating + "/10"
+            text: `<b>SCORE:</b> <font size="-0.5">${currentShow.rating}</font>`
             font.pixelSize: labelFontSize
             Layout.fillWidth: true
             color: "white"
+            Layout.row: 3
+            Layout.column: 1
+            Layout.columnSpan: 2
         }
-        Text {
-            id:viewsText
-            Layout.alignment: Qt.AlignTop
-            text: "<b>VIEWS:</b> " + currentShow.views
-            font.pixelSize: labelFontSize
-            Layout.fillWidth: true
-            color: "white"
-        }
+
         Text {
             id:statusText
             Layout.alignment: Qt.AlignTop
             Layout.fillWidth: true
-            text: "<b>STATUS:</b> " + currentShow.status
+            text: `<b>STATUS:</b> <font size="-0.5">${currentShow.status}</font>`
             font.pixelSize: labelFontSize
             color: "white"
-            Layout.columnSpan: 2
+            Layout.row: 4
+            Layout.column: 1
+        }
+        Text {
+            id:viewsText
+            Layout.alignment: Qt.AlignTop
+            text: `<b>VIEWS:</b> <font size="-0.5">${currentShow.views}</font>`
+            font.pixelSize: labelFontSize
+            Layout.fillWidth: true
+            color: "white"
+            Layout.row: 4
+            Layout.column: 2
         }
 
         Text {
             id:dateAiredText
             Layout.alignment: Qt.AlignTop
             Layout.fillWidth: true
-            text: "<b>DATE AIRED:</b> " + currentShow.releaseDate
+            text: `<b>DATE AIRED:</b> <font size="-0.5">${currentShow.releaseDate}</font>`
             font.pixelSize: labelFontSize
             color: "white"
+            Layout.row: 5
+            Layout.column: 1
         }
         Text {
             id:updateTimeText
             Layout.alignment: Qt.AlignTop
             Layout.fillWidth: true
-            text: "<b>UPDATE TIME:</b> " + currentShow.updateTime
+            text: `<b>UPDATE TIME:</b> <font size="-0.5">${currentShow.updateTime}</font>`
             font.pixelSize: labelFontSize
             color: "white"
+            Layout.row: 5
+            Layout.column: 2
         }
         Text {
             Layout.alignment: Qt.AlignTop
-            text: "GENRE(S):"
+            text: `<b>GENRE(S):</b> <font size="-0.5">${currentShow.genresString}</font>`
             color: "white"
             font.bold: true
             font.pixelSize: labelFontSize
+            Layout.row: 6
+            Layout.column: 1
+            Layout.columnSpan: 2
         }
 
-        Text {
-            //                    Layout.fillWidth: true
-            Layout.alignment: Qt.AlignTop
-            text: currentShow.genresString
-            font.pixelSize: descriptionLabel.fontSize
-            color: "white"
-        }
 
         CustomComboBox {
             id:libraryComboBox
             Layout.alignment: Qt.AlignBottom
+            Layout.row: 7
+            Layout.column: 0
             Layout.preferredWidth: posterImage.width
             Layout.preferredHeight: continueWatchingButton.height
             currentIndex: showManager.currentShowListType + 1
             displayText: currentText.length === 0 ?
-                             showManager.currentShow.isInWatchList ? "Remove from library" : "Add to library"
+                             showManager.currentShowIsInWatchList ? "Remove from library" : "Add to library"
                             : currentText
             fontSize:18 * root.aspectRatio
 
@@ -147,16 +162,10 @@ Item {
                     anchors.fill: parent
                     hoverEnabled: true
                     onClicked: {
-                        if (index !== 0)
-                        {
-                            app.watchList.addCurrentShow(index-1)
-                        }
-                        else
-                        {
-                            if (showManager.currentShowIsInWatchList)
-                            {
-                                app.watchList.removeCurrentShow()
-                            }
+                        if (index !== 0) {
+                            showManager.addCurrentShowToLibrary(index - 1)
+                        } else {
+                            showManager.removeCurrentShowFromLibrary()
                         }
                         libraryComboBox.popup.close()
                     }
@@ -189,25 +198,27 @@ Item {
         CustomButton {
             id:continueWatchingButton
             Layout.alignment: Qt.AlignBottom
-            visible: showManager.currentShowLastWatchedIndex !== -1
-            text: "Continue from " + app.episodeListModel.continueEpisodeName
-            onClicked: {
-                app.playlist.continueFromLastWatched()
-            }
+            visible: showManager.episodeList.lastWatchedIndex !== -1
+            text: "Continue from " + showManager.episodeList.continueEpisodeName
+            onClicked: showManager.continueWatching()
             fontSize: 18 * root.aspectRatio
             Layout.preferredHeight: fontSize * 2.5
             Layout.preferredWidth: libraryComboBox.width * 2
-            Layout.columnSpan: 2
+            Layout.row: 7
+            Layout.column: 1
         }
 
         EpisodeList {
-            Layout.columnSpan: 3
-            id:episodeList
+            id: episodeList
             Layout.fillWidth: true
             Layout.fillHeight: true
             Layout.alignment: Qt.AlignBottom | Qt.AlignHCenter
+            Layout.row: 8
+            Layout.column: 0
+            Layout.columnSpan: 3
 //            Layout.preferredHeight: infoPage.height * 0.6
         }
+
     }
 
 

@@ -35,7 +35,7 @@ Rectangle {
         0: "explorer/SearchPage.qml",
         1: "info/InfoPage.qml",
         2: "watchlist/WatchListPage.qml",
-        //        3: mpvPage,
+        3: "player/MpvPage.qml",
         4: "download/DownloadPage.qml",
         5: "settings.qml"
     }
@@ -46,14 +46,17 @@ Rectangle {
 
         if (currentPage!==index){
             currentPage = index
-            if (index===3) {
+            if (index === 3) {
                 mpvPage.progressBar.peak(2000)
                 mpvPage.visible = true
+                stackView.visible = false
                 mpvPage.forceActiveFocus()
             } else {
+                stackView.visible = true
+                mpvPage.visible = false
                 stackView.replace(pages[index])
                 stackView.forceActiveFocus()
-                setTimeout(()=>{mpvPage.visible = false},100)
+                // setTimeout(()=>{mpvPage.visible = false},100)
             }
 
         }
@@ -77,12 +80,13 @@ Rectangle {
             id: detailsPageButton
             enabled: showManager.hasCurrentShow
             source: selected ? "qrc:/resources/images/details_selected.png" : "qrc:/resources/images/details.png"
-            // hoverImage: selected ? "qrc:/resources/images/details_selected.png" : "qrc:/resources/images/details.png"
+            cursorShape: enabled ? Qt.PointingHandCursor : Qt.ForbiddenCursor
             Layout.preferredWidth: sideBar.width
             Layout.preferredHeight: sideBar.width
             onClicked:gotoPage(1)
             selected: currentPage == 1
         }
+
         ImageButton {
             id:libraryPageButton
             source: selected ? "qrc:/resources/images/library_selected.png" :"qrc:/resources/images/library.png"
@@ -93,10 +97,10 @@ Rectangle {
             onClicked: gotoPage(2)
             selected: currentPage === 2
         }
+
         ImageButton {
             id:playerPageButton
             source: selected ? "qrc:/resources/images/tv_selected.png" :"qrc:/resources/images/tv.png"
-            // hoverImage: selected ? "qrc:/resources/images/tv_selected.png" :"qrc:/resources/images/tv.png"
             Layout.preferredWidth: sideBar.width
             Layout.preferredHeight: sideBar.width
             onClicked: gotoPage(3)
@@ -106,7 +110,6 @@ Rectangle {
         ImageButton {
             id: downloadPageButton
             source: selected ? "qrc:/resources/images/download_selected.png" :"qrc:/resources/images/download.png"
-            // hoverImage: selected ? "qrc:/resources/images/download_selected.png" :"qrc:/resources/images/download.png"
 
             Layout.preferredWidth: sideBar.width
             Layout.preferredHeight: sideBar.width

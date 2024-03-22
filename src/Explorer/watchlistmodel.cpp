@@ -1,16 +1,7 @@
 #include "watchlistmodel.h"
 #include "showmanager.h"
 #include <tuple>
-int WatchListModel::getCurrentListType()
-{
-    return m_currentListType;
-}
 
-void WatchListModel::setDisplayingListType(int listType)
-{
-    m_currentListType = listType;
-    emit layoutChanged ();
-}
 
 void WatchListModel::loadWatchList(QString filePath)
 {
@@ -78,41 +69,74 @@ void WatchListModel::changeListType(const ShowData &show, int newListType)
     save();
 }
 
+void WatchListModel::fetchUnwatchedEpisodes(int listType) {
+    return;
+    // int count = 0;
+    // for (const auto& show : m_jsonList[m_currentListType]) {
+    //     QString providerName = QString::fromStdString (show["provider"].get<std::string>());
+    //     // auto provider = ShowManagex).getProvider (providerName);
+    //     // if (!provider) {
+    //     //     qDebug()<<"Unable to find a provider for provider enum" << providerName;
+    //     //     continue;
+    //     // }
+    //     // int totalEpisodes = provider->getTotalEpisodes(show["link"].get<std::string>());
+    //     //totalEpisodeMap.insert ({show["link"].get<std::string>(), totalEpisodes)
+
+    //     ++count;
+    // }
+    // emit layoutChanged();
+}
+
+nlohmann::json WatchListModel::loadShow(int index)
+{
+    return m_jsonList[m_currentListType][index];
+}
+
+bool WatchListModel::syncShow(ShowData& show)
+{
+    if (jsonHashmap.contains (show.link))
+    {
+        int listType = jsonHashmap[show.link];
+        // find the index of the show in the list
+        int index = findShowInJsonList (listType, show.link);
+        if (index != -1) {
+            int lastWatchedIndex = m_jsonList[listType][index]["lastWatchedIndex"].get<int> ();
+            if (show.playlist) {
+                show.playlist->currentIndex = lastWatchedIndex;
+            } else {
+                qDebug() << "Error setting the last watched index";
+            }
+            show.listType = listType;
+            show.playlist->setJsonPtr (&m_jsonList[listType][index]);
+        }
+        return true;
+    }
+    return false;
+}
+
 void WatchListModel::add(const ShowData& show, int listType)
 {
-    m_jsonList[listType].push_back (show.toJson ());
-    jsonHashmap[show.link] = listType;
-    if (m_currentListType == listType) {
-        beginInsertRows(QModelIndex(), m_jsonList[listType].size(), m_jsonList[listType].size() + 1);
-        endInsertRows();
+    if (show.listType < 0) // not in watchlist
+    {
+        m_jsonList[listType].push_back (show.toJson ());
+        jsonHashmap[show.link] = listType;
+        if (m_currentListType == listType) {
+            beginInsertRows(QModelIndex(), m_jsonList[listType].size(), m_jsonList[listType].size() + 1);
+            endInsertRows();
+        }
+
+    } else {
+        // in watch list so we change the list type
+        changeListType (show, listType);
     }
     save();
 }
 
-void WatchListModel::addCurrentShow(int listType)
-{
-    const auto& currentShow = ShowManager::instance ().getCurrentShow ();
-    if (currentShow.isInWatchList ())
-    {
-        changeListType (currentShow, listType);
-    }
-    else
-    {
-        add(currentShow, listType);
-    }
-    ShowManager::instance().setListType (listType);
-}
-
-void WatchListModel::removeCurrentShow()
-{
-    remove (ShowManager::instance().getCurrentShow ());
-    ShowManager::instance ().setListType(-1);
-}
 
 void WatchListModel::remove(const ShowData &show)
 {
     // check if the show is in the list
-    if (!jsonHashmap.contains (show.link)) return;
+    if (show.listType < 0 || !jsonHashmap.contains (show.link)) return;
     int listType = jsonHashmap[show.link];
 
     // find the index of the show in the list
@@ -139,60 +163,12 @@ void WatchListModel::moveEnded()
     save();
 }
 
-void WatchListModel::syncCurrentShow()
-{
-    if (std::string link = ShowManager::instance ().getCurrentShow ().link; !ShowManager::instance ().isInWatchList () && jsonHashmap.contains (link))
-    {
-        int listType = jsonHashmap[link];
-        // find the index of the show in the list
-        int index = findShowInJsonList (listType, link);
-        if(index != -1) {
-            int lastWatchedIndex = m_jsonList[listType][index]["lastWatchedIndex"].get<int> ();
-            ShowManager::instance().setLastWatchedIndex(lastWatchedIndex);
-            ShowManager::instance().setListType(listType);
-            ShowManager::instance().getCurrentShow().playlist->setJsonPtr (&m_jsonList[listType][index]);
-        }
-    }
-    emit syncedCurrentShow();
-}
-
 void WatchListModel::save()
 {
     QMutexLocker locker(&mutex);
     std::ofstream output_file(watchListFilePath.toStdString ());
     output_file << m_jsonList.dump (4);
     output_file.close();
-}
-
-void WatchListModel::fetchUnwatchedEpisodes(int listType) {
-    return;
-    int count = 0;
-    for (const auto& show : m_jsonList[m_currentListType]) {
-        QString providerName = QString::fromStdString (show["provider"].get<std::string>());
-        auto provider = ShowManager::instance ().getProvider (providerName);
-        if (!provider) {
-            qDebug()<<"Unable to find a provider for provider enum" << providerName;
-            continue;
-        }
-        int totalEpisodes = provider->getTotalEpisodes(show["link"].get<std::string>());
-        //totalEpisodeMap.insert ({show["link"].get<std::string>(), totalEpisodes)
-
-        ++count;
-    }
-    emit layoutChanged();
-}
-
-void WatchListModel::loadShow(int index)
-{
-    auto showJson = m_jsonList[m_currentListType][index];
-    std::string link = showJson["link"].get<std::string>();
-    QString title = QString::fromStdString(showJson["title"].get<std::string>());
-    QString coverUrl = QString::fromStdString(showJson["cover"].get<std::string>());
-    QString provider = QString::fromStdString (showJson["provider"].get<std::string>());
-    int lastWatchedIndex = showJson["lastWatchedIndex"].get<int>();
-    ShowData show(title, link, coverUrl, provider, "", m_currentListType);
-    ShowManager::instance ().setCurrentShow (show);
-    ShowManager::instance ().setLastWatchedIndex (lastWatchedIndex);
 }
 
 int WatchListModel::rowCount(const QModelIndex &parent) const

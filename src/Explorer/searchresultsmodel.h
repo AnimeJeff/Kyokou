@@ -15,31 +15,33 @@ class SearchResultsModel : public QAbstractListModel
     QFutureWatcher<QList<ShowData>> m_watcher;
     QList<ShowData> m_list;
     QString m_cancelReason;
-public:
-    explicit SearchResultsModel(QObject *parent = nullptr);
-    bool isLoading()
-    {
-        return loading;
-    }
+    int m_currentPageIndex;
+    bool m_canFetchMore = false;
+    std::function<void(int)> lastSearch;
     void setLoading(bool b)
     {
         loading = b;
         emit loadingChanged();
     }
-    Q_INVOKABLE bool canLoadMore() const;
+
+public:
+    explicit SearchResultsModel(QObject *parent = nullptr);
+
+    ShowData &at(int index) { return m_list[index]; }
+    bool isLoading() { return loading; }
+    void search(const QString& query,int page,int type, ShowProvider* provider);
+    void latest(int page, int type, ShowProvider* provider);
+    void popular(int page, int type, ShowProvider* provider);
+
 signals:
     void loadingChanged(void);
 public slots:
-    void search(const QString& query,int page,int type);
-    void latest(int page,int type);
-    void popular(int page,int type);
-    void loadShow(int index);
     void cancel();
     void reload();
     void loadMore();
+    bool canLoadMore() const;
 
-private:
-    void setResults(QList<ShowData> results);
+
 private:
     enum
     {

@@ -6,7 +6,9 @@ Item {
     id:imageButton
     property alias source: image.source
     property string hoverSource: "" // Source for the image on hover
+    property alias cursorShape: mouseArea.cursorShape
     property bool selected
+    property bool enabled: true
     signal clicked()
 
     width: image.width
@@ -21,20 +23,14 @@ Item {
     MouseArea {
         id: mouseArea
         anchors.fill: parent
-        hoverEnabled: true
-        onClicked: imageButton.clicked()
-        onEntered: {
-            app.cursor.shape = Qt.PointingHandCursor
-            if (hoverSource !== "") {
-                image.source = hoverSource;
-            }
-        }
-        onExited: {
-            app.cursor.shape = Qt.ArrowCursor
-            if (hoverSource !== "") {
-                image.source = source; // Assuming the source hasn't dynamically changed while hovering
-            }
-        }
+        onClicked: if (imageButton.enabled) imageButton.clicked()
+        cursorShape: Qt.PointingHandCursor
+        //TODO
+        // onContainsMouseChanged: {
+        //     if (hoverSource !== "") {
+        //         image.source = containsMouse ? hoverSource : source; // Assuming the source hasn't dynamically changed while hovering
+        //     }
+        // }
     }
 
 
@@ -48,29 +44,3 @@ Item {
 
 
 
-// Button {
-//     id: button
-//     property string image: ""
-//     property string hoverImage: ""
-//     property bool selected: false
-//     HoverHandler {
-//         onHoveredChanged: {
-//             if (hovered)
-//             {
-//                 app.cursor.shape = Qt.PointingHandCursor
-//             }
-//             else
-//             {
-//                 app.cursor.shape = Qt.ArrowCursor
-//             }
-//         }
-//     }
-//     background: Image {
-//         mipmap: true
-//         source: button.hovered ? hoverImage : image
-//         sourceSize.width: parent.width
-//         sourceSize.height: parent.height
-//     }
-//     focusPolicy: Qt.NoFocus
-
-// }

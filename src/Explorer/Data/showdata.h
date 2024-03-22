@@ -8,8 +8,9 @@
 #include <QVariant>
 #include <QList>
 #include "Player/playlistitem.h"
+#include "Providers/showprovider.h"
 #include "nlohmann/json.hpp"
-#include <memory>
+
 
 struct ShowData
 {
@@ -34,15 +35,15 @@ struct ShowData
     QString getViews() const {return views.isEmpty () ? "???" : views;}
     QString getStatus() const {return status.isEmpty () ? "???" : status;}
 public:
-    ShowData(const QString& title, const std::string& link, const QString& coverUrl, const QString& provider, const QString& latestTxt = "", int type = 0)
-        : title(title), link(link), coverUrl(coverUrl), provider(provider), latestTxt(latestTxt), type(type){};
+    ShowData(const QString& title, const std::string& link, const QString& coverUrl, ShowProvider* provider, const QString& latestTxt = "", int type = 0, int lastWatchedIndex = -1)
+        : title(title), link(link), coverUrl(coverUrl), provider(provider), latestTxt(latestTxt), type(type), lastWatchedIndex(lastWatchedIndex) {};
 
     ShowData(){}
 
     QString title = "";
     std::string link = "";
     QString coverUrl = "";
-    QString provider = "";
+    ShowProvider* provider;
     QString latestTxt = "";
     int type = 0;
 
@@ -54,6 +55,7 @@ public:
     QString rating = "";
     QString views = "";
     int totalEpisodes = 0;
+    int lastWatchedIndex = -1;
 
     const PlaylistItem* getPlaylist() const
     {
@@ -68,7 +70,7 @@ public:
     {
         if (!playlist)
         {
-            playlist = new PlaylistItem (title, provider, this->link);
+            playlist = new PlaylistItem (title, provider, this->link, nullptr);
         }
         playlist->emplaceBack (number, link, name, isLocal);
     }
@@ -82,8 +84,8 @@ public:
                                        {"title", title.toStdString ()},
                                        {"cover", coverUrl.toStdString ()},
                                        {"link", link},
-                                       {"provider", provider.toStdString ()},
-                                       {"lastWatchedIndex", playlist ? playlist->currentIndex : -1},
+                                       {"provider", provider->name().toStdString ()},
+                                       {"lastWatchedIndex", lastWatchedIndex},
                                        });
     }
 

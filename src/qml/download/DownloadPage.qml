@@ -10,118 +10,178 @@ Item {
         currentFolder: "file:///" + workDirTextField.text
         onAccepted:
         {
-            app.downloader.workDir = text
-            text = app.downloader.workDir
+            showManager.downloader.workDir = text
+            text = showManager.downloader.workDir
         }
     }
-    GridLayout {
+
+    ColumnLayout {
         anchors.fill: parent
-        Layout.alignment: Qt.AlignTop | Qt.AlignLeft
-        columns: 3
-        rows: 3
-        CustomTextField {
-            id: workDirTextField
-            checkedColor: "#727CF5"
-            Layout.row: 0
-            Layout.column: 0
+        spacing: 10
+        RowLayout {
             Layout.fillWidth: true
-            Layout.preferredHeight: infoPage.height*0.05
-            Layout.preferredWidth: infoPage.width*0.8
-            text: app.downloader.workDir
-            color: "white"
-            placeholderText: qsTr("Enter query!")
-            font.pixelSize: 20 * root.aspectRatio
-            onAccepted: () => {
-                            app.downloader.workDir = text
-                            text = app.downloader.workDir
-                        }
-        }
-        CustomButton{
-            Layout.row: 0
-            Layout.column: 1
-            Layout.preferredWidth: infoPage.width*0.1
+            Layout.fillHeight: true
+            spacing: 5
+            Layout.preferredHeight: 1
+            CustomTextField {
+                id: workDirTextField
+                text: showManager.downloader.workDir
+                checkedColor: "#727CF5"
+                color: "white"
+                placeholderText: qsTr("Enter working directory")
+                placeholderTextColor: "gray"
+                font.pixelSize: 20 * root.aspectRatio
+                onAccepted: () => {
+                                showManager.downloader.workDir = text
+                                text = showManager.downloader.workDir
+                            }
 
-            text: "Browse"
-            onClicked: folderDialog.open()
+                Layout.row: 0
+                Layout.column: 0
+                Layout.fillWidth: true
+                Layout.preferredWidth: 8 // Use weight to allocate 80% of the space
+            }
+            CustomButton {
+                Layout.row: 0
+                Layout.column: 1
+                text: "Browse"
+                onClicked: folderDialog.open()
+                Layout.fillWidth: true
+                Layout.preferredWidth: 1 // Use weight to allocate 80% of the space
+            }
+            CustomButton {
+                text: "Open"
+                onClicked: Qt.openUrlExternally("file:///" + workDirTextField.text)
+                Layout.fillWidth: true
+                Layout.preferredWidth: 1
+            }
         }
-        CustomButton{
-            Layout.row: 0
-            Layout.column: 2
-            Layout.preferredWidth: infoPage.width*0.1
 
-            text: "Open"
-            onClicked: app.downloader.openFolder("file:///" + workDirTextField.text)
+        RowLayout {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 1
+            Layout.fillHeight: true
+            spacing: 5
+            CustomTextField {
+                id: downloadNameField
+                checkedColor: "#727CF5"
+                color: "white"
+                placeholderText: qsTr("Enter filename")
+                placeholderTextColor: "gray"
+                font.pixelSize: 20 * root.aspectRatio
+                Layout.row: 1
+                Layout.column: 0
+                Layout.fillWidth: true
+                Layout.preferredWidth: 3
+            }
+
+            CustomTextField {
+                id: downloadUrlField
+                checkedColor: "#727CF5"
+
+                color: "white"
+                placeholderText: qsTr("Enter m3u8 link")
+                placeholderTextColor: "gray"
+                font.pixelSize: 20 * root.aspectRatio
+                Layout.row: 1
+                Layout.column: 1
+                Layout.fillWidth: true
+                Layout.preferredWidth: 7
+            }
+
+            CustomButton{
+                Layout.row: 1
+                Layout.column: 2
+                text: "Download"
+                onClicked: {showManager.downloader.downloadLink(downloadNameField.text, downloadUrlField.text)}
+                Layout.fillWidth: true
+                Layout.preferredWidth: 1
+            }
         }
 
         ListView {
-            MouseArea {
-                anchors.fill: parent
-                onClicked: forceActiveFocus()
-            }
-            id:list
+            id:listView
             Layout.fillWidth: true
             Layout.fillHeight: true
-            Layout.row: 1
-            Layout.column: 0
-            Layout.columnSpan: 3
-            ScrollBar.vertical: ScrollBar {
-                active: true
-            }
+            Layout.preferredHeight: 8
             clip: true
-            model:app.downloader
+            model:showManager.downloader
             boundsMovement: Flickable.StopAtBounds
             spacing: 10
             delegate: Rectangle {
-                width: list.width
-                height: 20 * root.aspectRatio * 4
+                width: listView.width
+                height: 120
+                border.width: 3
+                border.color: "white"
                 color: "black"
                 required property int progressValue;
                 required property string progressText;
                 required property string name;
                 required property string path;
-                GridLayout
-                {
-                    anchors.fill: parent
+                required property int index;
+                GridLayout {
+                    anchors{
+                        left:parent.left
+                        leftMargin: parent.border.width + 2
+                        right:parent.right
+                        rightMargin: parent.border.width + 2
+                        top:parent.top
+                        topMargin: parent.border.width + 2
+                        bottom:parent.bottom
+                        bottomMargin: parent.border.width + 2
+                    }
                     rows:4
                     columns: 3
                     rowSpacing: 10
                     Text {
                         Layout.row: 0
                         Layout.column: 0
-                        id:episodeStr
+                        Layout.columnSpan: 2
+                        id: nameStr
                         text:  name
                         font.pixelSize: 20 * root.aspectRatio
-                        Layout.columnSpan: 3
+
                         wrapMode: Text.Wrap
                         color: "white"
                     }
                     Text {
                         Layout.row: 1
                         Layout.column: 0
-                        id:pathStr
-                        text:  path
+                        Layout.columnSpan: 2
+                        id: pathStr
+                        text: path
                         font.pixelSize: 20 * root.aspectRatio
-                        Layout.columnSpan: 3
                         wrapMode: Text.Wrap
                         color: "white"
+                        MouseArea {
+                            id: mouseArea
+                            anchors.fill: parent
+                            acceptedButtons: Qt.LeftButton
+                            cursorShape: Qt.PointingHandCursor
+                            hoverEnabled: true
+                            onClicked: {
+                                showManager.downloader.openFolder(path);
+                            }
+                        }
                     }
 
                     CustomButton{
-                        Layout.row: 2
+                        Layout.row: 0
                         Layout.column: 2
+                        Layout.rowSpan: 4
                         text: "Cancel"
-                        onClicked: console.log("cancelled")
-                        Layout.rowSpan: 2
+                        onClicked: showManager.downloader.cancelTask(index)
                     }
 
 
                     ProgressBar {
                         Layout.row: 2
                         Layout.column: 0
+                        Layout.columnSpan: 2
                         from: 0
                         to: 100
                         value: progressValue
-                        Layout.columnSpan: 2
+
                         Layout.fillWidth: true
                     }
                     Text {
@@ -134,34 +194,12 @@ Item {
                         color: "white"
                     }
                 }
+
+
             }
         }
-        CustomTextField {
-            id: downloadUrlField
-            checkedColor: "#727CF5"
-            Layout.row: 2
-            Layout.column: 0
-            Layout.columnSpan: 2
-            Layout.fillWidth: true
-            Layout.preferredHeight: infoPage.height*0.05
-            Layout.preferredWidth: infoPage.width*0.8
-            color: "white"
-            placeholderText: qsTr("Enter m3u8 link")
-            font.pixelSize: 20 * root.aspectRatio
-            onAccepted: () => {
-                            // app.downloader.workDir = text
-                            // text = app.downloader.workDir
-                        }
-        }
-        CustomButton{
-            Layout.row: 2
-            Layout.column: 2
-            text: "Download"
-            onClicked: {app.downloader.downloadLink(downloadUrlField.text)}
-        }
-
-
     }
+
 
 
 

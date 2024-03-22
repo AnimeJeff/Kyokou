@@ -1,4 +1,4 @@
-import QtQuick 2.15
+import QtQuick
 import QtQuick.Controls 2.15
 import "../components"
 Item {
@@ -18,9 +18,9 @@ Item {
     LoadingScreen {
         id:loadingScreen
         anchors.centerIn: parent
-        loading: app.showExplorer.loading || showManager.loading
+        loading: showManager.explorer.loading || showManager.loading
         onCancelled: {
-            app.showExplorer.cancel()
+            showManager.explorer.cancel()
             showManager.cancel()
         }
         onTimedOut: {
@@ -75,7 +75,7 @@ Item {
 
     ShowContainer {
         id:showContainer
-        model: app.showExplorer
+        model: showManager.explorer
         anchors {
             top: searchBar.bottom
             left: parent.left
@@ -93,7 +93,7 @@ Item {
     Keys.onPressed: event => handleKeyPress(event)
     function handleKeyPress(event){
         if (event.modifiers & Qt.ControlModifier){
-            if (event.key === Qt.Key_R){app.showExplorer.reload()}
+            if (event.key === Qt.Key_R){showManager.explorer.reload()}
         }else{
             switch (event.key){
             case Qt.Key_Escape:

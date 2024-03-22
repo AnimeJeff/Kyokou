@@ -53,7 +53,6 @@ public:
         const VideoServer &server = m_servers.at(index.row());
         switch (role) {
         case NameRole:
-            qDebug() << server.name;
             return server.name;
             break;
         default:

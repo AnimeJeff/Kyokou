@@ -25,7 +25,8 @@
 #include <stdexcept>
 
 #include <QStringList>
-
+#include <windows.h>
+// #include <winbase.h>
 #include "Components/errorhandler.h"
 #include <QQuickOpenGLUtils>
 #include <QtOpenGL/QOpenGLFramebufferObject>
@@ -61,10 +62,6 @@ public:
                                       {MPV_RENDER_PARAM_API_TYPE,
                                        const_cast<char *>(MPV_RENDER_API_TYPE_OPENGL)},
                                       {MPV_RENDER_PARAM_OPENGL_INIT_PARAMS, &gl_init_params},
-                                      //                { MPV_RENDER_PARAM_X11_DISPLAY,
-                                      //                Graphics::x11Display() }, {
-                                      //                MPV_RENDER_PARAM_WL_DISPLAY,
-                                      //                Graphics::waylandDisplay() },
                                       {MPV_RENDER_PARAM_INVALID, nullptr}};
 
             if (m_obj->m_mpv.renderer_initialize(params) < 0)
@@ -73,9 +70,7 @@ public:
             m_obj->m_mpv.set_render_callback(
                 [](void *ctx) {
                     MpvObject *obj = static_cast<MpvObject *>(ctx);
-                    //                QMetaObject::invokeMethod(obj, "update",
-                    //                Qt::QueuedConnection);
-                    QMetaObject::invokeMethod(obj, "testupdate", Qt::QueuedConnection);
+                    QMetaObject::invokeMethod(obj, "update", Qt::QueuedConnection);
                 },
                 m_obj);
         }
@@ -83,14 +78,11 @@ public:
     }
 
     void render() {
+        if (!m_obj->isVisible () || m_obj->isResizing ()) return;
         Q_ASSERT(m_obj != nullptr);
         Q_ASSERT(m_obj->window() != nullptr);
 
-#if QT_VERSION_MAJOR >= 6
         QQuickOpenGLUtils::resetOpenGLState();
-#else
-        m_obj->window()->resetOpenGLState();
-#endif
 
         QOpenGLFramebufferObject *fbo = framebufferObject();
         Q_ASSERT(fbo != nullptr);
@@ -104,11 +96,7 @@ public:
                                      {MPV_RENDER_PARAM_INVALID, nullptr}};
         m_obj->m_mpv.render(params);
 
-#if QT_VERSION_MAJOR >= 6
         QQuickOpenGLUtils::resetOpenGLState();
-#else
-        m_obj->window()->resetOpenGLState();
-#endif
     }
 };
 
@@ -141,7 +129,16 @@ MpvObject::MpvObject(QQuickItem *parent) : QQuickFramebufferObject(parent) {
     m_mpv.set_option("cache-secs", "100");
     m_mpv.set_option("cache-unlink-files", "whendone");
     m_mpv.set_option("config", "yes");
+    m_mpv.set_option ("msg-level", "all=error");
 
+
+    m_mpv.observe_property("duration");
+    m_mpv.observe_property("playback-time");
+    m_mpv.observe_property("paused-for-cache");
+    m_mpv.observe_property("core-idle");
+    m_mpv.observe_property("pause");
+    m_mpv.observe_property("track-list");
+    m_mpv.request_log_messages("warn");
 
     auto appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
     QDir mpvAppData(appDataPath);
@@ -153,13 +150,6 @@ MpvObject::MpvObject(QQuickItem *parent) : QQuickFramebufferObject(parent) {
         }
     }
 
-    m_mpv.observe_property("duration");
-    m_mpv.observe_property("playback-time");
-    m_mpv.observe_property("paused-for-cache");
-    m_mpv.observe_property("core-idle");
-    m_mpv.observe_property("pause");
-    m_mpv.observe_property("track-list");
-    m_mpv.request_log_messages("warn");
 
     // Configure cache
     if (settings.value(QStringLiteral("network/limit_cache"), false).toBool()) {
@@ -173,33 +163,6 @@ MpvObject::MpvObject(QQuickItem *parent) : QQuickFramebufferObject(parent) {
         m_mpv.set_option("demuxer-max-back-bytes", backwardBytes);
     }
 
-#if defined(Q_OS_UNIX) && !defined(Q_OS_MAC)
-    Hwdec hwdec = (Hwdec)settings.value(QStringLiteral("video/hwdec"), 0).toInt();
-    switch (hwdec) {
-    case AUTO:
-        m_mpv.set_option("gpu-hwdec-interop", "auto");
-        m_mpv.set_option("hwdec", "auto");
-        break;
-    case VAAPI:
-        m_mpv.set_option("gpu-hwdec-interop", "vaapi-egl");
-        m_mpv.set_option("hwdec", "vaapi");
-        break;
-    case VDPAU:
-        m_mpv.set_option("gpu-hwdec-interop", "vdpau-glx");
-        m_mpv.set_option("hwdec", "vdpau");
-        break;
-    case NVDEC:
-        m_mpv.set_option("hwdec", "nvdec");
-        break;
-    default:
-        break;
-    }
-
-#elif defined(Q_OS_MAC)
-    m_mpv.set_option("gpu-hwdec-interop", "videotoolbox");
-    m_mpv.set_option("hwdec", "videotoolbox");
-
-#elif defined(Q_OS_WIN)
     if (QSysInfo::productVersion() == QStringLiteral("8.1") ||
         QSysInfo::productVersion() == QStringLiteral("10") ||
         QSysInfo::productVersion() == QStringLiteral("11")) {
@@ -209,7 +172,6 @@ MpvObject::MpvObject(QQuickItem *parent) : QQuickFramebufferObject(parent) {
         m_mpv.set_option("hwdec", "dxva2");
         m_mpv.set_option("gpu-context", "dxinterop");
     }
-#endif
 
     if (m_mpv.initialize() < 0)
         throw std::runtime_error("could not initialize mpv context");
@@ -240,7 +202,6 @@ void MpvObject::open(const QUrl &fileUrl, const QUrl &danmakuUrl, const QUrl &au
     //    fileUrl.toString().toUtf8();//(fileUrl.isLocalFile() ?
     //    fileUrl.toLocalFile() : fileUrl.toString()).toUtf8();
 
-    //    qDebug() << fileUrl.toString ().toUtf8 ().constData ();
     const char *args[] = {"loadfile", fileUrl.toString().toUtf8().constData(),
                           nullptr};
     currentVideoLink = fileUrl.toString();
@@ -370,14 +331,15 @@ void MpvObject::onMpvEvent() {
         }
 
         case MPV_EVENT_IDLE: {
-            //            Q_ASSERT(playlistModel != nullptr);
+
             if (m_endFileReason == MPV_END_FILE_REASON_EOF) {
-                emit playNext();
+
             } else {
                 m_state = STOPPED;
                 emit stateChanged();
             }
             m_state = STOPPED;
+
             emit stateChanged();
             break;
         }
@@ -423,17 +385,16 @@ void MpvObject::onMpvEvent() {
                 int64_t newTime = static_cast<double>(propValue); // It's double in mpv
                 if (newTime != m_time) {
                     m_time = newTime;
+                    // qDebug() << m_time;
                     emit timeChanged();
-                    //                    if(OPStart > -1 && m_time > OPStart && m_time <
-                    //                    OPStart + OPLength)
-                    //                    {
-                    //                        seek(OPStart + OPLength);
-                    //                    }
-                    //                    else if(EDStart > -1 && m_time > EDStart &&
-                    //                    m_time < EDStart + EDLength)
-                    //                    {
-                    //                        seek(EDStart + EDLength);
-                    //                    }
+                    if (m_time == m_duration){
+                        emit playNext();
+                    } else if (m_shouldSkipOP && m_time < m_OPEnd && m_time >= m_OPStart){
+                        seek(m_OPEnd,true);
+                    } else if (m_shouldSkipED && m_time < m_EDEnd && m_time >= m_EDStart){
+                        seek(m_EDEnd, true);
+                    }
+
                 }
             }
 

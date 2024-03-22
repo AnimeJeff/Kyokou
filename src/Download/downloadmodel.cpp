@@ -15,19 +15,21 @@ DownloadModel::DownloadModel(QObject *parent): QAbstractListModel(parent)
     {
         auto watcher = new QFutureWatcher<bool>();
         watchers.push_back (watcher);
+
         QObject::connect (watcher, &QFutureWatcher<bool>::finished, this, [watcher, this](){
             //set task success
-            bool success = watcher->future ().isValid () ? watcher->future().result() : false;
-            //                if (success) removeTask(watcher);
-            qDebug() << watcherTaskTracker[watcher]->displayName << "completed";
-            removeTask(watcher);
+            if (!watcher->future().isValid()) {
+                qDebug() << "Log (Downloader):" << watcherTaskTracker[watcher]->displayName << "cancelled successfully";
+            } else {
+                try {
+                    auto res = watcher->future().result();
+                } catch (...) {
+                    qDebug() << "Log (Downloader):" << watcherTaskTracker[watcher]->displayName << "task failed";
+                }
+            }
+            removeTask(watcherTaskTracker[watcher]);
             setTask (watcher);
             emit layoutChanged ();
-        });
-        QObject::connect (watcher, &QFutureWatcher<bool>::canceled, this, [watcher, this](){
-            qDebug() << "watcher cancelled";
-            removeTask(watcher);
-            setTask (watcher);
         });
 
         QObject::connect (watcher, &QFutureWatcher<bool>::progressValueChanged, this, [watcher, this](){
@@ -41,21 +43,34 @@ DownloadModel::DownloadModel(QObject *parent): QAbstractListModel(parent)
     }
 }
 
-void DownloadModel::removeTask(QFutureWatcher<bool> *watcher)
+void DownloadModel::removeTask(DownloadTask *task)
 {
     QMutexLocker locker(&mutex);
-    DownloadTask *task = watcherTaskTracker[watcher];
-    Q_ASSERT(task);
-    watcherTaskTracker[watcher] = nullptr;
+    if (task->watcher)
+    {
+        // task has started, not in task queue
+        Q_ASSERT(task == watcherTaskTracker[task->watcher]);
+        if (task->watcher->isRunning ()){
+            qDebug() << "Log (Downloader): Attempting to cancel the ongoing task" << task->displayName;
+            task->watcher->cancel ();
+            task->watcher->waitForFinished ();
+            return; // this function is called again from the canceled signal slot
+        }
+        watcherTaskTracker[task->watcher] = nullptr;
+    }
+    else {
+        tasksQueue.removeOne (task);
+    }
     tasks.removeOne (task);
     delete task;
+    qDebug() << "Log (Downloader): Removed task" << task->displayName;
 }
 
 void DownloadModel::setTask(QFutureWatcher<bool> *watcher)
 {
+    QMutexLocker locker(&mutex);
     if (tasksQueue.isEmpty ())
         return;
-    QMutexLocker locker(&mutex);
     DownloadTask *task = tasksQueue.front();
     task->watcher = watcher;
     watcherTaskTracker[watcher] = task;
@@ -64,33 +79,36 @@ void DownloadModel::setTask(QFutureWatcher<bool> *watcher)
     tasksQueue.pop_front ();
 }
 
-void DownloadModel::downloadCurrentShow(int startIndex, int count)
+void DownloadModel::downloadShow(const ShowData &show, ShowProvider* provider, int startIndex, int count)
 {
-    if (count < 1) return;
-    PlaylistItem* episodes = ShowManager::instance ().getCurrentShow ().playlist;
-    if (!episodes) return;
-    ++episodes->useCount;
-    QString showName = ShowManager::instance ().getCurrentShow ().title;
-    showName = showName.replace(":",".").replace(folderNameCleanerRegex,"_");   //todo check replace
-    const ShowProvider* provider = ShowManager::instance().getCurrentShowProvider();
-    if (startIndex + count > episodes->count ()) count = episodes->count () - startIndex;
+    if (!show.playlist || count < 1) return;
+    auto playlist = show.playlist;
+    ++playlist->useCount; // prevents the playlist from being delete whilst
 
-    QFuture<void> future = QtConcurrent::run([this, showName, episodes, provider, count, startIndex](){
+    int endIndex = startIndex + count;
+    if (endIndex > show.playlist->count ()) endIndex = show.playlist->count ();
+
+    QString showName = QString(show.title).replace(":",".").replace(folderNameCleanerRegex,"_");   //todo check replace
+    qDebug() << "Log (Downloader)" << showName << "from index" << startIndex << "to" << endIndex - 1;
+    QFuture<void> future = QtConcurrent::run([this, showName, playlist, provider, startIndex, endIndex](){
         try
         {
-            for (int i = startIndex; i < startIndex + count; ++i)
+            for (int i = startIndex; i < endIndex; ++i)
             {
                 auto workDir = QDir::cleanPath (m_workDir + QDir::separator () + showName);
-                const PlaylistItem* episode = episodes->at (i);
+                const PlaylistItem* episode = playlist->at (i);
                 QList<VideoServer> servers = provider->loadServers(episode);
                 QString link = provider->extractSource (servers.first ());
+
                 QString displayName = showName + " : " + episode->getFullName ();
                 QString path = QDir::cleanPath (workDir + QDir::separator () + episode->getFullName () + ".mp4");
                 QString referer = "";
                 QString headers = "authority:\"AUTHORITY\"|origin:\"https://REFERER\"|referer:\"https://REFERER/\"|user-agent:\"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36\"sec-ch-ua:\"Not A;Brand\";v=\"99\", \"Chromium\";v=\"102\", \"Google Chrome\";v=\"102\"";
                 headers.replace("REFERER", referer.isEmpty() ? link.split("https://")[1].split("/")[0] : referer);
                 DownloadTask *task = new DownloadTask(episode->getFullName (), workDir, link, headers, displayName , path);
+                qDebug() << "Log (Downloader): Appending new download task for" << episode->getFullName ();
                 addTask (task);
+                if (i == startIndex) startTasks ();
             }
             startTasks ();
             emit layoutChanged ();
@@ -99,26 +117,28 @@ void DownloadModel::downloadCurrentShow(int startIndex, int count)
             ErrorHandler::instance ().show ("error adding download task");
         }
         //delete episode if no longer used by playlistmodel or current show
-        qDebug() << "checking if should delete by downloader" << episodes->useCount;
-        if (--episodes->useCount == 0)
+        qDebug() << "Log (Downloader): Checking if the playlist should be deleted by the downloader" << playlist->useCount - 1;
+        if (--playlist->useCount == 0)
         {
-            qDebug() << "deleted playlist by downlaoder" ;
-            delete episodes;
+            qDebug() << "Log (Downloader): Deleted playlist by downlaoder" ;
+            delete playlist;
         }
     });
-    //
+
 }
+
+
 
 bool DownloadModel::setWorkDir(const QString &path)
 {
     const QFileInfo outputDir(path);
     if ((!outputDir.exists()) || (!outputDir.isDir()) || (!outputDir.isWritable())) {
-        qWarning() << "output directory does not exist, is not a directory, or is not writeable"
+        qWarning() << "Log (Downloader): Output directory either doesn't exist or isn't a directory or writeable"
                    << outputDir.absoluteFilePath();
         return false;
     }
     m_workDir = path;
-    qDebug() << "Changed successfully.";
+
     emit workDirChanged ();
     return true;
 }
@@ -126,7 +146,7 @@ bool DownloadModel::setWorkDir(const QString &path)
 QVariant DownloadModel::data(const QModelIndex &index, int role) const{
     if (!index.isValid())
         return QVariant();
-    const DownloadTask* task = tasks.at (index.row());
+    DownloadTask* task = tasks.at (index.row());
 
     switch (role){
     case NameRole:

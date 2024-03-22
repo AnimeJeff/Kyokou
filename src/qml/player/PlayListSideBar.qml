@@ -4,29 +4,19 @@ import QtQuick.Controls 2.15
 
 Rectangle{
     id:playlistBar
-    visible: false
     color: '#d0303030'
 
     Connections {
-        id:currentIndexChangeConnection
-        target:app.playlist
-        function onCurrentIndexChanged()
-        {
-            if (!app.playlist.currentIndex.valid) return
-            sel.setCurrentIndex(app.playlist.currentIndex, ItemSelectionModel.SelectCurrent)
-            treeView.expandToIndex(app.playlist.currentIndex)
-            treeView.forceLayout()
-//            let halfHeight = treeView.height / 2
-//            let contentY = 45 * (app.playlist.itemIndex-12) + 26.25 * (app.playlist.playlistIndex + 1)// - halfHeight
-//            if (contentY < 0) contentY = 0
-//            treeView.contentY = contentY
-
+        target: showManager.playList
+        function onCurrentIndexChanged() {
+            treeView.scrollToIndex(showManager.playList.currentIndex)
         }
 
     }
+
     TreeView {
         id: treeView
-        model: app.playlist
+        model: showManager.playList
         clip:true
         boundsBehavior:Flickable.StopAtBounds
         boundsMovement: Flickable.StopAtBounds
@@ -37,46 +27,61 @@ Rectangle{
             bottom: bottomBar.top
         }
         keyNavigationEnabled:false
+        smooth: false
+        onContentHeightChanged: {
+            scrollToIndex(showManager.playList.currentIndex)
+        }
+
+        function scrollToIndex(index){
+            if (index.valid) {
+                // console.log("Expanding to " + index)
+                expandToIndex(index);
+                // forceLayout()
+                // positionViewAtRow(rowAtIndex(index), Qt.AlignVCenter)
+                positionViewAtIndex(index, TableView.AlignVCenter)
+                sel.setCurrentIndex(index, ItemSelectionModel.SelectCurrent)
+            }
+        }
 
         selectionModel: ItemSelectionModel {
             id:sel
-            model: app.playlist
+            model: showManager.playList
             onCurrentChanged:(current, previous)=>
                              {
+                                 // if a playlist is selected, select the previous
                                  if (!current.parent.valid)
                                  {
-                                     if (previous.parent.valid)
-                                     {
+                                     // previous should be valid
+                                     if (previous.parent.valid) {
                                          setCurrentIndex(previous, ItemSelectionModel.SelectCurrent)
-                                     }
-                                     else
-                                     {
+                                     } else {
                                          clear()
                                      }
                                      return
                                  }
-                                 if (current === app.playlist.currentIndex) return;
-                                 app.playlist.load(current)
+                                 if (current === showManager.playList.currentIndex) return;
+                                 showManager.playList.load(current)
                              }
-        }
-        Component.onCompleted: {
-            currentIndexChangeConnection.onCurrentIndexChanged()
         }
 
         selectionBehavior:TableView.SelectRows
         delegate: TreeViewDelegate {
             id:treeDelegate
+
             implicitWidth :treeView.width
+            onYChanged: {
+                if(current)
+                    treeDelegate.treeView.contentY = treeDelegate.y;
+            }
+
+
             TapHandler {
                 acceptedModifiers: Qt.NoModifier
-                onTapped:
-                {
+                onTapped: {
                     if (treeDelegate.hasChildren)
                     {
                         if (treeView.isExpanded(row))
-                        {
                             treeView.collapse(row)
-                        }
                         else
                             treeView.expand(row)
                     }
@@ -89,7 +94,7 @@ Rectangle{
             }
             indicator: Text {
                 id: indicator
-                visible: treeDelegate.isTreeNode && treeDelegate.hasChildren
+                visible: isTreeNode && hasChildren
                 x: padding + (treeDelegate.depth * treeDelegate.indent)
                 anchors.verticalCenter: treeDelegate.verticalCenter
                 text: "▸"
@@ -108,7 +113,11 @@ Rectangle{
                 height: treeDelegate.hasChildren ? font.pixelSize : font.pixelSize * 2
                 clip: true
                 text: model.numberTitle
-                color: current ? "red" : treeDelegate.hasChildren && row === app.playlist.playlistIndex ? "green" : "white"
+                color: current || selected ? "red" : "white"
+
+                    //current ? "red" : treeDelegate.hasChildren && row === showManager.playList.playlistIndex ? "green" : "white"
+
+
             }
         }
 

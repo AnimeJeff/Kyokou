@@ -7,14 +7,14 @@ ComboBox {
 
     property color checkedColor: "#4E5BF2"
     property int fontSize: 15
+    property var text
     property int hAlignment: Text.AlignHCenter
     property int vAlignment: Text.AlignVCenter
     property int contentRadius: 5
     delegate: ItemDelegate {
         width: comboBox.width
-
         contentItem: Text {
-            text: model.text
+            text: model[`${comboBox.text}`]
             color: comboBox.highlightedIndex === index ? "white" : "black"
             elide: Text.ElideRight
             font.pixelSize: fontSize

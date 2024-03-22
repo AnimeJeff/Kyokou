@@ -4,18 +4,16 @@
 #include "curl/curl.h"
 #include "CSoup.h"
 #include <nlohmann/json.hpp>
-#include <iostream>
-#include <memory>
 #include <QDebug>
 #include <QMutex>
-#define StringMap std::map<std::string, std::string>
+
 
 class NetworkClient
 {
 private:
     static constexpr int maxCurls = 10;
 
-    static QList<CURL*> curls;
+
 
     static void createHandles()
     {
@@ -39,7 +37,7 @@ private:
         curl_easy_setopt(curl, CURLOPT_VERBOSE, 0L);
 
         // Set the user agent
-        // curl_easy_setopt(curl, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3");
+        curl_easy_setopt(curl, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
 
         // Set SSL options
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
@@ -57,13 +55,13 @@ private:
         curls.pop_back ();
         return curl;
     }
-    static QMutex mutex;
+
     static void returnCurl(CURL* curl){
         QMutexLocker locker(&mutex);
         curls.push_back(curl);
     }
 
-    static bool initialised;
+
 
     enum RequestType{
         GET,
@@ -116,7 +114,7 @@ public:
         }
     };
 
-    static Response get(const std::string &url, const StringMap& headers={}, const StringMap& params = {})
+    static Response get(const std::string &url, const std::map<std::string, std::string>& headers={}, const std::map<std::string, std::string>& params = {})
     {
         std::stringstream ss;
         std::string queryParams;
@@ -134,10 +132,10 @@ public:
 
         // Set the URL
         std::string fullUrl = url + queryParams;
-        return request(GET,fullUrl.c_str ());
+        return request(GET, fullUrl.c_str (), headers);
     }
 
-    static Response post(const std::string& url, const StringMap& headers={}, const StringMap& data={}){
+    static Response post(const std::string& url, const std::map<std::string, std::string>& headers={}, const std::map<std::string, std::string>& data={}){
         // Set the post data
         std::string postData;
         for (auto const& x : data){
@@ -146,33 +144,26 @@ public:
         return request(POST, url.c_str (), headers, postData.c_str());
     }
 
-    static Response request(int type, const char* url, const StringMap& headers={}, const char* data = nullptr){
-        CURL* curl = getCurl ();
+    static Response request(int type, const char* url, const std::map<std::string, std::string>& headersMap={}, const char* data = nullptr){
+        CURL* curl = getCurl();
         Response response;
 
         curl_easy_setopt(curl, CURLOPT_URL, url);
 
-        // Set the headers
-        struct curl_slist* headerLista = NULL;
-        StringMap _headers = headers;
-        if (headers.empty ()){
-            _headers = defaultHeaders;
-        }
-        for (auto const& [key, value] : _headers){
-            std::string header = std::string(key) + ":" + std::string(value);
-            headerLista = curl_slist_append(headerLista, header.c_str());
+        struct curl_slist* headers = nullptr;
+
+        for (const auto& header : headersMap) {
+            std::string headerStr = header.first + ": " + header.second;
+            // qDebug() << headerStr;
+            headers = curl_slist_append(headers, headerStr.c_str());
         }
 
-        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headerLista);
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
-        if (type == POST)
-        {
+        if (type == POST) {
             curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
             curl_easy_setopt(curl, CURLOPT_POST, 1L);
-        }else if (type==GET)
-        {
-            curl_easy_setopt(curl, CURLOPT_POSTFIELDS, nullptr);
-            curl_easy_setopt(curl, CURLOPT_POST, 0L);
+        } else if (type == GET) {
             curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
         }
         // Set the response callback function
@@ -197,7 +188,7 @@ public:
         }
 
         // Clean up
-        curl_slist_free_all(headerLista);
+        curl_slist_free_all(headers);
 
         // Parse the response
         response.url = url;
@@ -225,8 +216,10 @@ private:
     }
 
 private:
-    static StringMap defaultHeaders;
-    static std::string defaultUA;
+    inline static QList<CURL*> curls {};
+    inline static QMutex mutex {};
+    inline static bool initialised = false;
+
 };
 
 

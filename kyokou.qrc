@@ -50,6 +50,7 @@
         <file>resources/images/download-button.png</file>
         <file>resources/images/periodic-table.jpg</file>
         <file>resources/images/servers.png</file>
+        <file>resources/images/titlebar.jpg</file>
     </qresource>
     <qresource prefix="/qml">
         <file>src/qml/main.qml</file>

@@ -19,7 +19,7 @@ GridView {
 
     DelegateModel {
         id:visualModel
-        model:app.watchList
+        model:showManager.watchList
         delegate: Column {
             required property string title
             required property string cover
@@ -72,7 +72,7 @@ GridView {
                 MouseArea {
                     id: dragArea
                     anchors.fill: parent
-                    onClicked: app.watchList.loadShow(dragArea.DelegateModel.itemsIndex)
+                    onClicked: showManager.loadShow(dragArea.DelegateModel.itemsIndex, true)
                     property int lastZ
                     property bool held: true
                     drag.target: held ? content : undefined
@@ -90,7 +90,7 @@ GridView {
                         {
                             app.cursor.shape = Qt.PointingHandCursor
                             content.z = lastZ
-                            app.watchList.moveEnded()
+                            showManager.watchList.moveEnded()
                             content.list.contentY = content.list.lastY
                         }
                     }
@@ -105,23 +105,24 @@ GridView {
                                        //                                           container.lastLoadedIndex = newIndex
                                        //                                       }
                                        if (Math.abs(newIndex-oldIndex) < container.itemPerRow * 2){
-                                           app.watchList.move(oldIndex,newIndex)
+                                           showManager.watchList.move(oldIndex,newIndex)
                                            visualModel.items.move(oldIndex,newIndex)
                                        }
 
                                    }
                     }
                     hoverEnabled: true
-                    onContainsMouseChanged: {
-                        if (containsMouse && !drag.active)
-                        {
-                            app.cursor.shape = Qt.PointingHandCursor
-                        }
-                        else
-                        {
-                            app.cursor.shape = Qt.ArrowCursor
-                        }
-                    }
+                    cursorShape: Qt.PointingHandCursor
+                    // onContainsMouseChanged: {
+                    //     if (containsMouse && !drag.active)
+                    //     {
+                    //         app.cursor.shape = Qt.PointingHandCursor
+                    //     }
+                    //     else
+                    //     {
+                    //         app.cursor.shape = Qt.ArrowCursor
+                    //     }
+                    // }
 
 
                 }

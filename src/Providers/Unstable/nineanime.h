@@ -148,7 +148,6 @@
 //    QList<ShowResponse> widgetSearch(std::string path,int page)
 //    {
 //        m_widgetSearched = true;
-//        m_currentPage = page;
 //        m_lastSearch = path;
 //        std::string url = "https://9anime.id/ajax/home/widget/" + path +"?page=" + QString::number (page);
 //        QList<ShowResponse> animes = parseAnimes (url);

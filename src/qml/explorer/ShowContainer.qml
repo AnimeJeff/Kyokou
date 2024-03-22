@@ -22,7 +22,15 @@ GridView {
             width: parent.width - container.spacing
             height: width * container.aspectRatio
             anchors.horizontalCenter: parent.horizontalCenter
-
+            MouseArea{
+                anchors.fill: parent
+                hoverEnabled: true
+                acceptedButtons: Qt.LeftButton
+                cursorShape: Qt.PointingHandCursor
+                onClicked: (mouse)=>{
+                               showManager.loadShow(index, false)
+                           }
+            }
             AnimatedImage {
                 anchors
                 {
@@ -36,26 +44,7 @@ GridView {
                 visible: parent.status == Image.Loading
                 playing: parent.status == Image.Loading
             }
-
-            MouseArea{
-                anchors.fill: parent
-                hoverEnabled: true
-                onContainsMouseChanged: {
-                    if (containsMouse)
-                    {
-                        app.cursor.shape = Qt.PointingHandCursor
-                    }
-                    else
-                    {
-                        app.cursor.shape = Qt.ArrowCursor
-                    }
-                }
-                onClicked: (mouse)=>{
-                               app.showExplorer.loadShow(index)
-                           }
-            }
         }
-
         Text {
             text: model.title
             anchors.horizontalCenter: parent.horizontalCenter
@@ -66,44 +55,20 @@ GridView {
             font.pixelSize: 20
             elide: Text.ElideRight
             color: "white"
-            MouseArea {
-                anchors.fill: parent
-                onClicked: (mouse)=>{
-                               if (mouse.button === Qt.RightButton)
-                               {
-                                   app.showExplorer.loadShow(index)
-                               }
-                           }
-            }
         }
+
+
     }
 
     onContentYChanged: {
         searchResultsViewlastScrollY = contentY
     }
 
-    //        footer: Rectangle{
-    //            color: "transparent"
-    //            width: parent.width
-    //            height: 100
-    //            z:container.z+1
-    //            BusyIndicator{
-    //                running: true
-    //                visible: true
-    //                width: width
-    //                height: parent.height
-    //                anchors.centerIn: parent
-
-    //            }
-    //        }
-
-    //        interactive: true
-    //        property int realContentHeight: Math.ceil(container.count/6)*cellHeight
 
     onAtYEndChanged: {
-        if (atYEnd && count > 0 && app.showExplorer.canLoadMore())
+        if (atYEnd && count > 0 && showManager.explorer.canLoadMore())
         {
-            app.showExplorer.loadMore();
+            showManager.explorer.loadMore();
         }
     }
 }

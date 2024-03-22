@@ -1,5 +1,6 @@
 #pragma once
 #include "showprovider.h"
+#include "Explorer/Data/showdata.h"
 
 class Nivod: public ShowProvider
 {

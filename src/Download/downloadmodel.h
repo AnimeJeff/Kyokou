@@ -1,6 +1,7 @@
 #ifndef DOWNLOADMODEL_H
 #define DOWNLOADMODEL_H
 
+#include "Providers/showprovider.h"
 #include <QAbstractListModel>
 #include <QDir>
 #include <QObject>
@@ -40,11 +41,11 @@ class DownloadModel: public QAbstractListModel
 
         ~DownloadTask()
         {
-            qDebug() << displayName << "deleted";
+            qDebug() << displayName << "task deleted";
         }
     };
 
-    enum{
+    enum {
         NameRole = Qt::UserRole,
         PathRole,
         ProgressValueRole,
@@ -66,21 +67,29 @@ public:
         return m_workDir;
     }
     explicit DownloadModel(QObject *parent = nullptr);
-    void removeTask(QFutureWatcher<bool> *watcher);
+    void removeTask(DownloadTask *task);
 
     void setTask(QFutureWatcher<bool>* watcher);
 
     static QRegularExpression percentRegex;
 
-    Q_INVOKABLE void downloadCurrentShow(int startIndex, int count = 1);
 
-    Q_INVOKABLE void downloadLink(QString link) {
+    Q_INVOKABLE void downloadLink(const QString &name, const QString &link) {
+        if (link.isEmpty ()) {
+            qDebug() << "Log (Downloader): Empty link!";
+            return;
+        }
+        if (name.isEmpty ()){
+            qDebug() << "Log (Downloader): No filename provided!";
+            return;
+        }
         QString headers = "authority:\"AUTHORITY\"|origin:\"https://REFERER\"|referer:\"https://REFERER/\"|user-agent:\"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36\"sec-ch-ua:\"Not A;Brand\";v=\"99\", \"Chromium\";v=\"102\", \"Google Chrome\";v=\"102\"";
-        DownloadTask *task = new DownloadTask(link.mid (0,5), m_workDir, link, headers, link.mid (0,5) , link);
+        DownloadTask *task = new DownloadTask(name, m_workDir, link, headers, name , link);
         addTask (task);
         startTasks ();
         emit layoutChanged ();
     }
+
 
     void download(QPromise<bool> &promise, const QStringList &command)
     {
@@ -108,10 +117,10 @@ public:
                 return;
             }
         }
-        qDebug() << "exited loop";
-
         promise.addResult (true);
     }
+
+    void downloadShow(const ShowData &show, ShowProvider* provider, int startIndex, int count);
 
     void addTask(DownloadTask *task)
     {
@@ -119,19 +128,20 @@ public:
         tasksQueue.push_back (task);
         tasks.push_back (task);
     }
+
     void startTasks()
     {
         QMutexLocker locker(&mutex);
         for (auto* watcher:watchers)
         {
             if (tasksQueue.isEmpty ()) break;
-            else if (!watcherTaskTracker[watcher]) setTask (watcher);
+            else if (!watcherTaskTracker[watcher]) setTask (watcher); //if watcher not working on a task
         }
     }
 
     void cancelAllTasks(){
         QMutexLocker locker(&mutex);
-        qDeleteAll (tasks);
+
         for (auto* watcher : watchers)
         {
             if (!watcherTaskTracker[watcher]) continue;
@@ -139,6 +149,9 @@ public:
             watcher->cancel ();
             watcher->waitForFinished ();
         }
+        qDeleteAll (tasks);
+        tasks.clear();
+        tasksQueue.clear();
     }
 
     ~DownloadModel()
@@ -147,40 +160,19 @@ public:
         qDeleteAll(watchers);
     }
 
-    void cancelTask(int index)
+    Q_INVOKABLE void cancelTask(int index)
     {
         if (index >= 0 && index < tasks.size())
         {
-            QMutexLocker locker(&mutex);
-            DownloadTask* task = tasks[index];
-            if (task->watcher)
-            {
-                task->watcher->cancel ();
-                task->watcher->waitForFinished ();
-                removeTask (task->watcher);
-            }
-            else
-            {
-                delete task;
-            }
-
+            removeTask (tasks[index]);
+            emit layoutChanged();
         }
     }
-
-    Q_INVOKABLE void openFolder(const QString& path)
-    {
-        QProcess::startDetached("explorer.exe", QStringList() << path);
-    }
-
-
 
     bool setWorkDir(const QString& path);
 
 public:
-    int rowCount(const QModelIndex &parent) const
-    {
-        return tasks.count ();
-    };
+    int rowCount(const QModelIndex &parent) const { return tasks.count(); };
     QVariant data(const QModelIndex &index, int role) const;
     QHash<int, QByteArray> roleNames() const;
 signals:

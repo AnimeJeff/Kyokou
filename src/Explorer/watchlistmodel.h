@@ -28,8 +28,9 @@ private:
     std::unordered_map<std::string, int> jsonHashmap;
     std::unordered_map<std::string, int> totalEpisodeMap;
     int m_currentListType = WATCHING;
-    int getCurrentListType();
-    void setDisplayingListType(int listType);
+
+
+
     bool isLoading()
     {
         return loading;
@@ -50,7 +51,7 @@ private:
             ++index;
         }
         if (found) {
-            qDebug() << "found" << index;
+            // qDebug() << "found" << index;
             return index;
         } else {
             return -1;
@@ -67,19 +68,23 @@ public:
         loadWatchList ();
         //m_watcher->setFuture (QtConcurrent::run(&WatchListModel::fetchUnwatchedEpisodes, this, WATCHING));
     };
+    int getCurrentListType() const { return m_currentListType; }
+    void setDisplayingListType(int listType) {
+        m_currentListType = listType;
+        emit layoutChanged();
+    }
+
 signals:
     void loadingChanged(void);
     void syncedCurrentShow(void);
 public slots:
-    void syncCurrentShow();
+    bool syncShow(ShowData& show);
     void save();
     void add(const ShowData& show, int listType);
-    void addCurrentShow(int listType);
     void remove(const ShowData& show);
-    void removeCurrentShow();
     void move(int from, int to);
     void moveEnded();
-    void loadShow(int index);
+    nlohmann::json loadShow(int index);
 
 private:
     enum{

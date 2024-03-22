@@ -3,9 +3,10 @@
 QList<ShowData> Haitu::search(QString query, int page, int type)
 {
     QList<ShowData> shows;
+
     std::string url = hostUrl + "vodsearch/" + query.toStdString () + "----------" + std::to_string (page) + "---.html";
-    qDebug() << url;
-    // /vod/search/page/"++"/wd/"+query.toStdString ()+".html";
+    qDebug() << QString::fromStdString (url);
+
     auto showNodes = NetworkClient::get(url).document().select("//div[@class='module-search-item']");
     for (pugi::xpath_node_set::const_iterator it = showNodes.begin(); it != showNodes.end(); ++it)
     {
@@ -17,14 +18,9 @@ QList<ShowData> Haitu::search(QString query, int page, int type)
             coverUrl = QString::fromStdString (hostUrl) + coverUrl;
         }
         std::string link = it->selectFirst(".//div[@class='module-item-pic']/a").attr ("href").as_string ();
-        shows.emplaceBack(title, link, coverUrl, name ());
+        shows.emplaceBack(title, link, coverUrl, this);
     }
-    m_canFetchMore = !showNodes.empty();
-    if (!m_canFetchMore) return shows;
-    m_currentPage = page;
-    lastSearch = [query, type, this](int page){
-        return search(query, page, type);
-    };
+
     return shows;
 }
 
@@ -32,10 +28,6 @@ QList<ShowData> Haitu::popular(int page, int type)
 {
     std::string url = hostUrl + "vodshow/" + std::to_string (type) + "--hits------" + std::to_string(page) + "---.html";
     QList<ShowData> shows = filterSearch(url);
-    lastSearch = [type, this](int page){
-        return popular(page, type);
-    };
-    if (m_canFetchMore) m_currentPage = page;
     return shows;
 }
 
@@ -43,10 +35,8 @@ QList<ShowData> Haitu::latest(int page, int type)
 {
     std::string url = hostUrl + "vodshow/" + std::to_string (type) + "--time------" + std::to_string(page) + "---.html";
     QList<ShowData> shows = filterSearch(url);
-    lastSearch = [type, this](int page){
-        return latest(page, type);
-    };
-    if (m_canFetchMore) m_currentPage = page;
+
+
     return shows;
 }
 
@@ -66,9 +56,9 @@ QList<ShowData> Haitu::filterSearch(const std::string &url)
         qDebug() << title <<coverUrl;
         std::string link = it->selectFirst (".//div[@class='module-item-pic']/a").attr ("href").as_string ();
         QString latestText = it->selectFirst (".//div[@class='module-item-text']").node ().child_value ();
-        shows.emplaceBack(ShowData(title, link, coverUrl, name (),latestText));
+        shows.emplaceBack(title, link, coverUrl, this, latestText);
     }
-    m_canFetchMore = !showNodes.empty ();
+
     return shows;
 }
 

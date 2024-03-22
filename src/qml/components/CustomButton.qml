@@ -9,6 +9,7 @@ Button {
     property int fontSize: 18
     property alias radius: backRect.radius
     text: "Button"
+
     contentItem: Text {
         text: button.text
         color: button.contentItemTextColor
@@ -20,30 +21,25 @@ Button {
         wrapMode: Text.Wrap
     }
 
-    HoverHandler{
-        onHoveredChanged: {
-            if (hovered)
-            {
-                app.cursor.shape = Qt.PointingHandCursor
-            }
-            else
-            {
-                app.cursor.shape = Qt.ArrowCursor
-            }
+    MouseArea {
+        id: mouseArea
+        anchors.fill: parent
+        acceptedButtons: Qt.NoButton
+        onPressed: (mouse) => {
+                       backRect.color = button.backgroundPressedColor
+                   }
+        onReleased: {
+            backRect.color = button.backgroundDefaultColor
         }
-    }
+        cursorShape: Qt.PointingHandCursor
 
+    }
+    focusPolicy: Qt.NoFocus
     background: Rectangle {
-        id:backRect
-        implicitWidth: 83
-        implicitHeight: 37
-        color: button.down ? button.backgroundPressedColor : button.backgroundDefaultColor
+        id: backRect
+
+        color: button.backgroundDefaultColor
         radius: 3
-//        layer.enabled: true
-//        layer.effect: DropShadow {
-//            transparentBorder: true
-//            color: button.down ? button.backgroundPressedColor : button.backgroundDefaultColor
-//            samples: 20
-//        }
     }
 }
+

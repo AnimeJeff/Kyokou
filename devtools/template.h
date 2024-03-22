@@ -4,24 +4,20 @@
 class NewProvider : public ShowProvider
 {
 public:
-    explicit NewProvider(QObject *parent = nullptr) : ShowProvider{parent} {};
-public:
-    int providerEnum()
-    {
-        return 1;
-    }
-    QString name()
-    {
-        return "";
-    }
-    std::string hostUrl = "";
+    NewProvider() = default;
+    QString name() const override { return "Anitaku"; }
+    std::string hostUrl = "https://anitaku.to";
+    QList<int> getAvailableTypes() const override {
+        return {ShowData::ANIME};
+    };
 
-    QVector<ShowData> search(QString query, int page, int type) override;
-    QVector<ShowData> popular(int page, int type) override;
-    QVector<ShowData> latest(int page, int type) override;
-    void loadDetails(ShowData& show) override;
-    int getTotalEpisodes(const ShowData &show) override;
-    QVector<VideoServer> loadServers(const PlaylistItem *episode) override;
-    QString extractSource(VideoServer &server) override;
+    QList<ShowData> search(QString query, int page, int type = 0) override;
+    QList<ShowData> popular(int page, int type = 0) override;
+    QList<ShowData> latest(int page, int type = 0) override;
+
+    void loadDetails(ShowData& anime) const override;
+    int getTotalEpisodes(const std::string& link) const override;
+    QList<VideoServer> loadServers(const PlaylistItem* episode) const override;
+    QString extractSource(const VideoServer& server) const override;
 };
 

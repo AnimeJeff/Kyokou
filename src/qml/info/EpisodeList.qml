@@ -29,9 +29,9 @@ Item{
                 Layout.rightMargin: 10
                 id:reverseButton
                 source: "qrc:/resources/images/sorting-arrows.png"
-                // hoverImage: "qrc:/resources/images/sorting-arrows.png"
+
                 onClicked: {
-                    app.episodeListModel.reversed = !app.episodeListModel.reversed
+                    showManager.episodeList.reversed = !showManager.episodeList.reversed
                 }
             }
         }
@@ -44,23 +44,26 @@ Item{
             right: header.right
             bottom: episodeList.bottom
         }
-        ScrollBar.vertical: ScrollBar {
-            active: true
-        }
+        // ScrollBar.vertical: ScrollBar {
+        //     active: true
+        // }
         clip: true
-        model:app.episodeListModel
+        model:showManager.episodeList
+
+
+        Component.onCompleted: {
+            list.positionViewAtIndex(showManager.episodeList.lastWatchedIndex, ListView.Center)
+        }
+
         boundsMovement: Flickable.StopAtBounds
+
         delegate: Rectangle {
             id: delegateRect
             width: list.width
             height: 50 < (episodeStr.height + 10) ? (episodeStr.height + 10) : 50
-            color:
-            {
-                let lastWatchedIndex = showManager.currentShowLastWatchedIndex
-                if (lastWatchedIndex === -1)return "black"
-                lastWatchedIndex = app.episodeListModel.reversed ? list.count -  lastWatchedIndex - 1 : lastWatchedIndex;
-                return lastWatchedIndex === index ? "red":"black"
-            }
+            border.width: 2
+            border.color: "black"
+            color: showManager.episodeList.lastWatchedIndex === index ? "red" : "black"
             Text {
                 id:episodeStr
                 text:  model.fullTitle
@@ -79,39 +82,34 @@ Item{
                 color: "white"
             }
             MouseArea {
-                anchors.fill: delegateRect
-                //                onEntered: delegateRect.color = "#ccc"
-                //                onExited: delegateRect.color = "#f2f2f2"
-                onClicked: (mouse)=>{
-                               app.playlist.loadFromEpisodeList(app.episodeListModel.reversed ? list.count - index - 1: index)
-                           }
+                anchors.fill: parent
+                hoverEnabled: true
+                onEntered: delegateRect.border.color = "white"
+                onExited: delegateRect.border.color = delegateRect.color
+
+
+                onClicked:{
+                    showManager.playFromEpisodeList(index)
+                }
             }
 
             ImageButton {
-                anchors {
-                    right: parent.right
-                    top: parent.top
-                    rightMargin: 10
-                    bottom: parent.bottom
-                }
                 source: "qrc:/resources/images/download-button.png"
-                // hoverImage: "qrc:/resources/images/download-button.png"
-                width: height
+                height: parent.height * 0.8
+                width: parent.height * 0.8
+                anchors.right: parent.right
+
+
                 onClicked: {
-                    console.log("downloading " + app.episodeListModel.reversed ? list.count - index - 1: index)
-                    app.downloader.downloadCurrentShow(app.episodeListModel.reversed ? list.count - index - 1: index)
+                    showManager.downloadCurrentShow(index)
+                    source = "qrc:/resources/images/download_selected.png"
+                    enabled = false;
                 }
             }
 
 
+        }
 
-        }
-        onCountChanged: {
-            if (showManager.currentShowLastWatchedIndex > -1)
-            {
-                list.positionViewAtIndex(app.episodeListModel.reversed ? list.count - showManager.currentShowLastWatchedIndex - 1 : showManager.currentShowLastWatchedIndex, app.episodeListModel.reversed? ListView.End: ListView.Beginning)
-            }
-        }
     }
 
 }

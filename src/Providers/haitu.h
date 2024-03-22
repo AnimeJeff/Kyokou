@@ -1,6 +1,7 @@
 #pragma once
 #include <regex>
 #include "showprovider.h"
+#include "Explorer/Data/showdata.h"
 
 class Haitu : public ShowProvider
 {

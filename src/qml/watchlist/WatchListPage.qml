@@ -29,7 +29,7 @@ Rectangle{
             ListElement { text: "Completed" }
         }
         hoverEnabled: true
-        currentIndex: app.watchList.listType
+        currentIndex: showManager.watchList.listType
         delegate: ItemDelegate {
             text: model.text
             width: parent.width
@@ -40,10 +40,9 @@ Rectangle{
             }
             MouseArea {
                 anchors.fill: parent
-                hoverEnabled: true
                 onClicked: {
                     listTypeComboBox.displayText = model.text
-                    app.watchList.listType = model.index
+                    showManager.watchList.listType = model.index
                     listTypeComboBox.popup.close()
                 }
             }

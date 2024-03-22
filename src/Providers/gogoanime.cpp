@@ -1,21 +1,16 @@
 #include "gogoanime.h"
-
+#include "Extractors/gogocdn.h"
 
 
 QList<ShowData> Gogoanime::search(QString query, int page, int type)
 {
     QList<ShowData> animes;
     if (query.isEmpty ())
-    {
-        m_canFetchMore = false;
         return animes;
-    }
     std::string url = hostUrl + "/search.html?keyword=" + Functions::urlEncode (query.toStdString ())+ "&page="+ std::to_string (page);
     auto animeNodes = NetworkClient::get(url).document().select("//ul[@class='items']/li");
-    if (animeNodes.empty ()){
-        m_canFetchMore = false;
+    if (animeNodes.empty ())
         return animes;
-    }
 
     for (pugi::xpath_node_set::const_iterator it = animeNodes.begin(); it != animeNodes.end(); ++it)
     {
@@ -23,14 +18,9 @@ QList<ShowData> Gogoanime::search(QString query, int page, int type)
         auto title = anchor.attr("title").as_string();
         auto coverUrl = it->selectFirst(".//img").attr("src").as_string();
         auto link = anchor.attr ("href").as_string ();
-        animes.emplaceBack(title, link, coverUrl, name ());
+        animes.emplaceBack(title, link, coverUrl, this);
     }
-    m_canFetchMore = !animeNodes.empty();
-    if (!m_canFetchMore) return animes;
-    m_currentPage = page;
-    lastSearch = [query,this](int page){
-        return search(query,page);
-    };
+
     return animes;
 }
 
@@ -46,15 +36,11 @@ QList<ShowData> Gogoanime::popular(int page, int type)
         QString coverUrl = QString(anchor.selectFirst(".//div[@class='thumbnail-popular']").attr ("style").as_string ());
         coverUrl = coverUrl.split ("'").at (1);
         QString title = anchor.attr ("title").as_string ();
-        animes.push_back (ShowData (title, link, coverUrl, name()));
+        animes.push_back (ShowData (title, link, coverUrl, this));
         animes.last ().latestTxt = it->selectText (".//p[last()]/a");
     }
-    m_canFetchMore = !animeNodes.empty();
-    if (!m_canFetchMore) return animes;
-    m_currentPage = page;
-    lastSearch = [this](int page){
-        return popular(page);
-    };
+
+
     return animes;
 }
 
@@ -64,7 +50,7 @@ QList<ShowData> Gogoanime::latest(int page, int type)
     std::string url = "https://ajax.gogocdn.net/ajax/page-recent-release.html?page=" + std::to_string (page) + "&type=1";
     auto response = NetworkClient::get(url);
     pugi::xpath_node_set animeNodes = response.document().select("//ul[@class='items']/li");
-    m_canFetchMore = !animeNodes.empty();
+
     if (animeNodes.empty()) return animes;
 
     for (pugi::xpath_node_set::const_iterator it = animeNodes.begin(); it != animeNodes.end(); ++it)
@@ -79,13 +65,10 @@ QList<ShowData> Gogoanime::latest(int page, int type)
         }
         QString title = QString(it->selectFirst (".//p[@class='name']/a").node ().child_value ()).trimmed ().replace("\n", " ");
         std::string link = "/category/" + id.captured (1).toStdString ();
-        animes.emplaceBack (title, link, coverUrl, name (), it->selectText (".//p[@class='episode']"));
+        animes.emplaceBack (title, link, coverUrl, this, it->selectText (".//p[@class='episode']"));
     }
 
-    m_currentPage = page; //todo
-    lastSearch = [this](int page){
-        return latest(page);
-    };
+
     return animes;
 }
 
@@ -124,7 +107,7 @@ void Gogoanime::loadDetails(ShowData &anime) const
         qDebug() << "oof " ;
     }
 
-    anime.description = QString(doc.selectFirst ("//span[contains(text() ,'Plot Summary')]").parent ().text ().as_string ()).replace ("\n"," ").trimmed ();
+    anime.description = QString(doc.selectFirst ("//div[@class='description']/p").node ().child_value ()).replace ("\n"," ").trimmed ();
     anime.status = doc.selectFirst ("//span[contains(text(),'Status')]/following-sibling::a").node ().child_value ();
     anime.releaseDate = QString(doc.selectFirst ("//span[contains(text() ,'Released')]").parent ().text ().as_string ());
     pugi::xpath_node_set genreNodes = doc.select ("//span[contains(text(),'Genre')]/following-sibling::a");
@@ -171,7 +154,8 @@ QList<VideoServer> Gogoanime::loadServers(const PlaylistItem *episode) const
         Functions::httpsIfy(link);
         //            server.headers["referer"] = QS(hostUrl);
         //            qDebug() << name << link;
-        servers.emplaceBack (VideoServer(name,link));
+
+        servers.emplaceBack (name,link);
     }
     return servers;
 }

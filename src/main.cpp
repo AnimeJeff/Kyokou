@@ -13,6 +13,14 @@
 #include <QFontDatabase>
 #include "Player/Mpv/mpvObject.h"
 #include "application.h"
+
+#include "Providers/testprovider.h"
+#include "Providers/kimcartoon.h"
+#include "Providers/gogoanime.h"
+#include "Providers/nivod.h"
+#include "Providers/haitu.h"
+#include "Providers/allanime.h"
+
 #include "Explorer/showmanager.h"
 #include <QtPlugin>
 
@@ -25,16 +33,13 @@ int main(int argc, char *argv[]){
 
     QQuickWindow::setGraphicsApi(QSGRendererInterface::OpenGLRhi);
     QGuiApplication app(argc, argv);
-    if (!Application::instance ().parseArgs(argc,argv))
-    {
-        std::cout << "Failed to parse args\n";
-        return 1;
-    }
-    auto dllPath = QCoreApplication::applicationDirPath().toStdString () + "/dll";
+    ShowManager showManager(QString::fromLocal8Bit (argv[1]));
+
+
 
     QQmlApplicationEngine engine;
 
-    app.setWindowIcon(QIcon(u":/resources/images/icon.png"_qs));
+    app.setWindowIcon(QIcon(":/resources/images/icon.png"));
     qint32 fontId = QFontDatabase::addApplicationFont(":/resources/app-font.ttf");
     QStringList fontList = QFontDatabase::applicationFontFamilies(fontId);
 
@@ -47,12 +52,13 @@ int main(int argc, char *argv[]){
     qputenv("LC_NUMERIC", QByteArrayLiteral("C"));
     QQuickStyle::setStyle("Universal");
 
+
     qmlRegisterType<MpvObject>("MpvPlayer", 1, 0, "MpvObject");
-    engine.rootContext ()->setContextProperty("showManager",&ShowManager::instance ());
-    engine.rootContext ()->setContextProperty("app", &Application::instance ()); //remove singleton?
+
+    engine.rootContext ()->setContextProperty("app", &Application::instance()); //remove singleton?
+    engine.rootContext ()->setContextProperty("showManager",&showManager);
     engine.rootContext ()->setContextProperty("errorHandler", &ErrorHandler::instance ());
 
-    // Parsing the arguments
 
     const QUrl url(QStringLiteral("qrc:qml/src/qml/main.qml"));
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
@@ -60,9 +66,12 @@ int main(int argc, char *argv[]){
             if (!obj && url == objUrl)
                 QCoreApplication::exit(-1);
         }, Qt::QueuedConnection);
+
     engine.load(url);
     return app.exec();
 }
+
+
 
 void setOneInstance(){
     QSharedMemory shared("62d60669-bb94-4a94-88bb-b964890a7e04");

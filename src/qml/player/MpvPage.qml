@@ -1,13 +1,23 @@
-import QtQuick 2.15
-import QtQuick.Controls 2.15
+import QtQuick
+import QtQuick.Controls
 import MpvPlayer 1.0
 import QtQuick.Dialogs
 import QtQuick.Layouts 1.15
 Item{
     id:mpvPage
-    property alias progressBar:controlBar
+    property alias progressBar: controlBar
+    property alias playListSideBar: playlistBar
     focus: true
     visible: false
+
+    Connections {
+        target: showManager.playList
+        function onSourceFetched() {
+            mpv.subVisible = true
+            sideBar.gotoPage(3)
+        }
+    }
+
 
     MpvObject {
         id:mpvObject
@@ -20,14 +30,15 @@ Item{
             top: parent.top
             bottom: parent.bottom
         }
-        onPlayNext: app.playlist.playNextItem()
+        onPlayNext: showManager.playList.playNextItem()
         Component.onCompleted: {
             root.mpv = mpvObject
-            if (app.playlist.launchPath.toString().trim() !== "") {
+
+            if (showManager.playList.launchPath.toString().trim() !== "") {
                 sideBar.gotoPage(3)
-                setTimeout(()=>mpv.open(app.playlist.launchPath), 100)
+                setTimeout(()=>mpv.open(showManager.playList.launchPath), 100)
             } else {
-                app.showExplorer.latest(1,4);
+                showManager.latest(1,4);
             }
         }
         Rectangle {
@@ -57,7 +68,7 @@ Item{
             property point lastMousePosition
             hoverEnabled: true
             acceptedButtons: Qt.LeftButton
-
+            cursorShape: controlBar.visible ? Qt.ArrowCursor : Qt.BlankCursor
             anchors {
                 top: mpvObject.top
                 bottom: controlBar.visible ? controlBar.top : mpvObject.bottom
@@ -102,15 +113,10 @@ Item{
                                    } else {
                                        // Handle cursor showing and auto-hide logic
                                        controlBar.peak();
-                                       app.cursor.visible = true;
                                        lastMousePosition = Qt.point(mouse.x, mouse.y);
                                        inactivityTimer.restart();
                                    }
                                }
-
-            onEntered: {
-                mouseArea.cursorShape = Qt.ArrowCursor
-            }
 
             Timer {
                 id: doubleClickTimer
@@ -123,12 +129,11 @@ Item{
                 onTriggered: {
                     if (!mpvPage.visible) return
                     var newPos = Qt.point(mouseArea.mouseX, mouseArea.mouseY)
-                    if (newPos === mouseArea.lastMousePosition && !controlBar.hovered &&
+                    if (newPos === mouseArea.lastMousePosition &&
                             !mouseArea.pressed && !settingsPopup.visible && !serverListPopup.visible
                             && mouseArea.containsMouse
                             ) {
                         // If the mouse hasn't moved, hide the cursor
-                        app.cursor.visible = false;
                         controlBar.visible = false;
                     }
                     else {
@@ -158,22 +163,16 @@ Item{
             function peak(time){
                 if (pipMode) return
                 controlBar.visible = true
-                if (time) {
-                    inactivityTimer.interval = time
-                }
-                else {
-                    inactivityTimer.interval = 1000
-                }
-
+                inactivityTimer.interval = time ? time : 1000
                 if (autoHideBars) {
                     inactivityTimer.restart();
                 }
             }
 
             onPlayPauseButtonClicked: mpv.state === MpvObject.VIDEO_PLAYING ? mpv.pause() : mpv.play()
-            onSeekRequested: (time)=>mpv.seek(time);
+            onSeekRequested: (time)=>{mpv.seek(time)};
             onSidebarButtonClicked: playlistBar.toggle()
-            onFolderButtonClicked: folderDialog.open()
+            onFolderButtonClicked: fileDialog.open()
             onSettingsButtonClicked: settingsPopup.opened ? settingsPopup.close() : settingsPopup.open()
             onServersButtonClicked: serverListPopup.opened ? serverListPopup.close() : serverListPopup.open()
             onVolumeButtonClicked: {
@@ -205,7 +204,7 @@ Item{
             id:settingsPopup
             x:parent.width-width - 10
             y:parent.height - height - controlBar.height - 10
-            width: parent.width / 3.5
+            width: parent.width / 3
             height: parent.height / 3.5
         }
 
@@ -213,11 +212,31 @@ Item{
             id:serverListPopup
             anchors.centerIn: parent
             visible: false
-            width: parent.width / 3
+            width: parent.width / 2.7
             height: parent.height / 2.5
 
         }
     }
+
+    PlayListSideBar {
+        id:playlistBar
+        anchors{
+            right: parent.right
+            top: parent.top
+            bottom: parent.bottom
+        }
+        width: playlistBar.visible ? root.width/5 : 0
+        visible: false
+        function toggle() {
+            playlistBar.visible = !playlistBar.visible
+            if (playlistBar.visible && mpv.state === MpvObject.VIDEO_PLAYING) {
+                mpv.pause()
+            } else if (mpv.state === MpvObject.VIDEO_PAUSED) {
+                mpv.play()
+            }
+        }
+    }
+
 
     Dialog {
         id: notifier
@@ -269,39 +288,16 @@ Item{
 
     }
 
-    PlayListSideBar {
-        id:playlistBar
-        anchors{
-            right: parent.right
-            top: parent.top
-            bottom: parent.bottom
-        }
-        z:2
-        width: playlistBar.visible ? root.width/5 : 0
-
-        function toggle()
-        {
-            playlistBar.visible = !playlistBar.visible
-            if (playlistBar.visible && mpv.state === MpvObject.VIDEO_PLAYING)
-            {
-                mpv.pause()
-            }
-            else if (mpv.state === MpvObject.VIDEO_PAUSED)
-            {
-                mpv.play()
-            }
-        }
-    }
-
-    FolderDialog {
-        id:folderDialog
+    FileDialog {
+        id:fileDialog
         currentFolder: "file:///D:/TV/"
         onAccepted:
         {
-            app.playlist.replaceCurrentPlaylist(folderDialog.selectedFolder)
+            // console.log(fileDialog.selectedFolder)
+            showManager.playList.replaceCurrentPlaylist(fileDialog.selectedFolder)
+            showManager.playList.play(0, -1)
         }
     }
-
 
 
     Keys.enabled: true
@@ -315,8 +311,7 @@ Item{
 
 
     function handleCtrlModifiedKeyPress(key){
-        switch(key)
-        {
+        switch(key) {
         case Qt.Key_1:
             mpv.loadAnime4K(1)
             break;
@@ -342,10 +337,10 @@ Item{
             mpv.seek(mpv.time + 90)
             break;
         case Qt.Key_S:
-            app.playlist.playPrecedingItem()
+            showManager.playList.playPrecedingItem()
             break;
         case Qt.Key_D:
-            app.playlist.playNextItem()
+            showManager.playList.playNextItem()
             break;
         case Qt.Key_V:
             mpv.pasteOpen()
@@ -402,10 +397,10 @@ Item{
                 }
                 break;
             case Qt.Key_PageUp:
-                app.playlist.playNextItem();
+                showManager.playList.playNextItem();
                 break;
             case Qt.Key_Home:
-                app.playlist.playPrecedingItem();
+                showManager.playList.playPrecedingItem();
                 break;
             case Qt.Key_PageDown:
                 mpv.seek(mpv.time + 90);
@@ -450,7 +445,7 @@ Item{
                 break;
             case Qt.Key_Tab:
             case Qt.Key_Asterisk:
-                mpv.showText(app.playlist.currentItemName);
+                mpv.showText(showManager.playList.currentItemName);
                 break;
             case Qt.Key_Slash:
                 controlBar.peak()
@@ -466,132 +461,3 @@ Item{
     KeyNavigation.tab:mpvPage
 }
 
-
-
-// MouseArea {
-//     id:mouseArea
-//     anchors {
-//         top: mpvObject.top
-//         bottom: controlBar.visible ? controlBar.top : mpvObject.bottom
-//         left: mpvObject.left
-//         right: mpvObject.right
-//     }
-//     hoverEnabled: true
-//     onExited: {
-//         app.cursor.visible = true
-//     }
-//     onPositionChanged: {
-//         if (!pipMode)
-//         {
-//             controlBar.peak()
-//             app.cursor.visible = true
-//             mpvObject.lastPos = app.cursor.pos()
-//             inactivityTimer.start()
-//         }
-//     }
-//     acceptedButtons: Qt.LeftButton
-//     onClicked: (mouse)=> {
-//                    if (doubleClickTimer.running)
-//                    {
-//                        if (pipMode)
-//                        {
-//                            pipMode = false
-//                            return
-//                        }
-//                        root.playerFillWindow = !root.playerFillWindow
-//                        root.fullscreen = root.playerFillWindow
-//                        if (mpv.state == MpvObject.VIDEO_PLAYING)
-//                        {
-//                            mpv.pause()
-//                        }
-//                        else
-//                        {
-//                            mpv.play()
-//                        }
-//                        doubleClickTimer.stop()
-//                    }
-//                    else
-//                    {
-//                        if (mpv.state == MpvObject.VIDEO_PLAYING) mpv.pause()
-//                        else mpv.play()
-
-//                        doubleClickTimer.restart()
-//                    }
-//                }
-
-
-//     MouseArea {
-//         id:pipModeMouseArea
-//         pressAndHoldInterval:300
-//         visible: pipMode
-//         enabled: pipMode
-//         hoverEnabled: true
-//         anchors.fill: parent
-//         property var clickPos
-//         onPositionChanged: {
-//             if (clickPos)
-//             {
-//                 let newX = app.cursor.pos().x - clickPos.x
-//                 let newY = app.cursor.pos().y - clickPos.y
-//                 if (newX < 0) newX = 0
-//                 else if (newX > Screen.desktopAvailableWidth-root.width) newX = Screen.desktopAvailableWidth-root.width
-//                 if (newY < 0) newY = 0
-//                 else if (newY > Screen.desktopAvailableHeight-root.height) newY = Screen.desktopAvailableHeight-root.height
-//                 root.x = newX
-//                 root.y = newY
-//             }
-//         }
-//         onReleased: {
-//             clickPos = null
-//         }
-//         onPressed: (mouse)=>{
-//                        clickPos  = Qt.point(mouse.x,mouse.y)
-//                    }
-//         onContainsMouseChanged: {
-//             pipCloseButton.visible = containsMouse
-//         }
-//     }
-
-
-//     Timer {
-//         id:doubleClickTimer
-//         interval: 300
-//     }
-//     Timer {
-//         id:inactivityTimer
-//         interval: 2000
-//         onTriggered:
-//         {
-//             if (!mpvPage.visible) return
-//             let newPos = app.cursor.pos()
-//             if (newPos === mpvObject.lastPos && !controlBar.hovered)
-//             {
-//                 app.cursor.visible = false
-//             }
-//             else
-//             {
-//                 mpvObject.lastPos = app.cursor.pos()
-//                 inactivityTimer.restart()
-//             }
-//         }
-//     }
-
-// }
-
-// Timer {
-//     id: timer
-//     interval: 1000
-//     onTriggered:
-//     {
-//         if (!mouseArea.pressed &&
-//                 !controlBar.contains(controlBar.mapFromItem(mouseArea, mouseArea.mouseX, mouseArea.mouseY)) &&
-//                 !settingsPopup.visible
-//                 )
-//         {
-//             mouseArea.cursorShape = Qt.BlankCursor;
-//             controlBar.visible = false;
-//         }else{
-//             timer.restart()
-//         }
-//     }
-// }

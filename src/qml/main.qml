@@ -1,4 +1,4 @@
-    import QtQuick
+import QtQuick
 import QtQuick.Window 2.2
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
@@ -18,7 +18,8 @@ Window {
     height: 720
     visible: true
     color: "black"
-    flags: Qt.Window | Qt.FramelessWindowHint |Qt.WindowMinimizeButtonHint
+    flags: Qt.Window | Qt.FramelessWindowHint | Qt.WindowMinimizeButtonHint
+
     property int aspectRatio: root.width / root.height
     property bool maximised: false
     property bool fullscreen: false
@@ -33,11 +34,54 @@ Window {
     property double lastX
     property double lastY
     property MpvObject mpv
-    property bool mpvWasPlaying
 
 
 
+    Shortcut {
+        id: test
+        sequence: "B"
+        onActivated:
+        {
 
+        }
+    }
+
+    TitleBar {
+        id:titleBar
+        focus: false
+    }
+
+    SideBar {
+        id:sideBar
+        anchors{
+            left: parent.left
+            top:titleBar.bottom
+            bottom:parent.bottom
+        }
+    }
+
+    StackView {
+        id:stackView
+        visible: true
+        anchors{
+            top: titleBar.bottom
+            left: sideBar.right
+            right: parent.right
+            bottom: parent.bottom
+        }
+        initialItem: "explorer/SearchPage.qml"
+        background: Rectangle{
+            color: "black"
+        }
+    }
+
+
+
+    MpvPage {
+        id:mpvPage
+        visible: false
+        anchors.fill: root.playerFillWindow ? parent : stackView
+    }
 
 
     ParallelAnimation {
@@ -71,11 +115,10 @@ Window {
             to: 0
             velocity: resizingAnimation.speed
         }
-        // lags when resizing with mpv playing a video
-        // hide mpv then reshow
-        property bool mpvVisible:false
+
         onRunningChanged: {
-            if (!running && mpvWasPlaying) mpv.play()
+            // lags when resizing with mpv playing a video, stop the rendering
+            mpv.setIsResizing(running)
         }
     }
 
@@ -101,8 +144,6 @@ Window {
             widthanime.to = 1080
             heightanime.to = 720
         }
-        root.mpvWasPlaying = mpv.state == MpvObject.VIDEO_PLAYING
-        if (root.mpvWasPlaying) mpv.pause()
         resizingAnimation.running = true
     }
 
@@ -124,8 +165,8 @@ Window {
             widthanime.to = maximised ? Screen.desktopAvailableWidth : 1080
             heightanime.to = maximised ? Screen.desktopAvailableHeight : 720
         }
-        root.mpvWasPlaying = mpv.state == MpvObject.VIDEO_PLAYING
-        if (root.mpvWasPlaying) mpv.pause()
+        // root.mpvWasPlaying = mpv.state == MpvObject.VIDEO_PLAYING
+        // if (root.mpvWasPlaying) mpv.pause()
         resizingAnimation.running = true
 
     }
@@ -134,7 +175,8 @@ Window {
         if (resizingAnimation.running) return
         if (pipMode)
         {
-            mpvPage.progressBar.visible = false
+            mpvPage.progressBar.visible = false;
+            mpvPage.playListSideBar.visible = false;
             xanime.to = Screen.desktopAvailableWidth - Screen.width/3
             yanime.to = Screen.desktopAvailableHeight - Screen.height/2.3
             if (root.x !== 0 && root.y !== 0)
@@ -157,85 +199,14 @@ Window {
             flags &= ~Qt.WindowStaysOnTopHint
             playerFillWindow = fullscreen
         }
-        root.mpvWasPlaying = mpv.state == MpvObject.VIDEO_PLAYING
-        if (root.mpvWasPlaying) mpv.pause()
+        // root.mpvWasPlaying = mpv.state == MpvObject.VIDEO_PLAYING
+        // if (root.mpvWasPlaying) mpv.pause()
         resizingAnimation.running = true
 
     }
 
-    Shortcut {
-        id: test
-        sequence: "B"
-        onActivated:
-        {
-            console.log(app.showExplorer.rowCount())
-        }
-    }
-
-    Connections {
-        target: app.playlist
-        function onSourceFetched()
-        {
-            mpv.subVisible = true
-            sideBar.gotoPage(3)
-        }
-    }
-
-    TitleBar {
-        id:titleBar
-        focus: false
-    }
-
-    SideBar {
-        id:sideBar
-        anchors{
-            left: parent.left
-            top:titleBar.bottom
-            bottom:parent.bottom
-        }
-    }
-
-    StackView {
-        visible: !mpvPage.visible
-        id:stackView
-        anchors{
-            top: titleBar.bottom
-            left: sideBar.right
-            right: parent.right
-            bottom: parent.bottom
-        }
-        initialItem: "explorer/SearchPage.qml"
-
-        background: Rectangle{
-            color: "black"
-        }
-    }
-
-    MpvPage {
-        id:mpvPage
-        visible: false
-        anchors.fill: root.playerFillWindow ? parent : stackView
-    }
 
 
-    MouseArea {
-        anchors.fill: parent
-        acceptedButtons: Qt.ForwardButton | Qt.BackButton
-        onClicked: (mouse)=>
-                   {
-                       if (playerFillWindow) return;
-                       if (mouse.button === Qt.BackButton)
-                       {
-                           let nextPage = sideBar.currentPage + 1
-                           sideBar.gotoPage(nextPage === Object.keys(sideBar.pages).length ? 0 : nextPage)
-                       }
-                       else
-                       {
-                           let prevPage = sideBar.currentPage-1
-                           sideBar.gotoPage(prevPage < 0 ? Object.keys(sideBar.pages).length-1 : prevPage)
-                       }
-                   }
-    }
 
     Image {
         id:lol
@@ -294,7 +265,7 @@ Window {
         sequence: "Ctrl+Q"
         onActivated:
         {
-           lol.visible = !lol.visible
+            lol.visible = !lol.visible
 
         }
     }
@@ -328,6 +299,26 @@ Window {
         callbackTimer.interval = delay + 1;
         callbackTimer.running = true;
     }
+    MouseArea {
+        anchors.fill: parent
+        acceptedButtons: Qt.ForwardButton | Qt.BackButton
+        propagateComposedEvents: true
+        onClicked: (mouse)=>
+                   {
+                       if (playerFillWindow) return;
+                       if (mouse.button === Qt.BackButton)
+                       {
+                           let nextPage = sideBar.currentPage + 1
+                           sideBar.gotoPage(nextPage % Object.keys(sideBar.pages).length)
+                       }
+                       else
+                       {
+                           let prevPage = sideBar.currentPage-1
+                           sideBar.gotoPage(prevPage < 0 ? Object.keys(sideBar.pages).length-1 : prevPage)
+                       }
+                   }
+    }
+
 
 }
 

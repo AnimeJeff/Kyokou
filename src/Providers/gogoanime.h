@@ -1,7 +1,8 @@
 #pragma once
 #include <QDebug>
 #include "showprovider.h"
-#include "Extractors/gogocdn.h"
+
+#include "Explorer/Data/showdata.h"
 
 class Gogoanime : public ShowProvider
 {

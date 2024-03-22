@@ -7,7 +7,7 @@ TextField {
     property color checkedColor: "#D5DBDB"
     property color textColor: "white"
 
-    signal doubleClicked(var/*MouseEvent*/ event)
+    signal doubleClicked(var event)
 
     font.family: "QTxiaotu"
 
@@ -22,25 +22,18 @@ TextField {
         border.color: textField.enabled ? textField.checkedColor : "#D5DBDB"
         border.width: 2
         opacity: textField.enabled ? 1 : 0.7
-        layer.enabled: textField.hovered
-    }
 
+    }
+    MouseArea {
+        anchors.fill: parent
+        cursorShape: Qt.IBeamCursor
+        acceptedButtons: Qt.NoButton
+    }
 
 
     onDoubleClicked: selectAll()
 
-    HoverHandler{
-        onHoveredChanged: {
-            if (hovered)
-            {
-                app.cursor.shape = Qt.IBeamCursor
-            }
-            else
-            {
-                app.cursor.shape = Qt.ArrowCursor
-            }
-        }
-    }
+
 }
 
 

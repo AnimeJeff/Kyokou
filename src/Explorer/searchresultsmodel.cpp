@@ -33,14 +33,32 @@ SearchResultsModel::SearchResultsModel(QObject *parent) : QAbstractListModel(par
     QObject::connect (&m_watcher, &QFutureWatcher<QList<ShowData>>::finished, this, [this](){
 
         if (!m_watcher.future().isValid()) {
-            //future was cancelled
+            // future was cancelled
             ErrorHandler::instance().show ("Operation cancelled: " + m_cancelReason);
             setLoading (false);
             return;
         }
         try
         {
-            setResults (m_watcher.result());
+
+            auto results = m_watcher.result();
+            m_canFetchMore = !results.isEmpty ();
+            if (!results.isEmpty ())
+            {
+                if (fetchingMore)
+                {
+                    const int oldCount = m_list.count();
+                    beginInsertRows(QModelIndex(), oldCount, oldCount + results.count() - 1);
+                    m_list.reserve(oldCount + results.count());
+                    m_list += results;
+                    endInsertRows();
+                    fetchingMore = false;
+                } else {
+                    m_list.reserve(results.count());
+                    m_list.swap(results);
+                    emit layoutChanged ();
+                }
+            }
         }
         catch (QException& ex)
             {
@@ -51,32 +69,36 @@ SearchResultsModel::SearchResultsModel(QObject *parent) : QAbstractListModel(par
 
 }
 
-void SearchResultsModel::search(const QString &query, int page, int type)
+void SearchResultsModel::search(const QString &query, int page, int type, ShowProvider* provider)
 {
     if (m_watcher.isRunning ()) return;
     setLoading (true);
-    fetchingMore = false;
-    m_watcher.setFuture(QtConcurrent::run (&ShowProvider::search,ShowManager::instance().getCurrentSearchProvider(), query, page, type));
+    m_currentPageIndex = page;
+    m_watcher.setFuture(QtConcurrent::run (&ShowProvider::search, provider, query, page, type));
+    lastSearch = [this, query, type, provider](int page) {
+        search(query, page, type, provider);
+    };
 }
 
-void SearchResultsModel::latest(int page, int type)
+void SearchResultsModel::latest(int page, int type, ShowProvider* provider)
 {
     if (m_watcher.isRunning ()) return;
     setLoading (true);
-    fetchingMore = false;
-    m_watcher.setFuture(QtConcurrent::run (&ShowProvider::latest,ShowManager::instance().getCurrentSearchProvider(), page,type));
+    m_currentPageIndex = page;
+    m_watcher.setFuture(QtConcurrent::run (&ShowProvider::latest, provider, page,type));
+    lastSearch = [this, type, provider](int page){
+        latest(page, type, provider);
+    };
 }
 
-void SearchResultsModel::popular(int page, int type){
+void SearchResultsModel::popular(int page, int type, ShowProvider* provider){
     if (m_watcher.isRunning ()) return;
     setLoading (true);
-    fetchingMore = false;
-    m_watcher.setFuture(QtConcurrent::run (&ShowProvider::popular,ShowManager::instance().getCurrentSearchProvider(), page,type));
-}
-
-void SearchResultsModel::loadShow(int index)
-{
-    ShowManager::instance ().setCurrentShow (m_list[index]);
+    m_currentPageIndex = page;
+    m_watcher.setFuture(QtConcurrent::run (&ShowProvider::popular, provider, page, type));
+    lastSearch = [this, type, provider](int page) {
+        popular(page, type, provider);
+    };
 }
 
 void SearchResultsModel::cancel()
@@ -92,7 +114,7 @@ void SearchResultsModel::reload(){
     if (m_watcher.isRunning ()) return;
     setLoading (true);
     fetchingMore = false;
-    m_watcher.setFuture(QtConcurrent::run (&ShowProvider::reload,ShowManager::instance().getCurrentSearchProvider()));
+    lastSearch(m_currentPageIndex);
 }
 
 void SearchResultsModel::loadMore()
@@ -100,31 +122,14 @@ void SearchResultsModel::loadMore()
     if (m_watcher.isRunning ()) return;
     setLoading (true);
     fetchingMore = true;
-    m_watcher.setFuture(QtConcurrent::run (&ShowProvider::fetchMore,ShowManager::instance().getCurrentSearchProvider()));
+    lastSearch(m_currentPageIndex + 1);
 }
 
 bool SearchResultsModel::canLoadMore() const{
-    if (loading || m_watcher.isRunning ()) return false;
-    return ShowManager::instance().getCurrentSearchProvider ()->canFetchMore ();
+    return (loading || m_watcher.isRunning ()) ? false : m_canFetchMore;
 }
 
-void SearchResultsModel::setResults(QList<ShowData> results)
-{
-    if (fetchingMore)
-    {
-        const int oldCount = m_list.count();
-        beginInsertRows(QModelIndex(), oldCount, oldCount + results.count() - 1);
-        m_list.reserve(oldCount + results.count());
-        m_list += results;
-        endInsertRows();
-    }
-    else
-    {
-        m_list.reserve(results.count());
-        m_list.swap(results);
-        emit layoutChanged ();
-    }
-}
+
 
 
 

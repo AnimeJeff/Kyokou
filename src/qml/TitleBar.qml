@@ -1,6 +1,6 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
-
+import QtQuick.Shapes 1.15
 Rectangle {
     color: "#E6404040"
     anchors.top: parent.top
@@ -8,39 +8,30 @@ Rectangle {
     anchors.right: parent.right
     height: 35
 
+
     AnimatedImage {
         id:finn
         anchors {
-
+            top:parent.top
+            bottom: parent.bottom
             left:parent.right
         }
+        visible:true
+        z:parent.z+1
         source: "qrc:/resources/gifs/finn.gif"
-        width: 35
-        height: 35
+        width: height
         playing: false
         HoverHandler{
             onHoveredChanged: parent.playing = hovered
         }
 
     }
-    AnimatedImage {
-        anchors {
-            top: parent.top
-            bottom:parent.bottom
-            left:finn.right
-        }
-        width: height
-        height: parent.height
-        source: "qrc:/resources/gifs/jake.gif"
-        playing: false
-        HoverHandler{
-            onHoveredChanged: parent.playing = hovered
-        }
-    }
+
 
     MouseArea {
         property var clickPos
         anchors.fill: parent
+        acceptedButtons: Qt.LeftButton
         onPressed: (mouse)=>{
                        clickPos  = Qt.point(mouse.x,mouse.y)
                    }
