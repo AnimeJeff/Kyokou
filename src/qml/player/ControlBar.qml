@@ -7,7 +7,7 @@ Control {
     id: controlBar
     required property MpvObject mpv
     background: Rectangle {
-        implicitHeight: 40
+        // implicitHeight: 40
         color: '#d0303030'
     }
     hoverEnabled: true
@@ -41,23 +41,32 @@ Control {
 
     ColumnLayout {
         anchors.fill: parent
+        spacing: 1
         Slider {
             id: timeSlider
             from: 0
             to: duration
             focusPolicy: Qt.NoFocus
             hoverEnabled: true
+            live: true
             Layout.fillWidth: true
-            Layout.preferredHeight: controlBar.height * 0.1
+            Layout.fillHeight: true
+            Layout.preferredHeight: 1
             onPressedChanged: {
                 if (!pressed)  // released
                     seekRequested(value);
+            }
+            MouseArea{
+                anchors.fill: parent
+                acceptedButtons: Qt.NoButton
+                cursorShape: Qt.PointingHandCursor
+                propagateComposedEvents: true
             }
 
             background: Rectangle {
                 id:backgroundRect
                 x: timeSlider.leftPadding
-                y: timeSlider.topPadding + timeSlider.availableHeight / 2 - height / 2
+                // y: timeSlider.availableHeight / 2 - height
                 implicitHeight: timeSlider.hovered || timeSlider.pressed ? controlBar.height * 0.2 : controlBar.height * 0.1
                 width: timeSlider.availableWidth
                 height: implicitHeight
@@ -80,7 +89,7 @@ Control {
                 border.color: "#bdbebf"
 
                 x: timeSlider.leftPadding + timeSlider.visualPosition * (timeSlider.availableWidth - width)
-                y: timeSlider.topPadding + timeSlider.availableHeight / 2 - height / 2
+                // y: timeSlider.availableHeight / 2 - height
             }
         }
 
@@ -89,7 +98,7 @@ Control {
             Layout.leftMargin: 10
             Layout.rightMargin: 10
             Layout.fillHeight: true
-
+            Layout.preferredHeight: 7
             ImageButton {
                 id: playPauseButton
                 source: isPlaying ? "qrc:/resources/images/pause.png" : "qrc:/resources/images/play.png"

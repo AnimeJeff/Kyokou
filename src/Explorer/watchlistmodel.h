@@ -1,6 +1,4 @@
 #pragma once
-#include <fstream>
-#include <iostream>
 #include <QAbstractListModel>
 #include <QStandardItemModel>
 #include <nlohmann/json.hpp>
@@ -8,6 +6,10 @@
 #include <QCoreApplication>
 #include <QtConcurrent>
 #include "Data/showdata.h"
+
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
 
 class WatchListModel: public QAbstractListModel
 {
@@ -23,18 +25,17 @@ private:
         DROPPED,
         COMPLETED
     };
-
+    Q_ENUM(ListType);
     nlohmann::json m_jsonList;
+    QJsonArray m_watchListJson;
+    QHash<QString, int> m_showHashmap;
+
+
     std::unordered_map<std::string, int> jsonHashmap;
     std::unordered_map<std::string, int> totalEpisodeMap;
     int m_currentListType = WATCHING;
 
-
-
-    bool isLoading()
-    {
-        return loading;
-    }
+    bool isLoading() { return loading; }
     bool loading = false;
     QFutureWatcher<void>* m_watcher;
 private:
@@ -80,8 +81,8 @@ signals:
 public slots:
     bool syncShow(ShowData& show);
     void save();
-    void add(const ShowData& show, int listType);
-    void remove(const ShowData& show);
+    void add(ShowData& show, int listType);
+    void remove(ShowData& show);
     void move(int from, int to);
     void moveEnded();
     nlohmann::json loadShow(int index);

@@ -114,10 +114,6 @@ Rectangle{
                 clip: true
                 text: model.numberTitle
                 color: current || selected ? "red" : "white"
-
-                    //current ? "red" : treeDelegate.hasChildren && row === showManager.playList.playlistIndex ? "green" : "white"
-
-
             }
         }
 

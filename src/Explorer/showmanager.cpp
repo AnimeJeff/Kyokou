@@ -12,10 +12,12 @@ ShowManager::ShowManager(QString launchPath)
 {
     m_providers =
         {
-            new AllAnime,
+
             new Nivod,
-            new Gogoanime,
             new Haitu,
+            new AllAnime,
+            new Gogoanime,
+
             new Kimcartoon,
             // #ifdef QT_DEBUG
             //             new TestProvider
@@ -25,17 +27,10 @@ ShowManager::ShowManager(QString launchPath)
     for (ShowProvider* provider : m_providers) {
         m_providersMap.insert(provider->name (), provider);
     }
-    m_currentSearchProvider = m_providers.first ();
+    setCurrentProviderIndex(0);
 
-    // Parsing the arguments    if (argc == 1) return true;
-    // m_playlistModel.setLaunchPath (QString::fromLocal8Bit (argv[1]))
-    // return false;
-    // ShowManager::instance ().setLaunchArgs(QString::fromLocal8Bit (argv[1]));
     if (!launchPath.isEmpty ())
         m_playlistModel.setLaunchPath(launchPath);
-    // m_providers.move (m_providers.indexOf (m_currentSearchProvider),m_providers.size () - 1);
-
-
 
     // Cancels the task when it takes too long
     m_timeoutTimer.setSingleShot (true);
@@ -133,13 +128,6 @@ void ShowManager::setCurrentShow(const ShowData &show)
             }));
 }
 
-void ShowManager::changeSearchProvider(int index)
-{
-    m_currentSearchProvider = m_providers.at (index);
-    // m_providers.move (index, m_providers.size () - 1);
-    emit searchProviderChanged();
-    emit layoutChanged();
-}
 
 int ShowManager::getCurrentShowListType() const
 {

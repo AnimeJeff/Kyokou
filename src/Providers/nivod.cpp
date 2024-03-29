@@ -203,7 +203,7 @@ int Nivod::getShowType(const std::string &channelName) const {
     } else if (channelName == "纪录片") {
         return ShowData::DOCUMENTARY;
     }
-    qDebug() << "Cannot infer show type from"
+    qDebug() << "Log (Nivod): Cannot infer show type from"
              << QString::fromStdString(channelName);
     return ShowData::NONE;
 }

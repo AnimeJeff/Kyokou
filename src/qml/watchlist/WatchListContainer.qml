@@ -80,7 +80,6 @@ GridView {
                     drag.onActiveChanged: {
                         if (drag.active)
                         {
-                            //todo change grab
                             app.cursor.shape = Qt.ClosedHandCursor
                             lastZ = content.z
                             content.z = 10000000

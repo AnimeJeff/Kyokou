@@ -8,15 +8,15 @@ RowLayout {
     id:searchBar
     property alias textField: searchTextField
     function search(){
-        showManager.search(encodeURIComponent(searchTextField.text), 1, typeComboBox.type)
+        showManager.search(searchTextField.text, 1)
         root.lastSearch = searchTextField.text
         parent.forceActiveFocus()
     }
-    function latest(){
-        showManager.latest(1, typeComboBox.type)
+    function  latest(){
+        showManager.latest(1)
     }
     function popular(){
-        showManager.popular(1, typeComboBox.type)
+        showManager.popular(1)
     }
 
     CustomTextField {
@@ -76,32 +76,11 @@ RowLayout {
         Layout.preferredWidth: 2
         contentRadius: 20
         fontSize:20 * root.aspectRatio
-
         model: showManager
-        currentIndex: 0
+        onCurrentIndexChanged: showManager.currentProviderIndex = providersComboBox.currentIndex
         text: "text"
-        onCurrentIndexChanged: {
-            showManager.changeSearchProvider(currentIndex)
-            showTypeModel.clear()
-            for (let showType of showManager.availableShowTypes) {
-                showTypeModel.append({text : typeComboBox.typeName[showType - 1], type: showType})
-            }
-            if (showManager.availableShowTypes.includes(typeComboBox.type)){
-                for (var i = 0; i < showTypeModel.count; ++i)
-                {
-                    if (showTypeModel.get(i).type === typeComboBox.type)
-                    {
-                        typeComboBox.currentIndex = i
-                    }
-                }
-            }
-            else{
-                typeComboBox.currentIndex = 0
-                typeComboBox.type = showTypeModel.get(typeComboBox.currentIndex).type
-                typeComboBox.displayText = showTypeModel.get(typeComboBox.currentIndex).text
-            }
+        Component.onCompleted: providersComboBox.currentIndex = showManager.currentProviderIndex
 
-        }
     }
 
     CustomComboBox {
@@ -111,27 +90,35 @@ RowLayout {
         Layout.fillHeight: true
         contentRadius: 20
         fontSize:20 * root.aspectRatio
-        model: ListModel{
-            id:showTypeModel
-        }
-        text: "text"
-        property var typeName: ["Movie", "Tv Series", "Variety", "Anime", "Documentary", "None"];
-        property int type
-
-
-        currentIndex: 0
-        onCurrentIndexChanged: {
-            if (showTypeModel.count === 0) return
-            typeComboBox.type = showTypeModel.get(typeComboBox.currentIndex).type
-            typeComboBox.displayText = showTypeModel.get(typeComboBox.currentIndex).text
-        }
-        Component.onCompleted:{
-            for (let showType of showManager.availableShowTypes)
-            {
-                showTypeModel.append({text : typeComboBox.typeName[showType - 1], type: showType})
+        model: showManager.availableShowTypes
+        currentIndex: showManager.currentSearchTypeIndex
+        onCurrentIndexChanged: showManager.currentSearchTypeIndex = typeComboBox.currentIndex
+        Component.onCompleted: typeComboBox.currentIndex = showManager.currentSearchTypeIndex
+        Connections {
+            target: showManager
+            function onCurrentSearchTypeIndexChanged(){
+                typeComboBox.currentIndex = showManager.currentSearchTypeIndex;
             }
-            type = showManager.availableShowTypes[0]
-            displayText = showTypeModel.get(currentIndex).text
+        }
+
+        delegate: ItemDelegate {
+            width: typeComboBox.width
+            required property string modelData
+            required property real index
+            contentItem: Text {
+                text: modelData
+                color: typeComboBox.highlightedIndex === index ? "white" : "black"
+                elide: Text.ElideRight
+                // font.pixelSize: fontSize
+                verticalAlignment: Qt.AlignVCenter
+                horizontalAlignment: Qt.AlignHCenter
+            }
+            background: Rectangle {
+                width: parent.width
+                height: parent.height
+                color: typeComboBox.highlightedIndex === index ? typeComboBox.checkedColor : "#F3F4F5"
+                radius: 20
+            }
         }
     }
 

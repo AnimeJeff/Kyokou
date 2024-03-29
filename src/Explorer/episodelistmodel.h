@@ -10,11 +10,11 @@ class EpisodeListModel : public QAbstractListModel {
 
     int getLastWatchedIndex() const {
         if (!m_playlist || m_playlist->currentIndex == -1) return -1;
-        int lastWatchedIndex = isReversed ? m_playlist->count() - 1 -  m_playlist->currentIndex : m_playlist->currentIndex;
+        int lastWatchedIndex = m_isReversed ? m_playlist->count() - 1 -  m_playlist->currentIndex : m_playlist->currentIndex;
         return lastWatchedIndex;
     }
 
-    bool isReversed = false;
+    bool m_isReversed = false;
     int continueIndex = -1;
     PlaylistItem *m_playlist = nullptr;
     QString m_continueEpisodeName = "";
@@ -30,7 +30,10 @@ public:
         m_playlist = playlist;
         updateLastWatchedIndex ();
     }
-    int getContinueIndex() const { return continueIndex; }
+    int getContinueIndex() const {
+        return m_isReversed ? m_playlist->count() - 1 -  continueIndex : continueIndex;
+    }
+
     void updateLastWatchedIndex() {
         // If the index in second to last of the latest episode then continue from latest episode
         continueIndex = m_playlist->currentIndex == m_playlist->count () - 2 ? m_playlist->currentIndex + 1 : m_playlist->currentIndex;
@@ -42,15 +45,14 @@ public:
     }
 
     void setIsReversed(bool isReversed) {
-        if (this->isReversed == isReversed)
+        if (m_isReversed == isReversed)
             return;
-        this->isReversed = isReversed;
+        m_isReversed = isReversed;
         emit layoutChanged();
         emit reversedChanged();
     }
-    bool getIsReversed() const { return isReversed; }
-    explicit EpisodeListModel(QObject *parent = nullptr)
-        : QAbstractListModel(parent){};
+    bool getIsReversed() const { return m_isReversed; }
+    explicit EpisodeListModel(QObject *parent = nullptr) : QAbstractListModel(parent) {};
 
     enum { TitleRole = Qt::UserRole, NumberRole, FullTitleRole };
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;

@@ -94,7 +94,6 @@ void PlaylistModel::play(int playlistIndex, int itemIndex = -1)
     if (itemIndex < -1 || itemIndex >= m_playlists[playlistIndex]->count ()) return;
 
     m_playlistIndex = playlistIndex;
-
     emit playlistIndexChanged();
 
     setLoading(true);

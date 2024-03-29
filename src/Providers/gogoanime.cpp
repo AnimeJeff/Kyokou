@@ -106,8 +106,11 @@ void Gogoanime::loadDetails(ShowData &anime) const
     {
         qDebug() << "oof " ;
     }
+    qDebug () << QString::fromStdString (doc.selectFirst ("//div[@class='description']").toString ());
+    qDebug () << QString(doc.selectText ("//div[@class='description']/p"));
 
-    anime.description = QString(doc.selectFirst ("//div[@class='description']/p").node ().child_value ()).replace ("\n"," ").trimmed ();
+    anime.description = QString(doc.selectText ("//div[@class='description']")).replace ("\n"," ").trimmed ();
+
     anime.status = doc.selectFirst ("//span[contains(text(),'Status')]/following-sibling::a").node ().child_value ();
     anime.releaseDate = QString(doc.selectFirst ("//span[contains(text() ,'Released')]").parent ().text ().as_string ());
     pugi::xpath_node_set genreNodes = doc.select ("//span[contains(text(),'Genre')]/following-sibling::a");
@@ -122,6 +125,7 @@ void Gogoanime::loadDetails(ShowData &anime) const
 CSoup Gogoanime::getInfoPage(const std::string& link) const
 {
     auto response = NetworkClient::get(hostUrl + link);
+    qDebug() << hostUrl + link;
     if (response.code == 404)
     {
         QString errorMessage = "Invalid URL: '" + QString::fromStdString (hostUrl + link +"'");

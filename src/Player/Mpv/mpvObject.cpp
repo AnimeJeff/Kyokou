@@ -556,6 +556,5 @@ QQuickFramebufferObject::Renderer *MpvObject::createRenderer() const {
     win->setPersistentOpenGLContext(true);
 #endif
     win->setPersistentSceneGraph(true);
-
     return new MpvRenderer(const_cast<MpvObject *>(this));
 }

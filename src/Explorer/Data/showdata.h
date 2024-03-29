@@ -39,7 +39,6 @@ public:
         : title(title), link(link), coverUrl(coverUrl), provider(provider), latestTxt(latestTxt), type(type), lastWatchedIndex(lastWatchedIndex) {};
 
     ShowData(){}
-
     QString title = "";
     std::string link = "";
     QString coverUrl = "";
@@ -57,22 +56,17 @@ public:
     int totalEpisodes = 0;
     int lastWatchedIndex = -1;
 
-    const PlaylistItem* getPlaylist() const
-    {
-        return playlist;
-    }
-
     friend class ShowManager;
     friend class WatchListModel;
     friend class PlaylistModel;
     friend class DownloadModel;
-    void addEpisode(int number, std::string link, QString name, bool isLocal = false)
+    void addEpisode(int number, std::string link, QString name)
     {
         if (!playlist)
         {
-            playlist = new PlaylistItem (title, provider, this->link, nullptr);
+            playlist = new PlaylistItem(title, provider, this->link, nullptr);
         }
-        playlist->emplaceBack (number, link, name, isLocal);
+        playlist->emplaceBack (number, link, name, false);
     }
 
     bool isInWatchList() const
@@ -128,7 +122,7 @@ public:
     };
 
 private:
-    PlaylistItem* playlist = nullptr; //deletion handled by showmanager and playlistmodel
+    PlaylistItem* playlist = nullptr;
     int listType = -1;
 };
 

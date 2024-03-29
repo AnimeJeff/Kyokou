@@ -30,15 +30,15 @@ Item{
             top: parent.top
             bottom: parent.bottom
         }
+
         onPlayNext: showManager.playList.playNextItem()
         Component.onCompleted: {
             root.mpv = mpvObject
-
             if (showManager.playList.launchPath.toString().trim() !== "") {
                 sideBar.gotoPage(3)
                 setTimeout(()=>mpv.open(showManager.playList.launchPath), 100)
             } else {
-                showManager.latest(1,4);
+                showManager.latest(1)
             }
         }
         Rectangle {
@@ -155,7 +155,7 @@ Item{
                 right: parent.right
             }
             visible: false
-            height: parent.height/12.5
+            height: parent.height * 0.075
             isPlaying: mpv.state == MpvObject.VIDEO_PLAYING || mpv.state === MpvObject.TV_PLAYING
             time: mpv.time
             duration: mpv.duration
@@ -172,7 +172,7 @@ Item{
             onPlayPauseButtonClicked: mpv.state === MpvObject.VIDEO_PLAYING ? mpv.pause() : mpv.play()
             onSeekRequested: (time)=>{mpv.seek(time)};
             onSidebarButtonClicked: playlistBar.toggle()
-            onFolderButtonClicked: fileDialog.open()
+            onFolderButtonClicked: folderDialog.open()
             onSettingsButtonClicked: settingsPopup.opened ? settingsPopup.close() : settingsPopup.open()
             onServersButtonClicked: serverListPopup.opened ? serverListPopup.close() : serverListPopup.open()
             onVolumeButtonClicked: {
@@ -288,13 +288,13 @@ Item{
 
     }
 
-    FileDialog {
-        id:fileDialog
+    FolderDialog {
+        id:folderDialog
         currentFolder: "file:///D:/TV/"
         onAccepted:
         {
-            // console.log(fileDialog.selectedFolder)
-            showManager.playList.replaceCurrentPlaylist(fileDialog.selectedFolder)
+            // console.log(folderDialog.selectedFolder)
+            showManager.playList.replaceCurrentPlaylist(folderDialog.selectedFolder)
             showManager.playList.play(0, -1)
         }
     }

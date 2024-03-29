@@ -21,11 +21,7 @@ PlaylistItem *PlaylistItem::fromLocalDir(const QString &pathString) {
         return nullptr;
     }
 
-    QDir playlistDir = path.dir ();
-    // if (!playlistDir.) {
-    //     qDebug() << "Log (PlaylistItem): Directory" << pathString << "doesn't exist";
-    //     return nullptr;
-    // }
+    QDir playlistDir = path.isDir () ? QDir(pathString) : path.dir ();
     QStringList fileNames = playlistDir.entryList(
         {"*.mp4", "*.mkv", "*.avi", "*.mp3", "*.flac", "*.wav", "*.ogg", "*.webm"}, QDir::Files);
 
@@ -109,7 +105,6 @@ PlaylistItem *PlaylistItem::fromLocalDir(const QString &pathString) {
 
 void PlaylistItem::emplaceBack(int number, const std::string &link, const QString &name, bool isLocal) {
     if (!m_children) m_children = std::make_unique<QList<PlaylistItem*>>();
-
     m_children->emplaceBack(new PlaylistItem(number, link, name, this, isLocal));
 }
 

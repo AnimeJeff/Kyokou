@@ -12,10 +12,6 @@
 #include <QFutureWatcher>
 
 #include <QMap>
-//QString DownloadRunnable::N_m3u8DLPath = "";
-//bool DownloadRunnable::N_m3u8DLExists = false;
-
-
 
 class DownloadModel: public QAbstractListModel
 {

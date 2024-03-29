@@ -299,25 +299,25 @@ Window {
         callbackTimer.interval = delay + 1;
         callbackTimer.running = true;
     }
-    MouseArea {
-        anchors.fill: parent
-        acceptedButtons: Qt.ForwardButton | Qt.BackButton
-        propagateComposedEvents: true
-        onClicked: (mouse)=>
-                   {
-                       if (playerFillWindow) return;
-                       if (mouse.button === Qt.BackButton)
-                       {
-                           let nextPage = sideBar.currentPage + 1
-                           sideBar.gotoPage(nextPage % Object.keys(sideBar.pages).length)
-                       }
-                       else
-                       {
-                           let prevPage = sideBar.currentPage-1
-                           sideBar.gotoPage(prevPage < 0 ? Object.keys(sideBar.pages).length-1 : prevPage)
-                       }
-                   }
-    }
+    // MouseArea {
+    //     anchors.fill: parent
+    //     acceptedButtons: Qt.ForwardButton | Qt.BackButton
+    //     propagateComposedEvents: true
+    //     onClicked: (mouse)=>
+    //                {
+    //                    if (playerFillWindow) return;
+    //                    if (mouse.button === Qt.BackButton)
+    //                    {
+    //                        let nextPage = sideBar.currentPage + 1
+    //                        sideBar.gotoPage(nextPage % Object.keys(sideBar.pages).length)
+    //                    }
+    //                    else
+    //                    {
+    //                        let prevPage = sideBar.currentPage-1
+    //                        sideBar.gotoPage(prevPage < 0 ? Object.keys(sideBar.pages).length-1 : prevPage)
+    //                    }
+    //                }
+    // }
 
 
 }

@@ -25,16 +25,21 @@ public:
     };
 
     QList<ShowData> search(QString query, int page, int type = 0) override {
-        std::string url = "https://api.allanime.day/api?variables={%22search%22:{%22query%22:%22" + query.toStdString () + "%22},%22limit%22:26,%22page%22:1,%22translationType%22:%22sub%22,%22countryOrigin%22:%22ALL%22}&extensions={%22persistedQuery%22:{%22version%22:1,%22sha256Hash%22:%2206327bc10dd682e1ee7e07b6db9c16e9ad2fd56c1b769e47513128cd5c9fc77a%22}}";
+        std::string url = "https://api.allanime.day/api?variables={%22search%22:{%22query%22:%22" + QUrl::toPercentEncoding (query).toStdString () + "%22},%22limit%22:26,%22page%22:" + std::to_string (page) +",%22translationType%22:%22sub%22,%22countryOrigin%22:%22ALL%22}&extensions={%22persistedQuery%22:{%22version%22:1,%22sha256Hash%22:%2206327bc10dd682e1ee7e07b6db9c16e9ad2fd56c1b769e47513128cd5c9fc77a%22}}";
         QList<ShowData> animes;
+        // qDebug() << NetworkClient::get (url,headers);
         auto jsonResponse = NetworkClient::get (url,headers).json ()["data"]["shows"]["edges"];
-        for (auto &el : jsonResponse.items()) {
-            auto animeJson = el.value();
+
+        for (const auto& animeJson : jsonResponse) {
             QString coverUrl = QString::fromStdString (animeJson["thumbnail"].get<std::string> ());
+            coverUrl.replace("https:/","https://wp.youtube-anime.com");
+            if (coverUrl.startsWith ("images3"))
+                coverUrl = "https://wp.youtube-anime.com/aln.youtube-anime.com/" + coverUrl;
+
             QString title = QString::fromStdString (animeJson["name"].get<std::string> ());
             std::string link = animeJson["_id"].get<std::string> ();
-            QString latestEpisodeText = QString::fromStdString (animeJson["lastEpisodeInfo"]["sub"]["episodeString"].get<std::string> ());
-            animes.emplaceBack (title, link, coverUrl, this, latestEpisodeText);
+            // QString latestEpisodeText = QString::fromStdString (animeJson["lastEpisodeInfo"]["sub"]["episodeString"].get<std::string> ());
+            animes.emplaceBack (title, link, coverUrl, this);
         }
         return animes;
     };
@@ -43,14 +48,19 @@ public:
         std::string url = "https://api.allanime.day/api?variables={%22type%22:%22anime%22,%22size%22:25,%22dateRange%22:7,%22page%22:" + std::to_string(page) + ",%22allowAdult%22:true,%22allowUnknown%22:false}&extensions={%22persistedQuery%22:{%22version%22:1,%22sha256Hash%22:%221fc9651b0d4c3b9dfd2fa6e1d50b8f4d11ce37f988c23b8ee20f82159f7c1147%22}}";
         QList<ShowData> animes;
         auto jsonResponse = NetworkClient::get (url, headers).json ()["data"]["queryPopular"]["recommendations"];
-        for (auto &el : jsonResponse.items()) {
-            auto animeJson = el.value()["anyCard"];
+        for (const auto& animeResult : jsonResponse) {
+            auto animeJson = animeResult["anyCard"];
             QString coverUrl = QString::fromStdString (animeJson["thumbnail"].get<std::string> ());
+            coverUrl.replace("https:/","https://wp.youtube-anime.com");
+            if (coverUrl.startsWith ("images3"))
+                coverUrl = "https://wp.youtube-anime.com/aln.youtube-anime.com/" + coverUrl;
+
             QString title = QString::fromStdString (animeJson["name"].get<std::string> ());
             std::string link = animeJson["_id"].get<std::string> ();
             // QString latestEpisodeText = QString::fromStdString (animeJson["lastEpisodeInfo"]["sub"]["episodeString"].get<std::string> ());
             animes.emplaceBack (title, link, coverUrl, this);
         }
+
         return animes;
 
 
@@ -63,10 +73,13 @@ public:
         for (auto &el : jsonResponse.items()) {
             auto animeJson = el.value();
             QString coverUrl = QString::fromStdString (animeJson["thumbnail"].get<std::string> ());
+            coverUrl.replace("https:/","https://wp.youtube-anime.com");
+            if (coverUrl.startsWith ("images3"))
+                coverUrl = "https://wp.youtube-anime.com/aln.youtube-anime.com/" + coverUrl;
             QString title = QString::fromStdString (animeJson["name"].get<std::string> ());
             std::string link = animeJson["_id"].get<std::string> ();
-            QString latestEpisodeText = QString::fromStdString (animeJson["lastEpisodeInfo"]["sub"]["episodeString"].get<std::string> ());
-            animes.emplaceBack (title, link, coverUrl, this, latestEpisodeText);
+            // QString latestEpisodeText = QString::fromStdString (animeJson["lastEpisodeInfo"]["sub"]["episodeString"].get<std::string> ());
+            animes.emplaceBack (title, link, coverUrl, this);
         }
         return animes;
     };
@@ -137,7 +150,7 @@ public:
             try {
                 auto name = QString::fromStdString (server["sourceName"].get<std::string>());
                 std::string link = server["sourceUrl"].get<std::string>();
-                qDebug() << name;
+                // qDebug() << name;
                 servers.emplaceBack (name, link);
             } catch (const std::exception& e) {
                 qDebug() << "Error: Failed to read server json." << e.what();
@@ -150,26 +163,19 @@ public:
     {
         std::string endPoint = NetworkClient::get (hostUrl + "getVersion").json ()["episodeIframeHead"].get <std::string>();
         auto decryptedLink = decryptSource(server.link);
-        qDebug() << QString::fromStdString (endPoint+decryptedLink);
-        qDebug() << NetworkClient::get (endPoint + decryptedLink, headers);
+        // qDebug() << QString::fromStdString (endPoint+decryptedLink);
+        // qDebug() << NetworkClient::get (endPoint + decryptedLink, headers);
 
         QString source = "";
         if (decryptedLink.starts_with ("/apivtwo/")){
             decryptedLink.replace (8, 7, "/clock.json?");
-            qDebug() << decryptedLink;
             auto jsonResponse = NetworkClient::get (endPoint + decryptedLink, headers).json ();
 
             for (const auto& link : jsonResponse["links"]) {
                 try {
                     auto linkString = QString::fromStdString (link["link"].get<std::string>());
-                    qDebug() << linkString;
+                    // qDebug() << linkString;
                     return linkString;
-                    if (decryptedLink.starts_with ("/apivtwo")){
-                        source = linkString;
-                    }
-
-                    // qDebug() << QString::fromStdString (decryptSource(link));
-
                 } catch (const std::exception& e) {
                     qDebug() << "Error: Failed to read link json." << e.what();
                 }

@@ -114,6 +114,8 @@ public slots:
     }
     void setIsResizing(bool isResizing){
         m_isResizing = isResizing;
+        if(!m_isResizing)
+            update();
     }
 
     void loadAnime4K(int n) {

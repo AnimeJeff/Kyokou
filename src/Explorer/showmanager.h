@@ -24,7 +24,6 @@ class ShowManager: public QAbstractListModel
     Q_PROPERTY(int currentShowListType READ getCurrentShowListType NOTIFY listTypeChanged)
     Q_PROPERTY(bool currentShowIsInWatchList READ isInWatchList NOTIFY listTypeChanged)
 
-    Q_PROPERTY(QList<int> availableShowTypes READ getAvailableShowTypes NOTIFY searchProviderChanged)
 
     Q_PROPERTY(PlaylistModel *playList READ playlistModel CONSTANT)
     PlaylistModel m_playlistModel{this};
@@ -47,6 +46,46 @@ class ShowManager: public QAbstractListModel
     DownloadModel *downloadModel() { return m_downloadModel; }
 
     ShowData currentShow{"Undefined", "", "", nullptr};
+    Q_PROPERTY(int currentProviderIndex READ getCurrentProviderIndex WRITE setCurrentProviderIndex NOTIFY currentProviderIndexChanged)
+    int getCurrentProviderIndex() const {
+        return m_currentProviderIndex;
+    }
+    void setCurrentProviderIndex(int index) {
+        if (index == m_currentProviderIndex) return;
+        int currentType = m_currentProviderIndex != -1 ? m_currentSearchProvider->getAvailableTypes ()[m_currentSearchTypeIndex] : -1;
+        m_currentProviderIndex = index;
+        m_currentSearchProvider = m_providers.at (index);
+        emit currentProviderIndexChanged();
+        int searchTypeIndex = m_currentSearchProvider->getAvailableTypes ().indexOf (currentType);
+        m_currentSearchTypeIndex = searchTypeIndex == -1 ? 0 : searchTypeIndex;
+        emit currentSearchTypeIndexChanged();
+
+
+    };
+    int m_currentProviderIndex = -1;
+
+    Q_PROPERTY(int currentSearchTypeIndex READ getCurrentSearchTypeIndex WRITE setCurrentSearchTypeIndex NOTIFY currentSearchTypeIndexChanged)
+    void setCurrentSearchTypeIndex(int index) {
+        if (index == m_currentSearchTypeIndex) return;
+        m_currentSearchTypeIndex = index;
+        emit currentSearchTypeIndexChanged ();
+    };
+    int getCurrentSearchTypeIndex() const {
+        return m_currentSearchTypeIndex;
+    }
+    int m_currentSearchTypeIndex = ShowData::ShowType::MOVIE;
+
+    // Q_PROPERTY(int availableListTypes READ getCurrentIndex WRITE setCurrentIndex NOTIFY currentIndexChanged)
+    Q_PROPERTY(QVariant availableShowTypes READ getAvailableShowTypes NOTIFY currentProviderIndexChanged)
+    QVariant getAvailableShowTypes() {
+        QStringList stringTypes = {"Movie", "Tv Series", "Variety", "Anime", "Documentary", "None"};
+        QStringList availableTypes;
+        for (auto type : m_currentSearchProvider->getAvailableTypes()){
+            availableTypes.push_back (stringTypes[type - 1]);
+        }
+        return QVariant::fromValue(availableTypes);
+    }
+
 private:
     ShowManager(const ShowManager &) = delete;
     ShowManager &operator=(const ShowManager &) = delete;
@@ -61,9 +100,7 @@ private:
     }
     QTimer m_timeoutTimer{this};
     QString m_cancelReason;
-    QList<int> getAvailableShowTypes() {
-        return m_currentSearchProvider->getAvailableTypes();
-    }
+
     QList<ShowProvider*> m_providers;
     QHash<QString, ShowProvider *> m_providersMap;
 
@@ -89,15 +126,19 @@ signals:
     void listTypeChanged(void);
     void loadingChanged(void);
     void searchProviderChanged(void);
-
+    void currentSearchTypeIndexChanged(void);
+    void currentProviderIndexChanged(void);
 public slots:
-    void search(const QString& query, int page, int type){
+    void search(const QString& query, int page){
+        int type = m_currentSearchProvider->getAvailableTypes()[m_currentSearchTypeIndex];
         m_searchResultsModel.search (query, page, type, m_currentSearchProvider);
     }
-    void latest(int page,int type) {
-        m_searchResultsModel.latest (page,type,m_currentSearchProvider);
+    void latest(int page) {
+        int type = m_currentSearchProvider->getAvailableTypes()[m_currentSearchTypeIndex];
+        m_searchResultsModel.latest (page, type, m_currentSearchProvider);
     }
-    void popular(int page,int type){
+    void popular(int page){
+        int type = m_currentSearchProvider->getAvailableTypes()[m_currentSearchTypeIndex];
         m_searchResultsModel.popular (page,type,m_currentSearchProvider);
     }
     void loadShow(int index, bool fromWatchList) {
@@ -115,17 +156,15 @@ public slots:
         }
     }
     void cancel();
-    void changeSearchProvider(int index);
     void addCurrentShowToLibrary(int listType)
     {
-        m_watchListModel.add (currentShow, listType);
-        currentShow.listType = listType;
+        //todo logic
+        m_watchListModel.add (currentShow, listType); //either changes the list type or adds to library
         emit listTypeChanged ();
     }
     void removeCurrentShowFromLibrary()
     {
         m_watchListModel.remove (currentShow);
-        currentShow.listType = -1;
         emit listTypeChanged ();
     }
     void checkUpdateLastWatchedIndex() {
@@ -172,6 +211,8 @@ public slots:
     };
 
 public:
+    ShowManager(ShowManager &&) = delete;
+    ShowManager &operator=(ShowManager &&) = delete;
     explicit ShowManager(QString launchPath);
     ~ShowManager();
 

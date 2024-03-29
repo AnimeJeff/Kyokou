@@ -17,6 +17,9 @@ void WatchListModel::loadWatchList(QString filePath)
             outfile.write (emptyFile);
             outfile.close();
         }
+        QJsonParseError error;
+        QJsonDocument doc = QJsonDocument::fromJson(emptyFile, &error);
+        m_watchListJson = doc.array ();
         m_jsonList = nlohmann::json::parse (emptyFile);
     }
     else
@@ -32,6 +35,33 @@ void WatchListModel::loadWatchList(QString filePath)
         }
         infile.close ();
     }
+
+    // for (const auto& listObject : ){
+    //     auto watchList = listObject.toArray();
+    //     for (auto& show : watchList)
+    //     {
+    //         jsonHashmap.insert ({show["link"].get<std::string>(), std::stoi(type)});
+    //     }
+    // }
+    for (int type = 0; type < m_watchListJson.size(); ++type) {
+        QJsonArray array = m_watchListJson[type].toArray();
+        for (int index = 0; index < array.size(); ++index) {
+            QJsonObject show = array[index].toObject();
+            QString link = show["link"].toString();
+            m_showHashmap.insert(link, type);
+        }
+    }
+
+    for (auto& [type, array] : m_jsonList.items())
+    {
+        for (auto& [index, show] : array.items())
+        {
+            jsonHashmap.insert ({show["link"].get<std::string>(), std::stoi(type)});
+        }
+    }
+
+
+    //to remove
     for (auto& [type, array] : m_jsonList.items())
     {
         for (auto& [index, show] : array.items())
@@ -103,37 +133,41 @@ bool WatchListModel::syncShow(ShowData& show)
             int lastWatchedIndex = m_jsonList[listType][index]["lastWatchedIndex"].get<int> ();
             if (show.playlist) {
                 show.playlist->currentIndex = lastWatchedIndex;
+                show.playlist->setJsonPtr (&m_jsonList[listType][index]);
             } else {
                 qDebug() << "Error setting the last watched index";
             }
             show.listType = listType;
-            show.playlist->setJsonPtr (&m_jsonList[listType][index]);
+
         }
         return true;
     }
     return false;
 }
 
-void WatchListModel::add(const ShowData& show, int listType)
+void WatchListModel::add(ShowData& show, int listType)
 {
-    if (show.listType < 0) // not in watchlist
+    if (jsonHashmap.contains (show.link)) // already in library so we change the list type
     {
+        changeListType (show, listType);
+    } else {
+
         m_jsonList[listType].push_back (show.toJson ());
         jsonHashmap[show.link] = listType;
         if (m_currentListType == listType) {
             beginInsertRows(QModelIndex(), m_jsonList[listType].size(), m_jsonList[listType].size() + 1);
             endInsertRows();
         }
-
-    } else {
-        // in watch list so we change the list type
-        changeListType (show, listType);
+        nlohmann::json* showJsonPtr = &m_jsonList[listType][m_jsonList[listType].size()-1];
+        show.playlist->setJsonPtr (showJsonPtr);
+        m_jsonList[listType][m_jsonList[listType].size()-1]["lastWatchedIndex"] = show.playlist->currentIndex;
+        show.listType = listType;
     }
     save();
 }
 
 
-void WatchListModel::remove(const ShowData &show)
+void WatchListModel::remove(ShowData &show)
 {
     // check if the show is in the list
     if (show.listType < 0 || !jsonHashmap.contains (show.link)) return;
@@ -146,6 +180,8 @@ void WatchListModel::remove(const ShowData &show)
     m_jsonList[listType].erase (m_jsonList[listType].begin() + index);
     // remove the show from the hashmap
     jsonHashmap.erase(show.link);
+    show.playlist->setJsonPtr (nullptr);
+    show.listType = -1;
     save();
 }
 
