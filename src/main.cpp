@@ -11,17 +11,8 @@
 #include <QtGlobal>
 
 #include <QFontDatabase>
-#include "Player/Mpv/mpvObject.h"
+#include "Mpv/mpvObject.h"
 #include "application.h"
-
-#include "Providers/testprovider.h"
-#include "Providers/kimcartoon.h"
-#include "Providers/gogoanime.h"
-#include "Providers/nivod.h"
-#include "Providers/haitu.h"
-#include "Providers/allanime.h"
-
-#include "Explorer/showmanager.h"
 #include <QtPlugin>
 
 //qputenv("QT_DEBUG_PLUGINS", QByteArray("1"));
@@ -33,7 +24,7 @@ int main(int argc, char *argv[]){
 
     QQuickWindow::setGraphicsApi(QSGRendererInterface::OpenGLRhi);
     QGuiApplication app(argc, argv);
-    ShowManager showManager(QString::fromLocal8Bit (argv[1]));
+    Application application(QString::fromLocal8Bit (argv[1]));
 
 
 
@@ -55,8 +46,7 @@ int main(int argc, char *argv[]){
 
     qmlRegisterType<MpvObject>("MpvPlayer", 1, 0, "MpvObject");
 
-    engine.rootContext ()->setContextProperty("app", &Application::instance()); //remove singleton?
-    engine.rootContext ()->setContextProperty("showManager",&showManager);
+    engine.rootContext ()->setContextProperty("app",&application);
     engine.rootContext ()->setContextProperty("errorHandler", &ErrorHandler::instance ());
 
 

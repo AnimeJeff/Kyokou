@@ -3,8 +3,9 @@
 
 #include "curl/curl.h"
 #include "CSoup.h"
-#include <nlohmann/json.hpp>
+#include "qjsonobject.h"
 #include <QDebug>
+#include <QJsonDocument>
 #include <QMutex>
 
 
@@ -12,8 +13,6 @@ class NetworkClient
 {
 private:
     static constexpr int maxCurls = 10;
-
-
 
     static void createHandles()
     {
@@ -61,8 +60,6 @@ private:
         curls.push_back(curl);
     }
 
-
-
     enum RequestType{
         GET,
         POST,
@@ -102,9 +99,16 @@ public:
         CSoup document(){
             return CSoup(body);
         }
-        nlohmann::json json(){
-            return nlohmann::json::parse (body);
+        QJsonObject JSONOBJECT(){
+            QJsonParseError error;
+            QJsonDocument jsonData = QJsonDocument::fromJson(body.c_str (), &error);
+            if (error.error != QJsonParseError::NoError) {
+                qWarning() << "JSON parsing error:" << error.errorString();
+                return QJsonObject{};
+            }
+            return jsonData.object ();
         }
+
         ~Response(){
         }
         friend QDebug operator<<(QDebug debug, const Response& response)

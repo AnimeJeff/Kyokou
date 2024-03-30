@@ -28,6 +28,8 @@ qt_add_executable(kyokou
     ${PROJECT_SOURCE_DIR}/dependencies/includes/pugixml/pugixml.cpp
     ${APP_ICON_RESOURCE_WINDOWS}
     kyokou.qrc
+    src/Data/showdata.cpp
+    src/Data/video.h src/Data/video.cpp
 )
 
 # Include directories

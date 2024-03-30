@@ -20,19 +20,22 @@ Window {
     color: "black"
     flags: Qt.Window | Qt.FramelessWindowHint | Qt.WindowMinimizeButtonHint
 
-    property int aspectRatio: root.width / root.height
     property bool maximised: false
     property bool fullscreen: false
     property bool pipMode: false
+    property int aspectRatio: !maximised ? 1 : 2
 
     property real searchResultsViewlastScrollY:0
     property real watchListViewLastScrollY: 0
-
-    property alias resizeAnime: resizingAnimation
     property string lastSearch: ""
-    property bool playerFillWindow: false
     property double lastX
     property double lastY
+
+
+    property alias resizeAnime: resizingAnimation
+
+    // property bool playerFillWindow: false
+
     property MpvObject mpv
 
 
@@ -69,9 +72,42 @@ Window {
             right: parent.right
             bottom: parent.bottom
         }
-        initialItem: "explorer/SearchPage.qml"
+        initialItem: Qt.resolvedUrl("explorer/SearchPage.qml")
         background: Rectangle{
             color: "black"
+        }
+
+        pushEnter: Transition {
+            PropertyAnimation {
+                property: "opacity"
+                from: 0
+                to:1
+                duration: 200
+            }
+        }
+        pushExit: Transition {
+            PropertyAnimation {
+                property: "opacity"
+                from: 1
+                to:0
+                duration: 200
+            }
+        }
+        popEnter: Transition {
+            PropertyAnimation {
+                property: "opacity"
+                from: 0
+                to:1
+                duration: 200
+            }
+        }
+        popExit: Transition {
+            PropertyAnimation {
+                property: "opacity"
+                from: 1
+                to:0
+                duration: 200
+            }
         }
     }
 
@@ -80,7 +116,8 @@ Window {
     MpvPage {
         id:mpvPage
         visible: false
-        anchors.fill: root.playerFillWindow ? parent : stackView
+        anchors.fill: root.fullscreen ? parent : stackView
+        // anchors.fill: root.playerFillWindow ? parent : stackView
     }
 
 
@@ -159,14 +196,14 @@ Window {
             }
             widthanime.to = Screen.width
             heightanime.to = Screen.height
+
         } else {
             xanime.to = maximised ? 0 : lastX
             yanime.to = maximised ? 0 : lastY
             widthanime.to = maximised ? Screen.desktopAvailableWidth : 1080
             heightanime.to = maximised ? Screen.desktopAvailableHeight : 720
         }
-        // root.mpvWasPlaying = mpv.state == MpvObject.VIDEO_PLAYING
-        // if (root.mpvWasPlaying) mpv.pause()
+
         resizingAnimation.running = true
 
     }
@@ -188,7 +225,7 @@ Window {
             heightanime.to = Screen.height/2.3
             flags |= Qt.WindowStaysOnTopHint
             sideBar.gotoPage(3)
-            playerFillWindow = true
+            // playerFillWindow = true
         }
         else
         {
@@ -197,7 +234,7 @@ Window {
             widthanime.to = fullscreen ? Screen.width : maximised ? Screen.desktopAvailableWidth : 1080
             heightanime.to = fullscreen ? Screen.height : maximised ? Screen.desktopAvailableHeight : 720
             flags &= ~Qt.WindowStaysOnTopHint
-            playerFillWindow = fullscreen
+            // playerFillWindow = fullscreen
         }
         // root.mpvWasPlaying = mpv.state == MpvObject.VIDEO_PLAYING
         // if (root.mpvWasPlaying) mpv.pause()
@@ -253,7 +290,7 @@ Window {
             root.lower()
             root.showMinimized()
             if (pipMode) pipMode = false
-            if (playerFillWindow) playerFillWindow = false
+            // if (playerFillWindow) playerFillWindow = false
             if (maximised) maximised = false
             if (fullscreen) fullscreen = false
             lol.visible = true

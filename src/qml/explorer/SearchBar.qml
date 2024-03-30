@@ -8,15 +8,15 @@ RowLayout {
     id:searchBar
     property alias textField: searchTextField
     function search(){
-        showManager.search(searchTextField.text, 1)
+        app.search(searchTextField.text, 1)
         root.lastSearch = searchTextField.text
         parent.forceActiveFocus()
     }
     function  latest(){
-        showManager.latest(1)
+        app.latest(1)
     }
     function popular(){
-        showManager.popular(1)
+        app.popular(1)
     }
 
     CustomTextField {
@@ -76,10 +76,10 @@ RowLayout {
         Layout.preferredWidth: 2
         contentRadius: 20
         fontSize:20 * root.aspectRatio
-        model: showManager
-        onCurrentIndexChanged: showManager.currentProviderIndex = providersComboBox.currentIndex
+        model: app
+        currentIndex: app.currentProviderIndex
+        onCurrentIndexChanged: app.currentProviderIndex = providersComboBox.currentIndex
         text: "text"
-        Component.onCompleted: providersComboBox.currentIndex = showManager.currentProviderIndex
 
     }
 
@@ -90,14 +90,14 @@ RowLayout {
         Layout.fillHeight: true
         contentRadius: 20
         fontSize:20 * root.aspectRatio
-        model: showManager.availableShowTypes
-        currentIndex: showManager.currentSearchTypeIndex
-        onCurrentIndexChanged: showManager.currentSearchTypeIndex = typeComboBox.currentIndex
-        Component.onCompleted: typeComboBox.currentIndex = showManager.currentSearchTypeIndex
+        model: app.availableShowTypes
+        currentIndex: app.currentSearchTypeIndex
+        onCurrentIndexChanged: app.currentSearchTypeIndex = typeComboBox.currentIndex
+        Component.onCompleted: typeComboBox.currentIndex = app.currentSearchTypeIndex
         Connections {
-            target: showManager
+            target: app
             function onCurrentSearchTypeIndexChanged(){
-                typeComboBox.currentIndex = showManager.currentSearchTypeIndex;
+                typeComboBox.currentIndex = app.currentSearchTypeIndex;
             }
         }
 

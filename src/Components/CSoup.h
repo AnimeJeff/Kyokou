@@ -1,5 +1,4 @@
-#ifndef HTMLPARSER_H
-#define HTMLPARSER_H
+#pragma once
 #include <QString>
 #include <iostream>
 
@@ -39,4 +38,3 @@ private:
     bool parse (const char* source);
 };
 
-#endif // HTMLPARSER_H

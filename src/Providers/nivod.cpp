@@ -4,6 +4,7 @@ QList<ShowData> Nivod::filterSearch(int page, const QString &sortBy, int type,
                                     const QString &regionId,
                                     const QString &langId,
                                     const QString &yearRange) {
+
     std::string channel = type == ShowData::DOCUMENTARY ?  "6" : std::to_string(type);
     std::map<std::string, std::string> data = {
                                                {"sort_by", sortBy.toStdString()},
@@ -14,26 +15,9 @@ QList<ShowData> Nivod::filterSearch(int page, const QString &sortBy, int type,
                                                {"year_range", " "},
                                                {"start", std::to_string((page - 1) * 20)}};
 
-    std::string response = callAPI("https://api.nivodz.com/show/filter/WEB/3.2", data);
-    QList<ShowData> results = showsFromJsonArray(nlohmann::json::parse(response)["list"]);
-    return results;
-}
+    QJsonArray responseJson = callAPI("https://api.nivodz.com/show/filter/WEB/3.2", data)["list"].toArray ();
+    return parseShows(responseJson);
 
-std::string Nivod::callAPI(const std::string &url, const std::map<std::string, std::string> &data) const {
-    std::string sign = createSign(data);
-
-    std::string postUrl = url + "?_ts=" + _mts +
-                          "&app_version=1.0&platform=3&market_id=web_nivod&"
-                          "device_code=web&versioncode=1&oid=" +
-                          _oid + "&sign=" + sign;
-
-    auto response = NetworkClient::post(postUrl, mudvodHeaders, data).body;
-    try {
-        return decryptedByDES(response);
-    } catch (std::exception &e) {
-        qDebug() << "Bad Input" << postUrl;
-    }
-    return "";
 }
 
 QList<ShowData> Nivod::search(QString query, int page, int type) {
@@ -45,90 +29,84 @@ QList<ShowData> Nivod::search(QString query, int page, int type) {
                                                {"cat_id", "1"},
                                                {"keyword_type", "0"}};
     filterSearched = false;
-    std::string response = callAPI("https://api.nivodz.com/show/search/WEB/3.2", data);
-    QList<ShowData> results = showsFromJsonArray(nlohmann::json::parse(response)["list"]);
+    QJsonArray responseJson = callAPI("https://api.nivodz.com/show/search/WEB/3.2", data)["list"].toArray();
+    return parseShows(responseJson);
+}
+
+QList<ShowData> Nivod::parseShows(const QJsonArray &showArrayJson)
+{
+    QList<ShowData> results;
+    foreach (const QJsonValue &value, showArrayJson) {
+        QJsonObject item = value.toObject();
+        int tvType;
+        QString channelName = item["channelName"].toString();
+        if (channelName == "电影") {
+            tvType = ShowData::MOVIE;
+        } else if (channelName == "电视剧") {
+            tvType = ShowData::TVSERIES;
+        } else if (channelName == "综艺") {
+            tvType = ShowData::VARIETY;
+        } else if (channelName == "动漫") {
+            tvType = ShowData::ANIME;
+        } else if (channelName == "纪录片") {
+            tvType = ShowData::DOCUMENTARY;
+        } else {
+            qDebug() << "Log (Nivod): Cannot infer show type from" << channelName;
+            tvType = ShowData::NONE;
+        }
+
+        QString title = item["showTitle"].toString();
+        QString coverUrl = item["showImg"].toString();
+        std::string link = item["showIdCode"].toString().toStdString ();
+        QString latestTxt;
+        if (!item["episodesTxt"].isUndefined() && !item["episodesTxt"].isNull()) {
+            latestTxt = item["episodesTxt"].toString();
+        }
+        // QJsonDocument doc(item);
+        // QString jsonString = doc.toJson(QJsonDocument::Indented);
+        // qDebug().noquote() << jsonString;
+
+        results.emplaceBack(title, link, coverUrl, this, latestTxt, tvType);
+
+    }
+
     return results;
 }
 
-QList<ShowData> Nivod::popular(int page, int type) {
-    return filterSearch(page, "1", type);
-}
 
-QList<ShowData> Nivod::latest(int page, int type) {
-    return filterSearch(page, "4", type);
+QJsonObject Nivod::getInfoJson(const std::string &link) const {
+    return callAPI("https://api.nivodz.com/show/detail/WEB/3.3",
+                            {{"show_id_code", link}, {"episode_id", "0"}})["entity"].toObject ();
 }
 
 void Nivod::loadDetails(ShowData &show) const {
-    nlohmann::json infoJson = getInfoJson(show.link);
-    show.description =
-        QString::fromStdString(infoJson["showDesc"].get<std::string>());
-    if (infoJson.contains("episodesUpdateDesc") &&
-        !infoJson.at("episodesUpdateDesc").is_null()) {
-        show.updateTime = QString::fromStdString(
-            infoJson["episodesUpdateDesc"].get<std::string>());
-    }
-    if (!infoJson["showTypeName"].is_null())
-        show.genres +=
-            QString::fromStdString(infoJson["showTypeName"].get<std::string>());
+    QJsonObject infoJson = getInfoJson(show.link);
+
+    show.description = infoJson["showDesc"].toString ();
+    show.genres += infoJson["showTypeName"].toString ();
+    show.status = infoJson["episodesTxt"].toString ();
     //        auto actors =
     //        QString::fromStdString(infoJson["actors"].get<std::string>());
-
-    if (!infoJson["hot"].is_null())
-        show.views =
-            QString::fromStdString(std::to_string(infoJson["hot"].get<int>()));
-    if (!infoJson["rating"].is_null())
-        show.rating = QString::fromStdString(
-            std::to_string((infoJson["rating"].get<int>()) / 10));
-
-    for (const auto &item : infoJson["plays"].items()) {
-        auto episode = item.value();
-        QString name =
-            QString::fromStdString(episode["displayName"].get<std::string>());
+    show.releaseDate = QString::number(infoJson["postYear"].toInt(69));
+    show.views = QString::number (infoJson["hot"].toInt (69));
+    show.score = QString::number (infoJson["rating"].toInt (69));
+    show.updateTime = infoJson["episodesUpdateDesc"].toString ();
+    foreach (const QJsonValue &item, infoJson["plays"].toArray ()) {
+        auto episode = item.toObject ();
+        QString name = episode["displayName"].toString ();
         int number = -1;
-
         bool ok;
         int intTitle = name.toInt(&ok);
         if (ok) {
             number = intTitle;
             name = "";
         }
-        std::string link =
-            show.link + "&" + episode["playIdCode"].get<std::string>();
+        std::string link = show.link + "&" + episode["playIdCode"].toString ().toStdString ();
         show.addEpisode(number, link, name);
-        show.totalEpisodes++;
     }
 }
 
-QList<VideoServer> Nivod::loadServers(const PlaylistItem *episode) const {
-    // {{"referer", "https://www.nivod.tv/"}}/
-    return { VideoServer{"default", episode->link} };
-}
 
-QMap<QString, QString> Nivod::objKeySort(const QMap<QString, QString> &inputMap) const {
-
-    if (inputMap.isEmpty())
-        return inputMap;
-
-    QMap<QString, QString> sortedMap;
-    for (const auto &key : inputMap.keys()) {
-        const QString &value = inputMap.value(key);
-        if (key.isEmpty() || value.isEmpty() || key == "sign")
-            continue;
-        sortedMap.insert(key, value);
-    }
-    return sortedMap;
-}
-
-nlohmann::json Nivod::getInfoJson(const std::string &link) const {
-    auto response = callAPI("https://api.nivodz.com/show/detail/WEB/3.3",
-                            {{"show_id_code", link}, {"episode_id", "0"}});
-    // qDebug() << QString::fromStdString (response);
-    return nlohmann::json::parse(response)["entity"];
-}
-
-int Nivod::getTotalEpisodes(const std::string &link) const {
-    return getInfoJson(link)["plays"].size();
-}
 
 QString Nivod::extractSource(const VideoServer &server) const {
     auto codes = Functions::split(server.link, '&');
@@ -136,16 +114,53 @@ QString Nivod::extractSource(const VideoServer &server) const {
                                                {"show_id_code", codes[0]},
                                                {"oid", "1"},
                                                {"episode_id", "0"}};
-    auto playUrl = nlohmann::json::parse(
-                       callAPI("https://api.nivodz.com/show/play/info/WEB/3.3",
-                               data))["entity"]["plays"][0]["playUrl"]
-                       .get<std::string>(); // video quality
+    auto responseJson = callAPI("https://api.nivodz.com/show/play/info/WEB/3.3", data);
+    auto playUrl = responseJson["entity"].toObject()["plays"].toArray()[0].toObject()["playUrl"].toString ();
+    // QJsonDocument doc(responseJson);
+    // QString jsonString = doc.toJson(QJsonDocument::Indented);
+    // qDebug().noquote() << jsonString;
+
     // qDebug() << QString::fromStdString(playUrl);
-    return QString::fromStdString(playUrl);
+    return playUrl;
 }
 
-std::string Nivod::createSign(const std::map<std::string, std::string> &bodyMap,
-                              const std::string &secretKey) const {
+
+QJsonObject Nivod::callAPI(const std::string &url, const std::map<std::string, std::string> &data) const {
+    std::string sign = createSign(data);
+
+    std::string postUrl = url + "?_ts=" + _mts +
+                          "&app_version=1.0&platform=3&market_id=web_nivod&"
+                          "device_code=web&versioncode=1&oid=" +
+                          _oid + "&sign=" + sign;
+
+    std::string response = NetworkClient::post(postUrl, mudvodHeaders, data).body;
+    QJsonParseError error;
+    QJsonDocument jsonData = QJsonDocument::fromJson(decryptedByDES(response).c_str (),&error);
+    if (error.error != QJsonParseError::NoError) {
+        qWarning() << "JSON parsing error:" << error.errorString();
+        return QJsonObject{};
+    }
+    return jsonData.object ();
+
+
+}
+
+// QMap<QString, QString> Nivod::objKeySort(const QMap<QString, QString> &inputMap) const {
+
+//     if (inputMap.isEmpty())
+//         return inputMap;
+
+//     QMap<QString, QString> sortedMap;
+//     for (const auto &key : inputMap.keys()) {
+//         const QString &value = inputMap.value(key);
+//         if (key.isEmpty() || value.isEmpty() || key == "sign")
+//             continue;
+//         sortedMap.insert(key, value);
+//     }
+//     return sortedMap;
+// }
+
+std::string Nivod::createSign(const std::map<std::string, std::string> &bodyMap, const std::string &secretKey) const {
 
     std::string signQuery = _QUERY_PREFIX;
     for (auto it = queryMap.begin(); it != queryMap.end(); ++it) {
@@ -191,47 +206,5 @@ std::string Nivod::decryptedByDES(const std::string &input) const {
     return decrypted;
 }
 
-int Nivod::getShowType(const std::string &channelName) const {
-    if (channelName == "电影") {
-        return ShowData::MOVIE;
-    } else if (channelName == "电视剧") {
-        return ShowData::TVSERIES;
-    } else if (channelName == "综艺") {
-        return ShowData::VARIETY;
-    } else if (channelName == "动漫") {
-        return ShowData::ANIME;
-    } else if (channelName == "纪录片") {
-        return ShowData::DOCUMENTARY;
-    }
-    qDebug() << "Log (Nivod): Cannot infer show type from"
-             << QString::fromStdString(channelName);
-    return ShowData::NONE;
-}
 
-QList<ShowData> Nivod::showsFromJsonArray(const nlohmann::json &showList,
-                                          int type) {
-    QList<ShowData> results;
-    for (auto &el : showList.items()) {
-        auto item = el.value();
-        int tvType = getShowType(item["channelName"].get<std::string>());
-        //            if (item["showTitle"].get<std::string>().find ("假面骑士"));
-        QString title = QString::fromStdString(item["showTitle"].get<std::string>());
-        QString coverUrl = QString::fromStdString(item["showImg"].get<std::string>());
-        std::string link = item["showIdCode"].get<std::string>();
-        QString latestTxt = "";
-        if (!item["episodesTxt"].is_null()) {
-            latestTxt = QString::fromStdString(item["episodesTxt"].get<std::string>());
-            //                int status = ShowData::Status::Completed;
-            //                if (results.last ().latestTxt.contains("更新")){
-            //                    results.last ().status = ShowData::Status::Ongoing;
-            //                }
-        }
-        results.emplaceBack(title, link, coverUrl, this, latestTxt, tvType);
-        if (!item["postYear"].is_null()) {
-            results.last().releaseDate =
-                QString::fromStdString(std::to_string(item["postYear"].get<int>()));
-        }
-    }
 
-    return results;
-}

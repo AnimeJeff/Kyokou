@@ -10,8 +10,8 @@ Item {
         currentFolder: "file:///" + workDirTextField.text
         onAccepted:
         {
-            showManager.downloader.workDir = text
-            text = showManager.downloader.workDir
+            app.downloader.workDir = text
+            text = app.downloader.workDir
         }
     }
 
@@ -25,15 +25,15 @@ Item {
             Layout.preferredHeight: 1
             CustomTextField {
                 id: workDirTextField
-                text: showManager.downloader.workDir
+                text: app.downloader.workDir
                 checkedColor: "#727CF5"
                 color: "white"
                 placeholderText: qsTr("Enter working directory")
                 placeholderTextColor: "gray"
                 font.pixelSize: 20 * root.aspectRatio
                 onAccepted: () => {
-                                showManager.downloader.workDir = text
-                                text = showManager.downloader.workDir
+                                app.downloader.workDir = text
+                                text = app.downloader.workDir
                             }
 
                 Layout.row: 0
@@ -93,7 +93,7 @@ Item {
                 Layout.row: 1
                 Layout.column: 2
                 text: "Download"
-                onClicked: {showManager.downloader.downloadLink(downloadNameField.text, downloadUrlField.text)}
+                onClicked: {app.downloader.downloadLink(downloadNameField.text, downloadUrlField.text)}
                 Layout.fillWidth: true
                 Layout.preferredWidth: 1
             }
@@ -105,7 +105,7 @@ Item {
             Layout.fillHeight: true
             Layout.preferredHeight: 8
             clip: true
-            model:showManager.downloader
+            model:app.downloader
             boundsMovement: Flickable.StopAtBounds
             spacing: 10
             delegate: Rectangle {
@@ -160,7 +160,7 @@ Item {
                             cursorShape: Qt.PointingHandCursor
                             hoverEnabled: true
                             onClicked: {
-                                showManager.downloader.openFolder(path);
+                                app.downloader.openFolder(path);
                             }
                         }
                     }
@@ -170,7 +170,7 @@ Item {
                         Layout.column: 2
                         Layout.rowSpan: 4
                         text: "Cancel"
-                        onClicked: showManager.downloader.cancelTask(index)
+                        onClicked: app.downloader.cancelTask(index)
                     }
 
 

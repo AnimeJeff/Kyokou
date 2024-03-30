@@ -1,7 +1,7 @@
 #pragma once
 #include <regex>
-#include "showprovider.h"
-#include "Explorer/Data/showdata.h"
+#include "Providers/showprovider.h"
+#include "Data/showdata.h"
 
 class Haitu : public ShowProvider
 {
@@ -20,7 +20,7 @@ public:
     QList<ShowData> search(QString query, int page, int type) override;
     QList<ShowData> popular(int page, int type) override;
     QList<ShowData> latest(int page, int type) override;
-    QList<ShowData> filterSearch(const std::string& url);
+    QList<ShowData> filterSearch(const std::string &query, const std::string &sortBy, int page);
 
     void loadDetails(ShowData& show) const override;
     int getTotalEpisodes(const std::string& link) const override

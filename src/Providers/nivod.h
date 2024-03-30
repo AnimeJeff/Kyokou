@@ -1,6 +1,6 @@
 #pragma once
 #include "showprovider.h"
-#include "Explorer/Data/showdata.h"
+#include "Data/showdata.h"
 
 class Nivod: public ShowProvider
 {
@@ -13,23 +13,31 @@ public:
     };
 
     QList<ShowData> search(QString query, int page, int type) override;
-    QList<ShowData> popular(int page, int type) override;
-    QList<ShowData> latest(int page, int type) override;
+    QList<ShowData> popular(int page, int type) override {
+        return filterSearch(page, "1", type);
+    };
+    QList<ShowData> latest(int page, int type) override {
+        return filterSearch(page, "4", type);
+    };
 
     void loadDetails(ShowData& show) const override;
-    QList<VideoServer> loadServers(const PlaylistItem* episode) const override;
-    int getTotalEpisodes(const std::string& link) const override;
+    QList<VideoServer> loadServers(const PlaylistItem *episode) const override {
+        return {VideoServer{"default", episode->link}};
+    };
+    int getTotalEpisodes(const std::string &link) const override {
+        return getInfoJson(link)["plays"].toArray().size();
+    }
     QString extractSource(const VideoServer& server) const override;
 
 private:
-    QMap<QString, QString> objKeySort(const QMap<QString, QString>& inputMap) const;
-    nlohmann::json getInfoJson(const std::string& link) const;
+    QJsonObject getInfoJson(const std::string& link) const;
+    QList<ShowData> parseShows(const QJsonArray& showList);
+    QList<ShowData> filterSearch(int page, const QString& sortBy,int type, const QString& regionId = "0", const QString& langId="0", const QString& yearRange = " ");
+
+    QJsonObject callAPI(const std::string& url, const std::map<std::string, std::string>& data) const;
     std::string createSign(const std::map<std::string, std::string>& bodyMap, const std::string& secretKey = "2x_Give_it_a_shot") const;
     std::string decryptedByDES(const std::string& input) const;
-    int getShowType(const std::string& channelName) const;
-    QList<ShowData> showsFromJsonArray(const nlohmann::json& showList,int type = 0);
-    QList<ShowData> filterSearch(int page, const QString& sortBy,int type, const QString& regionId = "0", const QString& langId="0", const QString& yearRange = " ");
-    std::string callAPI(const std::string& url, const std::map<std::string, std::string>& data) const;
+    // QMap<QString, QString> objKeySort(const QMap<QString, QString>& inputMap) const;
 private:
     const std::string _HOST_CONFIG_KEY = "2x_Give_it_a_shot";
     const std::string _bp_app_version = "1.0";

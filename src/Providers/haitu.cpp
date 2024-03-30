@@ -2,48 +2,43 @@
 
 QList<ShowData> Haitu::search(QString query, int page, int type)
 {
-    QList<ShowData> shows;
+    // QList<ShowData> shows;
 
-    std::string url = hostUrl + "vodsearch/" + query.toStdString () + "----------" + std::to_string (page) + "---.html";
-    qDebug() << QString::fromStdString (url);
+    // std::string url = hostUrl + "vodsearch/" + query.toStdString () + "----------" + std::to_string (page) + "---.html";
+    // auto showNodes = NetworkClient::get(url).document().select("//div[@class='module-items']/div");
+    // for (pugi::xpath_node_set::const_iterator it = showNodes.begin(); it != showNodes.end(); ++it)
+    // {
+    //     auto img = it->selectFirst(".//img");
+    //     QString title = img.attr("alt").as_string();
+    //     QString coverUrl = img.attr("data-src").as_string();
+    //     if (!coverUrl.startsWith ("http"))
+    //     {
+    //         coverUrl = QString::fromStdString (hostUrl) + coverUrl;
+    //     }
+    //     std::string link = it->selectFirst(".//div[@class='module-item-pic']/a").attr ("href").as_string ();
+    //     shows.emplaceBack(title, link, coverUrl, this);
+    // }
 
-    auto showNodes = NetworkClient::get(url).document().select("//div[@class='module-search-item']");
-    for (pugi::xpath_node_set::const_iterator it = showNodes.begin(); it != showNodes.end(); ++it)
-    {
-        auto img = it->selectFirst(".//img");
-        QString title = img.attr("alt").as_string();
-        QString coverUrl = img.attr("data-src").as_string();
-        if (!coverUrl.startsWith ("http"))
-        {
-            coverUrl = QString::fromStdString (hostUrl) + coverUrl;
-        }
-        std::string link = it->selectFirst(".//div[@class='module-item-pic']/a").attr ("href").as_string ();
-        shows.emplaceBack(title, link, coverUrl, this);
-    }
-
-    return shows;
+    // return shows;
+    return filterSearch(QUrl::toPercentEncoding (query).toStdString (), "--", page);
 }
 
 QList<ShowData> Haitu::popular(int page, int type)
 {
-    std::string url = hostUrl + "vodshow/" + std::to_string (type) + "--hits------" + std::to_string(page) + "---.html";
-    QList<ShowData> shows = filterSearch(url);
-    return shows;
+    return filterSearch(std::to_string (type), "hits", page);
 }
 
 QList<ShowData> Haitu::latest(int page, int type)
 {
-    std::string url = hostUrl + "vodshow/" + std::to_string (type) + "--time------" + std::to_string(page) + "---.html";
-    QList<ShowData> shows = filterSearch(url);
-
-
-    return shows;
+    return filterSearch(std::to_string (type), "time", page);
 }
 
-QList<ShowData> Haitu::filterSearch(const std::string &url)
+QList<ShowData> Haitu::filterSearch(const std::string &query, const std::string &sortBy, int page)
 {
+    std::string url = hostUrl + "vodshow/" + query + "--" + sortBy + "------" + std::to_string(page) + "---.html";
+    auto showNodes = NetworkClient::get(url).document().select("//div[@class='module-items']/div");
     QList<ShowData> shows;
-    auto showNodes = NetworkClient::get(url).document().select("//div[@class='module-item']");
+
     for (pugi::xpath_node_set::const_iterator it = showNodes.begin(); it != showNodes.end(); ++it)
     {
         auto img = it->selectFirst(".//div[@class='module-item-pic']/img");
@@ -53,9 +48,15 @@ QList<ShowData> Haitu::filterSearch(const std::string &url)
         {
             coverUrl = QString::fromStdString (hostUrl) + coverUrl;
         }
-        qDebug() << title <<coverUrl;
+        // qDebug() << title <<coverUrl;
         std::string link = it->selectFirst (".//div[@class='module-item-pic']/a").attr ("href").as_string ();
-        QString latestText = it->selectFirst (".//div[@class='module-item-text']").node ().child_value ();
+        QString latestText;
+
+        if (sortBy == "--"){
+            latestText = it->selectFirst (".//a[@class='video-serial']").node ().child_value ();
+        } else {
+            latestText = it->selectFirst (".//div[@class='module-item-text']").node ().child_value ();
+        }
         shows.emplaceBack(title, link, coverUrl, this, latestText);
     }
 
@@ -66,21 +67,37 @@ void Haitu::loadDetails(ShowData &show) const
 {
     auto doc = NetworkClient::get(hostUrl + show.link).document ();
     auto episodeNodes = doc.select ("//div[@class='scroll-content']/a");
+
+    auto infoItems = doc.select ("//div[@class='video-info-items']/div");
+    show.releaseDate = infoItems[2].node ().child_value ();
+    show.updateTime = infoItems[3].node ().child_value ();
+    show.updateTime = show.updateTime.split ("，").first ();
+    show.status = infoItems[4].node ().child_value ();
+    show.score = infoItems[5].selectText (".//font");
+    show.description = QString(infoItems[7].selectText (".//span")).trimmed ();
+    auto genreNodes = doc.select ("//div[@class='tag-link']/a");
+    for (pugi::xpath_node_set::const_iterator it = genreNodes.begin(); it != genreNodes.end(); ++it)
+    {
+        show.genres += it->node ().child_value ();
+    }
+
     for (pugi::xpath_node_set::const_iterator it = episodeNodes.begin(); it != episodeNodes.end(); ++it)
     {
-        QString title = QString::fromStdString (it->selectFirst(".//span").node ().child_value ()).trimmed ();
-        int number = -1;
+        QString title = QString::fromStdString (it->selectFirst(".//span").node ().child_value ())
+                            .replace ("集","").replace ("第","").trimmed ();
+
         bool ok;
         int intTitle = title.toInt (&ok);
-        if (ok)
-        {
+        int number = -1;
+        if (ok) {
             number = intTitle;
-            title = "";
+            title.clear ();
         }
         std::string link = it->attr ("href").as_string ();
         show.addEpisode(number, link, title);
     }
-    show.description = QString(doc.selectFirst ("//div[@class='video-info-item video-info-content vod_content']/span").node ().child_value ());
+
+
 }
 
 QList<VideoServer> Haitu::loadServers(const PlaylistItem *episode) const
@@ -94,8 +111,8 @@ QString Haitu::extractSource(const VideoServer &server) const
     std::smatch match;
     if (!std::regex_search(response, match, player_aaaa_regex))
         throw "Failed to extract m3u8";
-    std::string matchedText = match[1].str();
-    auto url = nlohmann::json::parse(matchedText)["url"].get<std::string>();
-    qDebug()<<QString::fromStdString (url);
-    return QString::fromStdString (url);
+    // std::string matchedText = ;
+    auto url = QJsonDocument::fromJson (match[1].str ().c_str ()).object ()["url"].toString ();
+    // qDebug()<<url;
+    return url;
 }

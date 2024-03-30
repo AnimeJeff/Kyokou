@@ -10019,7 +10019,7 @@ PUGI__NS_BEGIN
 			switch (_test)
 			{
 			case nodetest_name:
-				if (type == node_element && n->name && strequal(n->name, _data.nodetest))
+                if (type == node_element && n->name && strequal(n->name, _data.nodetest))
 				{
 					ns.push_back(xml_node(n), alloc);
 					return true;

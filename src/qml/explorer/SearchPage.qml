@@ -18,10 +18,10 @@ Item {
     LoadingScreen {
         id:loadingScreen
         anchors.centerIn: parent
-        loading: showManager.explorer.loading || showManager.loading
+        loading: app.explorer.loading || app.loading
         onCancelled: {
-            showManager.explorer.cancel()
-            showManager.cancel()
+            app.explorer.cancel()
+            app.cancel()
         }
         onTimedOut: {
             notifier.headerText = "Error"
@@ -74,8 +74,8 @@ Item {
 
 
     ShowContainer {
-        id:showContainer
-        model: showManager.explorer
+        id:showGridView
+        model: app.explorer
         anchors {
             top: searchBar.bottom
             left: parent.left
@@ -93,7 +93,7 @@ Item {
     Keys.onPressed: event => handleKeyPress(event)
     function handleKeyPress(event){
         if (event.modifiers & Qt.ControlModifier){
-            if (event.key === Qt.Key_R){showManager.explorer.reload()}
+            if (event.key === Qt.Key_R){app.explorer.reload()}
         }else{
             switch (event.key){
             case Qt.Key_Escape:
@@ -114,10 +114,10 @@ Item {
                 searchBar.latest()
                 break;
             case Qt.Key_Up:
-                showContainer.flick(0,500)
+                showGridView.flick(0,500)
                 break;
             case Qt.Key_Down:
-                showContainer.flick(0,-500)
+                showGridView.flick(0,-500)
                 break;
 
             }

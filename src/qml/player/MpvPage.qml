@@ -11,13 +11,12 @@ Item{
     visible: false
 
     Connections {
-        target: showManager.playList
+        target: app.playList
         function onSourceFetched() {
             mpv.subVisible = true
             sideBar.gotoPage(3)
         }
     }
-
 
     MpvObject {
         id:mpvObject
@@ -31,14 +30,14 @@ Item{
             bottom: parent.bottom
         }
 
-        onPlayNext: showManager.playList.playNextItem()
+        onPlayNext: app.playList.playNextItem()
         Component.onCompleted: {
             root.mpv = mpvObject
-            if (showManager.playList.launchPath.toString().trim() !== "") {
+            if (app.playList.launchPath.toString().trim() !== "") {
                 sideBar.gotoPage(3)
-                setTimeout(()=>mpv.open(showManager.playList.launchPath), 100)
+                setTimeout(()=>mpv.open(app.playList.launchPath), 100)
             } else {
-                showManager.latest(1)
+                app.latest(1)
             }
         }
         Rectangle {
@@ -68,7 +67,7 @@ Item{
             property point lastMousePosition
             hoverEnabled: true
             acceptedButtons: Qt.LeftButton
-            cursorShape: controlBar.visible ? Qt.ArrowCursor : Qt.BlankCursor
+            cursorShape: root.pipMode ? Qt.ArrowCursor : controlBar.visible ? Qt.ArrowCursor : Qt.BlankCursor
             anchors {
                 top: mpvObject.top
                 bottom: controlBar.visible ? controlBar.top : mpvObject.bottom
@@ -95,8 +94,9 @@ Item{
                                 if (mpv.state == MpvObject.VIDEO_PLAYING) mpv.pause(); else mpv.play();
 
                                 if (doubleClickTimer.running) {
-                                    root.playerFillWindow = !root.playerFillWindow
-                                    root.fullscreen = root.playerFillWindow
+                                    // root.playerFillWindow = !root.playerFillWindow
+                                    // root.fullscreen = root.playerFillWindow
+                                    root.fullscreen = !root.fullscreen
                                 } else {
                                     doubleClickTimer.restart();
                                 }
@@ -206,6 +206,7 @@ Item{
             y:parent.height - height - controlBar.height - 10
             width: parent.width / 3
             height: parent.height / 3.5
+            onClosed: mpvObject.forceActiveFocus()
         }
 
         ServerListPopup {
@@ -214,6 +215,7 @@ Item{
             visible: false
             width: parent.width / 2.7
             height: parent.height / 2.5
+            onClosed: mpvObject.forceActiveFocus()
 
         }
     }
@@ -294,8 +296,8 @@ Item{
         onAccepted:
         {
             // console.log(folderDialog.selectedFolder)
-            showManager.playList.replaceCurrentPlaylist(folderDialog.selectedFolder)
-            showManager.playList.play(0, -1)
+            app.playList.replaceCurrentPlaylist(folderDialog.selectedFolder)
+            app.playList.play(0, -1)
         }
     }
 
@@ -337,10 +339,10 @@ Item{
             mpv.seek(mpv.time + 90)
             break;
         case Qt.Key_S:
-            showManager.playList.playPrecedingItem()
+            app.playList.playPrecedingItem()
             break;
         case Qt.Key_D:
-            showManager.playList.playNextItem()
+            app.playList.playNextItem()
             break;
         case Qt.Key_V:
             mpv.pasteOpen()
@@ -367,7 +369,7 @@ Item{
                     pipMode = false
                     return
                 }
-                playerFillWindow = false
+                // playerFillWindow = false
                 fullscreen = false
                 break;
             case Qt.Key_P:
@@ -397,10 +399,10 @@ Item{
                 }
                 break;
             case Qt.Key_PageUp:
-                showManager.playList.playNextItem();
+                app.playList.playNextItem();
                 break;
             case Qt.Key_Home:
-                showManager.playList.playPrecedingItem();
+                app.playList.playPrecedingItem();
                 break;
             case Qt.Key_PageDown:
                 mpv.seek(mpv.time + 90);
@@ -427,10 +429,12 @@ Item{
                 if (pipMode)
                 {
                     pipMode = false
-                    return
+                } else {
+                    // playerFillWindow = !playerFillWindow
+                    // fullscreen = playerFillWindow
+                    fullscreen = !fullscreen
                 }
-                playerFillWindow = !playerFillWindow
-                fullscreen = playerFillWindow
+
                 break;
             case Qt.Key_M:
                 mpv.mute();
@@ -445,7 +449,7 @@ Item{
                 break;
             case Qt.Key_Tab:
             case Qt.Key_Asterisk:
-                mpv.showText(showManager.playList.currentItemName);
+                mpv.showText(app.playList.currentItemName);
                 break;
             case Qt.Key_Slash:
                 controlBar.peak()

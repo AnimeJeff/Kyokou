@@ -7,16 +7,16 @@ Rectangle{
     color: '#d0303030'
 
     Connections {
-        target: showManager.playList
+        target: app.playList
         function onCurrentIndexChanged() {
-            treeView.scrollToIndex(showManager.playList.currentIndex)
+            treeView.scrollToIndex(app.playList.currentIndex)
         }
 
     }
 
     TreeView {
         id: treeView
-        model: showManager.playList
+        model: app.playList
         clip:true
         boundsBehavior:Flickable.StopAtBounds
         boundsMovement: Flickable.StopAtBounds
@@ -29,7 +29,7 @@ Rectangle{
         keyNavigationEnabled:false
         smooth: false
         onContentHeightChanged: {
-            scrollToIndex(showManager.playList.currentIndex)
+            scrollToIndex(app.playList.currentIndex)
         }
 
         function scrollToIndex(index){
@@ -45,7 +45,7 @@ Rectangle{
 
         selectionModel: ItemSelectionModel {
             id:sel
-            model: showManager.playList
+            model: app.playList
             onCurrentChanged:(current, previous)=>
                              {
                                  // if a playlist is selected, select the previous
@@ -59,8 +59,8 @@ Rectangle{
                                      }
                                      return
                                  }
-                                 if (current === showManager.playList.currentIndex) return;
-                                 showManager.playList.load(current)
+                                 if (current === app.playList.currentIndex) return;
+                                 app.playList.load(current)
                              }
         }
 

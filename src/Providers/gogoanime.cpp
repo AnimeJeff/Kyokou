@@ -40,7 +40,6 @@ QList<ShowData> Gogoanime::popular(int page, int type)
         animes.last ().latestTxt = it->selectText (".//p[last()]/a");
     }
 
-
     return animes;
 }
 
@@ -78,7 +77,8 @@ void Gogoanime::loadDetails(ShowData &anime) const
     int lastEpisode = std::stoi(doc.selectFirst ("//ul[@id='episode_page']/li[last()]/a").attr ("ep_end").as_string ());
     std::string animeId = doc.selectFirst ("//input[@id='movie_id']").attr ("value").as_string ();
     std::string alias = doc.selectFirst ("//input[@id='alias_anime']").attr ("value").as_string ();
-    std::string epStart = lastEpisode > 1000 ? std::to_string(lastEpisode - 99) : "0";
+    // std::string epStart = lastEpisode > 1000 ? std::to_string(lastEpisode - 99) : "0";
+    std::string epStart = "0";
     try
     {
         //        std::string link = "https://ajax.gogo-load.com/ajax/load-list-episode?ep_start=" + epStart + "&ep_end="  + std::to_string (lastEpisode)+ "&id=" + animeId;
@@ -106,11 +106,21 @@ void Gogoanime::loadDetails(ShowData &anime) const
     {
         qDebug() << "oof " ;
     }
-    qDebug () << QString::fromStdString (doc.selectFirst ("//div[@class='description']").toString ());
-    qDebug () << QString(doc.selectText ("//div[@class='description']/p"));
 
-    anime.description = QString(doc.selectText ("//div[@class='description']")).replace ("\n"," ").trimmed ();
-
+    if (auto pNodes = doc.select ("//div[@class='description']/p"); !pNodes.empty ()) {
+        for (pugi::xpath_node_set::const_iterator it = pNodes.begin(); it != pNodes.end(); ++it)
+        {
+            anime.description += QString(it->node ().child_value ()).replace ("\n"," ").trimmed () + "\n\n";
+        }
+        anime.description = anime.description.trimmed ();
+    } else {
+        auto descriptionNode = doc.selectFirst("//div[@class='description']");
+        if (!descriptionNode.node().first_child() && std::string(descriptionNode.node().child_value()).empty()) {
+            qDebug() << "The div is empty.\n";
+        } else {
+            anime.description = QString(descriptionNode.node ().child_value ()).replace ("\n"," ").trimmed ();
+        }
+    }
     anime.status = doc.selectFirst ("//span[contains(text(),'Status')]/following-sibling::a").node ().child_value ();
     anime.releaseDate = QString(doc.selectFirst ("//span[contains(text() ,'Released')]").parent ().text ().as_string ());
     pugi::xpath_node_set genreNodes = doc.select ("//span[contains(text(),'Genre')]/following-sibling::a");
@@ -125,7 +135,6 @@ void Gogoanime::loadDetails(ShowData &anime) const
 CSoup Gogoanime::getInfoPage(const std::string& link) const
 {
     auto response = NetworkClient::get(hostUrl + link);
-    qDebug() << hostUrl + link;
     if (response.code == 404)
     {
         QString errorMessage = "Invalid URL: '" + QString::fromStdString (hostUrl + link +"'");

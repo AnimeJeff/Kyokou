@@ -7,24 +7,29 @@ Control {
     id: controlBar
     required property MpvObject mpv
     background: Rectangle {
-        // implicitHeight: 40
         color: '#d0303030'
     }
     hoverEnabled: true
 
-    signal playPauseButtonClicked()
-    signal settingsButtonClicked()
-    signal volumeButtonClicked()
+
     signal sidebarButtonClicked()
     signal folderButtonClicked()
     signal seekRequested(int time)
+    signal playPauseButtonClicked()
+    signal settingsButtonClicked()
+    signal volumeButtonClicked()
     signal serversButtonClicked()
 
     property bool isPlaying: false
     property int time: 0
+    onTimeChanged:{
+        if (!timeSlider.pressed)
+            timeSlider.value = time;
+    }
     property int duration: 0
     property alias volumeButton: volumeButton
     property int buttonSize : height * 0.5
+
     function toHHMMSS(seconds){
         var hours = Math.floor(seconds / 3600);
         seconds -= hours*3600;
@@ -102,7 +107,6 @@ Control {
             ImageButton {
                 id: playPauseButton
                 source: isPlaying ? "qrc:/resources/images/pause.png" : "qrc:/resources/images/play.png"
-                // hoverImage: isPlaying ? "qrc:/resources/images/pause_hover.png" : "qrc:/resources/images/play_hover.png"
                 Layout.preferredWidth: buttonSize
                 Layout.preferredHeight: buttonSize
                 onClicked: playPauseButtonClicked()
@@ -112,10 +116,6 @@ Control {
                 source: mpv.volume === 0 ? "qrc:/resources/images/mute_volume.png" :
                                            mpv.volume < 25 ? "qrc:/resources/images/low_volume.png" :
                                                              mpv.volume < 75 ? "qrc:/resources/images/mid_volume.png" : "qrc:/resources/images/high_volume.png"
-
-                // hoverImage: mpv.volume === 0 ? "qrc:/resources/images/mute_volume_hover.png" :
-                // mpv.volume < 25 ? "qrc:/resources/images/low_volume_hover.png" :
-                // mpv.volume < 75 ? "qrc:/resources/images/mid_volume_hover.png" : "qrc:/resources/images/high_volume_hover.png"
                 Layout.preferredWidth: buttonSize
                 Layout.preferredHeight: buttonSize
                 onClicked: volumeButtonClicked()
@@ -133,11 +133,11 @@ Control {
                 text: `${toHHMMSS(time)} / ${toHHMMSS(duration)}`
                 color: "white"
                 font.pixelSize: buttonSize * 0.7
+
             }
             //spacer
-            Rectangle{
+            Item{
                 Layout.fillWidth: true
-                color: "transparent"
             }
 
             ImageButton {
@@ -146,7 +146,7 @@ Control {
                 // hoverImage: "qrc:/resources/images/pip_hover.png"
                 Layout.preferredWidth: buttonSize
                 Layout.preferredHeight: buttonSize
-                onClicked: pipMode = true
+                onClicked: root.pipMode = true
             }
             ImageButton {
                 id: explorerButton
@@ -179,142 +179,5 @@ Control {
     }
 
 
-    onTimeChanged:{
-        if (!timeSlider.pressed)
-            timeSlider.value = time;
-    }
+
 }
-
-// RowLayout {
-//     spacing: 10
-//     anchors.fill: parent
-//     anchors.leftMargin: 10
-//     anchors.rightMargin: 10
-
-//     ImageButton {
-//         id: playPauseButton
-//         source: isPlaying ? "qrc:/resources/images/pause.png" : "qrc:/resources/images/play.png"
-//         // hoverImage: isPlaying ? "qrc:/resources/images/pause_hover.png" : "qrc:/resources/images/play_hover.png"
-//         Layout.preferredWidth: buttonSize
-//         Layout.preferredHeight: buttonSize
-//         onClicked: playPauseButtonClicked()
-//     }
-
-
-//     ImageButton {
-//         id: volumeButton
-//         source: mpv.volume === 0 ? "qrc:/resources/images/mute_volume.png" :
-//                                   mpv.volume < 25 ? "qrc:/resources/images/low_volume.png" :
-//                                                     mpv.volume < 75 ? "qrc:/resources/images/mid_volume.png" : "qrc:/resources/images/high_volume.png"
-
-//         // hoverImage: mpv.volume === 0 ? "qrc:/resources/images/mute_volume_hover.png" :
-//                                        // mpv.volume < 25 ? "qrc:/resources/images/low_volume_hover.png" :
-//                                                          // mpv.volume < 75 ? "qrc:/resources/images/mid_volume_hover.png" : "qrc:/resources/images/high_volume_hover.png"
-//         Layout.preferredWidth: buttonSize
-//         Layout.preferredHeight: buttonSize
-//         onClicked: volumeButtonClicked()
-//     }
-//     ImageButton {
-//         id: serversButton
-//         source: mpv.volume === 0 ? "qrc:/resources/images/mute_volume.png" :
-//                                   mpv.volume < 25 ? "qrc:/resources/images/low_volume.png" :
-//                                                     mpv.volume < 75 ? "qrc:/resources/images/mid_volume.png" : "qrc:/resources/images/high_volume.png"
-
-//         // hoverImage: mpv.volume === 0 ? "qrc:/resources/images/mute_volume_hover.png" :
-//         //                                mpv.volume < 25 ? "qrc:/resources/images/low_volume_hover.png" :
-//         //                                                  mpv.volume < 75 ? "qrc:/resources/images/mid_volume_hover.png" : "qrc:/resources/images/high_volume_hover.png"
-
-//         Layout.preferredWidth: buttonSize
-//         Layout.preferredHeight: buttonSize
-//         onClicked: serversButtonClicked()
-//     }
-
-//     Text {
-//         id: timeText
-//         text: toHHMMSS(time)
-//         color: "white"
-//     }
-
-//     Slider {
-//         id: timeSlider
-//         from: 0
-//         to: duration
-//         focusPolicy: Qt.NoFocus
-//         hoverEnabled: true
-//         Layout.fillWidth: true
-//         Layout.preferredHeight: 24
-//         onPressedChanged: {
-//             if (!pressed)  // released
-//                 seekRequested(value);
-//         }
-//         background: Rectangle {
-//             x: timeSlider.leftPadding
-//             y: timeSlider.topPadding + timeSlider.availableHeight / 2 - height / 2
-//             implicitWidth: 200
-//             implicitHeight: 6
-//             width: timeSlider.availableWidth
-//             height: implicitHeight
-//             radius: 2
-//             color: "#bdbebf"
-
-//             Rectangle {
-//                 width: timeSlider.visualPosition * parent.width
-//                 height: parent.height
-//                 color: "#F2F2F2"
-//                 radius: 2
-//             }
-//         }
-
-//         handle: Rectangle {
-//             id:handle
-//             x: timeSlider.leftPadding + timeSlider.visualPosition * (timeSlider.availableWidth - width)
-//             y: timeSlider.topPadding + timeSlider.availableHeight / 2 - height / 2
-//             implicitWidth: timeSlider.hovered ? 20 : 5
-//             implicitHeight: implicitWidth
-//             radius: 13
-//             color: timeSlider.pressed ? "#f0f0f0" : "#f6f6f6"
-//             border.color: "#bdbebf"
-//         }
-//     }
-
-//     Text {
-//         id: durationText
-//         text: toHHMMSS(duration)
-//         color: "white"
-//     }
-
-//     ImageButton {
-//         id: pipButton
-//         source: "qrc:/resources/images/pip.png"
-//         // hoverImage: "qrc:/resources/images/pip_hover.png"
-//         Layout.preferredWidth: buttonSize
-//         Layout.preferredHeight: buttonSize
-//         onClicked: pipMode = true
-//     }
-//     ImageButton {
-//         id: explorerButton
-//         source: "qrc:/resources/images/folder.png"
-//         // hoverImage: "qrc:/resources/images/folder_hover.png"
-//         Layout.preferredWidth: buttonSize
-//         Layout.preferredHeight: buttonSize
-//         onClicked: folderButtonClicked()
-//     }
-
-//     ImageButton {
-//         id: settingsButton
-//         source: "qrc:/resources/images/player_settings.png"
-//         // hoverImage: "qrc:/resources/images/player_settings_hover.png"
-//         Layout.preferredWidth: buttonSize
-//         Layout.preferredHeight: buttonSize
-//         onClicked: settingsButtonClicked()
-//     }
-
-//     ImageButton {
-//         id: sidebarButton
-//         source: "qrc:/resources/images/playlist.png"
-//         // hoverImage: "qrc:/resources/images/playlist_hover.png"
-//         Layout.preferredWidth: buttonSize
-//         Layout.preferredHeight: buttonSize
-//         onClicked: sidebarButtonClicked()
-//     }
-// }

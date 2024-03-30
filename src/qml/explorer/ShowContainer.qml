@@ -1,7 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 GridView {
-    id: container
+    id: gridView
     property real aspectRatio: 319/225
     property real itemPerRow: Math.floor(root.width/200)
     property real spacing: 10
@@ -19,8 +19,8 @@ GridView {
             id:coverImage
             source:  model.cover// : "qrc:/kyokou/images/error_image.png"
             onStatusChanged: if (coverImage.status === Image.Error) source = "qrc:/resources/images/error_image.png"
-            width: parent.width - container.spacing
-            height: width * container.aspectRatio
+            width: parent.width - gridView.spacing
+            height: width * gridView.aspectRatio
             anchors.horizontalCenter: parent.horizontalCenter
             MouseArea{
                 anchors.fill: parent
@@ -28,7 +28,7 @@ GridView {
                 acceptedButtons: Qt.LeftButton
                 cursorShape: Qt.PointingHandCursor
                 onClicked: (mouse)=>{
-                               showManager.loadShow(index, false)
+                               app.loadShow(index, false)
                            }
             }
             AnimatedImage {
@@ -49,7 +49,7 @@ GridView {
             text: model.title
             anchors.horizontalCenter: parent.horizontalCenter
             horizontalAlignment:Text.AlignHCenter
-            width: container.cellWidth
+            width: gridView.cellWidth
             height: contentHeight
             wrapMode: Text.Wrap
             font.pixelSize: 20
@@ -66,9 +66,9 @@ GridView {
 
 
     onAtYEndChanged: {
-        if (atYEnd && count > 0 && showManager.explorer.canLoadMore())
+        if (atYEnd && count > 0 && app.explorer.canLoadMore())
         {
-            showManager.explorer.loadMore();
+            app.explorer.loadMore();
         }
     }
 }

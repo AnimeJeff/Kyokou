@@ -1,4 +1,3 @@
-
 // #include "tangrenjie.h"
 
 // QList<ShowData> Tangrenjie::search(QString query, int page, int type)

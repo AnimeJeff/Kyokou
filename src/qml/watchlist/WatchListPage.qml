@@ -9,7 +9,7 @@ Rectangle{
         id:loadingScreen
         anchors.centerIn: parent
         z: parent.z + 1
-        loading: showManager.loading
+        loading: app.loading
     }
     //https://doc.qt.io/qt-6/qtquick-tutorials-dynamicview-dynamicview3-example.html
 
@@ -29,7 +29,7 @@ Rectangle{
             ListElement { text: "Completed" }
         }
         hoverEnabled: true
-        currentIndex: showManager.watchList.listType
+        currentIndex: app.watchList.listType
         delegate: ItemDelegate {
             text: model.text
             width: parent.width
@@ -42,7 +42,7 @@ Rectangle{
                 anchors.fill: parent
                 onClicked: {
                     listTypeComboBox.displayText = model.text
-                    showManager.watchList.listType = model.index
+                    app.watchList.listType = model.index
                     listTypeComboBox.popup.close()
                 }
             }

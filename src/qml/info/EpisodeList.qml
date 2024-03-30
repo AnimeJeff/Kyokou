@@ -31,7 +31,7 @@ Item{
                 source: "qrc:/resources/images/sorting-arrows.png"
 
                 onClicked: {
-                    showManager.episodeList.reversed = !showManager.episodeList.reversed
+                    app.currentShow.episodeList.reversed = !app.currentShow.episodeList.reversed
                 }
             }
         }
@@ -48,11 +48,11 @@ Item{
         //     active: true
         // }
         clip: true
-        model:showManager.episodeList
+        model:app.currentShow.episodeList
 
 
         Component.onCompleted: {
-            list.positionViewAtIndex(showManager.episodeList.lastWatchedIndex, ListView.Center)
+            list.positionViewAtIndex(app.currentShow.episodeList.lastWatchedIndex, ListView.Center)
         }
 
         boundsMovement: Flickable.StopAtBounds
@@ -63,7 +63,7 @@ Item{
             height: 50 < (episodeStr.height + 10) ? (episodeStr.height + 10) : 50
             border.width: 2
             border.color: "black"
-            color: showManager.episodeList.lastWatchedIndex === index ? "red" : "black"
+            color: app.currentShow.episodeList.lastWatchedIndex === index ? "red" : "black"
             Text {
                 id:episodeStr
                 text:  model.fullTitle
@@ -89,7 +89,7 @@ Item{
 
 
                 onClicked:{
-                    showManager.playFromEpisodeList(index)
+                    app.playFromEpisodeList(index)
                 }
             }
 
@@ -101,7 +101,7 @@ Item{
 
 
                 onClicked: {
-                    showManager.downloadCurrentShow(index)
+                    app.downloadCurrentShow(index)
                     source = "qrc:/resources/images/download_selected.png"
                     enabled = false;
                 }

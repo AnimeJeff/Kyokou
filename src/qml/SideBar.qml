@@ -24,8 +24,8 @@ Rectangle {
     property int currentPage: 0
     // Positionate all buttons
     Connections{
-        target: showManager
-        function onCurrentShowChanged(){
+        target: app.currentShow
+        function onShowChanged(){
             gotoPage(1)
         }
     }
@@ -42,7 +42,7 @@ Rectangle {
 
     function gotoPage(index){
         if (fullscreen) return;
-        if (index === 1 && !showManager.hasCurrentShow) return;
+        if (index === 1 && !app.currentShow.exists) return;
 
         if (currentPage!==index){
             currentPage = index
@@ -56,7 +56,6 @@ Rectangle {
                 mpvPage.visible = false
                 stackView.replace(pages[index])
                 stackView.forceActiveFocus()
-                // setTimeout(()=>{mpvPage.visible = false},100)
             }
 
         }
@@ -78,7 +77,7 @@ Rectangle {
 
         ImageButton {
             id: detailsPageButton
-            enabled: showManager.hasCurrentShow
+            enabled: app.currentShow.exists
             source: selected ? "qrc:/resources/images/details_selected.png" : "qrc:/resources/images/details.png"
             cursorShape: enabled ? Qt.PointingHandCursor : Qt.ForbiddenCursor
             Layout.preferredWidth: sideBar.width
