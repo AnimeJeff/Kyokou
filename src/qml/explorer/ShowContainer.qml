@@ -15,6 +15,7 @@ GridView {
 
     delegate: Column {
         id: item
+
         Image {
             id:coverImage
             source:  model.cover// : "qrc:/kyokou/images/error_image.png"
@@ -31,9 +32,10 @@ GridView {
                                app.loadShow(index, false)
                            }
             }
+
+
             AnimatedImage {
-                anchors
-                {
+                anchors {
                     left:parent.left
                     right:parent.right
                     bottom:parent.bottom

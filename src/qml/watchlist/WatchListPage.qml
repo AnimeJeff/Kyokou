@@ -13,14 +13,15 @@ Rectangle{
     }
     //https://doc.qt.io/qt-6/qtquick-tutorials-dynamicview-dynamicview3-example.html
 
-    ComboBox {
+    CustomComboBox {
         id:listTypeComboBox
         anchors{
             left: parent.left
             top: parent.top
         }
-        width: 150
-        height: 30
+        width: parent.width * 0.2
+        height: 35
+        fontSize: 20
         model: ListModel{
             ListElement { text: "Watching" }
             ListElement { text: "Planned" }
@@ -28,25 +29,9 @@ Rectangle{
             ListElement { text: "Dropped" }
             ListElement { text: "Completed" }
         }
-        hoverEnabled: true
+        text: "text"
         currentIndex: app.watchList.listType
-        delegate: ItemDelegate {
-            text: model.text
-            width: parent.width
-            height: 30
-            highlighted: hovered
-            background: Rectangle {
-                color: highlighted ? "lightblue" : "transparent"
-            }
-            MouseArea {
-                anchors.fill: parent
-                onClicked: {
-                    listTypeComboBox.displayText = model.text
-                    app.watchList.listType = model.index
-                    listTypeComboBox.popup.close()
-                }
-            }
-        }
+        onActivated: (index) => {app.watchList.listType = index}
     }
 
     WatchListContainer {

@@ -93,16 +93,16 @@ void Nivod::loadDetails(ShowData &show) const {
     show.updateTime = infoJson["episodesUpdateDesc"].toString ();
     foreach (const QJsonValue &item, infoJson["plays"].toArray ()) {
         auto episode = item.toObject ();
-        QString name = episode["displayName"].toString ();
-        int number = -1;
+        QString title = episode["displayName"].toString ();
+        float number = -1;
         bool ok;
-        int intTitle = name.toInt(&ok);
+        float intTitle = title.toFloat(&ok);
         if (ok) {
             number = intTitle;
-            name = "";
+            title = "";
         }
         std::string link = show.link + "&" + episode["playIdCode"].toString ().toStdString ();
-        show.addEpisode(number, link, name);
+        show.addEpisode(number, link, title);
     }
 }
 

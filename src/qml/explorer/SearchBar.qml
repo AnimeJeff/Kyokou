@@ -29,7 +29,7 @@ RowLayout {
         placeholderText: qsTr("Enter query!")
         placeholderTextColor: "gray"
         text: root.lastSearch
-        font.pixelSize: 20 * root.aspectRatio
+        font.pixelSize: 20
         onAccepted: search()
     }
     
@@ -39,7 +39,7 @@ RowLayout {
         Layout.fillHeight: true
         Layout.preferredWidth: 1
         Layout.fillWidth: true
-        fontSize:20 * root.aspectRatio
+        fontSize:20
         radius: 20
         focusPolicy: Qt.NoFocus
         onClicked: search()
@@ -51,7 +51,7 @@ RowLayout {
         Layout.fillHeight: true
         Layout.fillWidth: true
         radius: 20
-        fontSize:20 * root.aspectRatio
+        fontSize:20
         Layout.preferredWidth: 1
         focusPolicy: Qt.NoFocus
         onClicked:latest()
@@ -62,7 +62,7 @@ RowLayout {
         text: "Popular"
         Layout.fillHeight: true
         Layout.fillWidth: true
-        fontSize:20 * root.aspectRatio
+        fontSize:20
         radius: 20
         Layout.preferredWidth: 1
         focusPolicy: Qt.NoFocus
@@ -75,10 +75,11 @@ RowLayout {
         Layout.fillHeight: true
         Layout.preferredWidth: 2
         contentRadius: 20
-        fontSize:20 * root.aspectRatio
+        fontSize: 20
         model: app
         currentIndex: app.currentProviderIndex
-        onCurrentIndexChanged: app.currentProviderIndex = providersComboBox.currentIndex
+        onActivated: (index) => {app.currentProviderIndex.listType = index}
+        // onCurrentIndexChanged: app.currentProviderIndex = providersComboBox.currentIndex
         text: "text"
 
     }
@@ -89,10 +90,12 @@ RowLayout {
         Layout.fillWidth: true
         Layout.fillHeight: true
         contentRadius: 20
-        fontSize:20 * root.aspectRatio
+        fontSize: 20
         model: app.availableShowTypes
         currentIndex: app.currentSearchTypeIndex
-        onCurrentIndexChanged: app.currentSearchTypeIndex = typeComboBox.currentIndex
+        currentIndexColor: "red"
+        onActivated: (index) => {app.currentSearchTypeIndex.listType = index}
+        // onCurrentIndexChanged: app.currentSearchTypeIndex = typeComboBox.currentIndex
         Component.onCompleted: typeComboBox.currentIndex = app.currentSearchTypeIndex
         Connections {
             target: app
@@ -101,25 +104,7 @@ RowLayout {
             }
         }
 
-        delegate: ItemDelegate {
-            width: typeComboBox.width
-            required property string modelData
-            required property real index
-            contentItem: Text {
-                text: modelData
-                color: typeComboBox.highlightedIndex === index ? "white" : "black"
-                elide: Text.ElideRight
-                // font.pixelSize: fontSize
-                verticalAlignment: Qt.AlignVCenter
-                horizontalAlignment: Qt.AlignHCenter
-            }
-            background: Rectangle {
-                width: parent.width
-                height: parent.height
-                color: typeComboBox.highlightedIndex === index ? typeComboBox.checkedColor : "#F3F4F5"
-                radius: 20
-            }
-        }
+
     }
 
 

@@ -13,7 +13,7 @@ Item {
     }
     focus: false
     property real aspectRatio: root.width/root.height
-    property real labelFontSize: 24 * root.aspectRatio
+    property real labelFontSize: 24 * root.fontSizeMultiplier
     property var currentShow: app.currentShow
 
 
@@ -49,7 +49,7 @@ Item {
         font.bold: true
         color: "white"
         wrapMode: Text.Wrap
-        font.pixelSize: 26 * root.aspectRatio
+        font.pixelSize: 26 * root.fontSizeMultiplier
         anchors {
             top: parent.top
             left:posterImage.right
@@ -78,7 +78,7 @@ Item {
             height: contentHeight
             color: "white"
             wrapMode: Text.Wrap
-            font.pixelSize: 22 * root.aspectRatio
+            font.pixelSize: 22 * root.fontSizeMultiplier
         }
     }
 
@@ -93,41 +93,28 @@ Item {
         height: parent.height * 0.05
 
         currentIndex: app.currentShow.listType + 1
-        displayText: currentText.length === 0 ?
-                         app.currentShow.inWatchList ? "Remove from library" : "Add to library" : currentText
-
-        fontSize: 20 * root.aspectRatio
-
-        delegate: ItemDelegate {
-            width: libraryComboBox.width
-            MouseArea {
-                anchors.fill: parent
-                hoverEnabled: true
-                onClicked: {
-                    if (index !== 0) {
-                        app.addCurrentShowToLibrary(index - 1)
-                    } else {
-                        app.removeCurrentShowFromLibrary()
-                    }
-                    libraryComboBox.popup.close()
-                }
-            }
-            contentItem: Text {
-                text: model.text ? model.text : app.currentShow.inWatchList ? "Remove from library" : "Add to library"
-                color: libraryComboBox.highlightedIndex === index ? "white" : "black"
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
-                font.pixelSize:libraryComboBox.fontSize
-            }
-
-            background: Rectangle {
-                width: parent.width
-                height: parent.height
-                color: libraryComboBox.highlightedIndex === index ? libraryComboBox.checkedColor : "#F3F4F5"
-            }
+        Component.onCompleted: {
+            if (app.currentShow.inWatchList)
+                listTypeModel.set(0, {text: "Add to Library"})
+            else
+                listTypeModel.set(0, {text: "Remove from Library"})
         }
-        visible: app.currentShow.exists
+
+        fontSize: 20
+        onActivated: (index) => {
+                         if (index === 0) {
+                             app.removeCurrentShowFromLibrary()
+                             console.log("removed")
+                             listTypeModel.set(0, {text: "Add to Library"})
+                         } else {
+                             app.addCurrentShowToLibrary(index - 1)
+                             console.log("added", index - 1)
+                             listTypeModel.set(0, {text: "Remove from Library"})
+                         }
+                     }
+
         model: ListModel{
+            id: listTypeModel
             ListElement { text: "" }
             ListElement { text: "Watching" }
             ListElement { text: "Planned" }
@@ -143,14 +130,14 @@ Item {
         visible: app.currentShow.episodeList.lastWatchedIndex !== -1
         text: "Continue from " + app.currentShow.episodeList.continueEpisodeName
         onClicked: app.continueWatching()
-        fontSize: 20 * root.aspectRatio
+        fontSize: 20
         radius: height
         anchors {
             top: descriptionBox.bottom
             horizontalCenter: descriptionBox.horizontalCenter
             topMargin: 10
         }
-        width: parent.width * 0.2
+        width: descriptionBox.width * 0.5
         height: libraryComboBox.height
     }
 

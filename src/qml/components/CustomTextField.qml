@@ -6,12 +6,14 @@ TextField {
     id: textField
     property color checkedColor: "#D5DBDB"
     property color textColor: "white"
+    property int fontSize: 16
+
 
     signal doubleClicked(var event)
 
     font.family: "QTxiaotu"
 
-    font.pixelSize: 16
+    font.pixelSize: fontSize * root.fontSizeMultiplier
     font.weight: Font.Thin
 
     antialiasing: true

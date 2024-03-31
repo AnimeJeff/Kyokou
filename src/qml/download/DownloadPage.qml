@@ -30,7 +30,7 @@ Item {
                 color: "white"
                 placeholderText: qsTr("Enter working directory")
                 placeholderTextColor: "gray"
-                font.pixelSize: 20 * root.aspectRatio
+                fontSize: 20
                 onAccepted: () => {
                                 app.downloader.workDir = text
                                 text = app.downloader.workDir
@@ -68,7 +68,7 @@ Item {
                 color: "white"
                 placeholderText: qsTr("Enter filename")
                 placeholderTextColor: "gray"
-                font.pixelSize: 20 * root.aspectRatio
+                font.pixelSize: 20
                 Layout.row: 1
                 Layout.column: 0
                 Layout.fillWidth: true
@@ -82,7 +82,7 @@ Item {
                 color: "white"
                 placeholderText: qsTr("Enter m3u8 link")
                 placeholderTextColor: "gray"
-                font.pixelSize: 20 * root.aspectRatio
+                font.pixelSize: 20
                 Layout.row: 1
                 Layout.column: 1
                 Layout.fillWidth: true
@@ -139,7 +139,7 @@ Item {
                         Layout.columnSpan: 2
                         id: nameStr
                         text:  name
-                        font.pixelSize: 20 * root.aspectRatio
+                        font.pixelSize: 20 * root.fontSizeMultiplier
 
                         wrapMode: Text.Wrap
                         color: "white"
@@ -150,7 +150,7 @@ Item {
                         Layout.columnSpan: 2
                         id: pathStr
                         text: path
-                        font.pixelSize: 20 * root.aspectRatio
+                        font.pixelSize: 20 * root.fontSizeMultiplier
                         wrapMode: Text.Wrap
                         color: "white"
                         MouseArea {
@@ -188,7 +188,7 @@ Item {
                         Layout.row: 3
                         Layout.column: 0
                         text:  progressText
-                        font.pixelSize: 20 * root.aspectRatio
+                        font.pixelSize: 20 * root.fontSizeMultiplier
                         Layout.columnSpan: 2
                         wrapMode: Text.Wrap
                         color: "white"

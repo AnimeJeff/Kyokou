@@ -6,18 +6,24 @@ ComboBox {
     id: comboBox
 
     property color checkedColor: "#4E5BF2"
+    property color currentIndexColor: "red"
     property int fontSize: 15
-    property var text
+
+
+
+    property string text: ""
     property int hAlignment: Text.AlignHCenter
     property int vAlignment: Text.AlignVCenter
+
     property int contentRadius: 5
+
     delegate: ItemDelegate {
         width: comboBox.width
         contentItem: Text {
-            text: model[`${comboBox.text}`]
+            text: comboBox.text.length === 0 ? modelData : model[`${comboBox.text}`]
             color: comboBox.highlightedIndex === index ? "white" : "black"
             elide: Text.ElideRight
-            font.pixelSize: fontSize
+            font.pixelSize: fontSize * root.fontSizeMultiplier
             verticalAlignment: vAlignment
             horizontalAlignment: hAlignment
         }
@@ -25,7 +31,10 @@ ComboBox {
         background: Rectangle {
             width: parent.width
             height: parent.height
-            color: comboBox.highlightedIndex === index ? comboBox.checkedColor : "#F3F4F5"
+            color: {
+                if (index === comboBox.currentIndex) return currentIndexColor
+                return comboBox.highlightedIndex === index ? comboBox.checkedColor : "#F3F4F5"
+            }
             radius: 20
         }
     }
@@ -65,11 +74,10 @@ ComboBox {
         elide: Text.ElideRight
         horizontalAlignment: hAlignment
         verticalAlignment: vAlignment
-        font.pixelSize: fontSize
+        font.pixelSize: fontSize * root.fontSizeMultiplier
         font.weight: Font.Thin
         color: comboBox.down ? Qt.rgba(255, 255, 255, 0.75) : "white"
     }
-
 
     background: Rectangle {
         implicitWidth: 102
@@ -90,6 +98,8 @@ ComboBox {
         width: comboBox.width
         implicitHeight: contentItem.implicitHeight
         padding: 0
+
+
 
         contentItem: ListView {
             implicitHeight: contentHeight

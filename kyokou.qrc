@@ -53,5 +53,28 @@
         <file>resources/images/titlebar.jpg</file>
         <file>src/showmanager.h</file>
         <file>src/showmanager.cpp</file>
+        <file>src/qml/components/CustomButton.qml</file>
+        <file>src/qml/components/CustomComboBox.qml</file>
+        <file>src/qml/components/CustomTextField.qml</file>
+        <file>src/qml/components/HoverCursorArea.qml</file>
+        <file>src/qml/components/ImageButton.qml</file>
+        <file>src/qml/components/LoadingScreen.qml</file>
+        <file>src/qml/download/DownloadPage.qml</file>
+        <file>src/qml/explorer/SearchBar.qml</file>
+        <file>src/qml/explorer/SearchPage.qml</file>
+        <file>src/qml/explorer/ShowContainer.qml</file>
+        <file>src/qml/info/EpisodeList.qml</file>
+        <file>src/qml/info/InfoPage.qml</file>
+        <file>src/qml/player/ControlBar.qml</file>
+        <file>src/qml/player/MpvPage.qml</file>
+        <file>src/qml/player/PlayListSideBar.qml</file>
+        <file>src/qml/player/ServerListPopup.qml</file>
+        <file>src/qml/player/SettingsPopup.qml</file>
+        <file>src/qml/watchlist/WatchListContainer.qml</file>
+        <file>src/qml/watchlist/WatchListPage.qml</file>
+        <file>src/qml/main.qml</file>
+        <file>src/qml/settings.qml</file>
+        <file>src/qml/SideBar.qml</file>
+        <file>src/qml/TitleBar.qml</file>
     </qresource>
 </RCC>

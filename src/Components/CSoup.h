@@ -22,14 +22,14 @@ public:
 
     ~CSoup(){}
 
-    inline const char* selectText(std::string XPath) const {
+    inline const char* selectText(const std::string& XPath) const {
         return doc.select_node(XPath.data()).node().child_value ();
     }
-    inline pugi::xpath_node_set select(std::string XPath) const {
+    inline pugi::xpath_node_set select(const std::string& XPath) const {
         return doc.select_nodes(XPath.data());
     }
-    inline pugi::xpath_node selectFirst(const char* XPath) const {
-        return doc.select_node(XPath);
+    inline pugi::xpath_node selectFirst(const std::string& XPath) const {
+        return doc.select_node(XPath.data ());
     }
 
 private:

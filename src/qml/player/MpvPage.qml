@@ -287,7 +287,9 @@ Item{
                 notifier.open()
             }
         }
-
+        onClosed: {
+            mpvObject.forceActiveFocus()
+        }
     }
 
     FolderDialog {

@@ -147,7 +147,7 @@ public:
         for (int i = episodesArray.size() - 1; i >= 0; --i) {
             QString episodeString = episodesArray.at(i).toString();
             QString episodeUrl = QString("https://api.allanime.day/api?variables={\"showId\":\"%1\",\"translationType\":\"sub\",\"episodeString\":\"%2\"}&extensions={\"persistedQuery\":{\"version\":1,\"sha256Hash\":\"5f1a64b73793cc2234a389cf3a8f93ad82de7043017dd551f38f65b89daa65e0\"}}").arg(QString::fromStdString(anime.link), episodeString);
-            anime.addEpisode(episodeString.toInt(), episodeUrl.toStdString (), "");
+            anime.addEpisode(episodeString.toFloat(), episodeUrl.toStdString (), "");
         }
 
 

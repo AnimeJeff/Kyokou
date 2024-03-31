@@ -18,7 +18,7 @@ class ShowProvider : public QObject {
     Q_OBJECT
     Q_PROPERTY(QString name READ name CONSTANT);
 
-
+    QString m_preferredServer;
 public:
     ShowProvider(QObject *parent = nullptr) : QObject(parent){};
     virtual QString name() const = 0;
@@ -34,5 +34,13 @@ public:
     virtual QList<VideoServer> loadServers(const PlaylistItem *episode) const = 0;
     virtual QString extractSource(const VideoServer &server) const = 0;
 
+    void setPreferredServer(const QString &serverName)
+    {
+        m_preferredServer = serverName;
+    }
+
+    QString getPreferredServer() const {
+        return m_preferredServer;
+    }
 
 };

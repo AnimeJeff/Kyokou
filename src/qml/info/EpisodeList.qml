@@ -67,7 +67,7 @@ Item{
             Text {
                 id:episodeStr
                 text:  model.fullTitle
-                font.pixelSize: 20 * root.aspectRatio
+                font.pixelSize: 20 * root.fontSizeMultiplier
                 anchors{
                     left:parent.left
                     right:parent.right

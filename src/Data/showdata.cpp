@@ -2,7 +2,7 @@
 #include "Data/playlistitem.h"
 #include "Providers/showprovider.h"
 
-void ShowData::addEpisode(int number, std::string link, QString name)
+void ShowData::addEpisode(float number, std::string link, QString name)
 {
     if (!playlist) {
         playlist = new PlaylistItem(title, provider, this->link, nullptr);
@@ -18,6 +18,7 @@ QJsonObject ShowData::toJson() const {
     object["link"] = QString::fromStdString(link);
     object["provider"] = provider->name();
     object["lastWatchedIndex"] = lastWatchedIndex;
+    object["type"] = type;
     return object;
 }
 

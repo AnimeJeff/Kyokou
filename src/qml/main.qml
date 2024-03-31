@@ -23,7 +23,7 @@ Window {
     property bool maximised: false
     property bool fullscreen: false
     property bool pipMode: false
-    property int aspectRatio: !maximised ? 1 : 2
+    property int fontSizeMultiplier: !maximised ? 1 : 2
 
     property real searchResultsViewlastScrollY:0
     property real watchListViewLastScrollY: 0
@@ -72,7 +72,7 @@ Window {
             right: parent.right
             bottom: parent.bottom
         }
-        initialItem: Qt.resolvedUrl("explorer/SearchPage.qml")
+        initialItem: "qrc:/src/qml/explorer/SearchPage.qml"
         background: Rectangle{
             color: "black"
         }
@@ -116,7 +116,7 @@ Window {
     MpvPage {
         id:mpvPage
         visible: false
-        anchors.fill: root.fullscreen ? parent : stackView
+        anchors.fill: root.fullscreen || root.pipMode ? parent : stackView
         // anchors.fill: root.playerFillWindow ? parent : stackView
     }
 

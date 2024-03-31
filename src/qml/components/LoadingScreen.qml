@@ -4,6 +4,7 @@ Popup {
     id: overlay
     dim: true
     visible: loading
+
     signal cancelled()
     signal timedOut()
     property bool loading:false

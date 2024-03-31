@@ -129,7 +129,8 @@ public slots:
             QString title = showJson["title"].toString ();
             QString coverUrl = showJson["cover"].toString ();
             int lastWatchedIndex = showJson["lastWatchedIndex"].toInt ();
-            auto show = ShowData(title, link, coverUrl, provider, "", -1, lastWatchedIndex);
+            int type = showJson["type"].toInt ();
+            auto show = ShowData(title, link, coverUrl, provider, "", type, lastWatchedIndex);
             m_showManager.setShow(show);
             m_showManager.setListType (m_watchListModel.getCurrentListType());
         } else {

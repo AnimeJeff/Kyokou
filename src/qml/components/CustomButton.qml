@@ -14,7 +14,7 @@ Button {
         text: button.text
         color: button.contentItemTextColor
         font.weight: Font.Thin
-        font.pixelSize: fontSize
+        font.pixelSize: fontSize * root.fontSizeMultiplier
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
         elide: Text.ElideRight

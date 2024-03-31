@@ -90,9 +90,9 @@ void Gogoanime::loadDetails(ShowData &anime) const
         for (pugi::xpath_node_set::const_iterator it = episodeNodes.end() - 1; it != episodeNodes.begin() - 1; --it)
         {
             QString title = QString::fromStdString (it->selectText (".//div")).replace("EP", "").trimmed ();
-            int number = -1;
+            float number = -1;
             bool ok;
-            int intTitle = title.toInt (&ok);
+            float intTitle = title.toFloat (&ok);
             if (ok)
             {
                 number = intTitle;

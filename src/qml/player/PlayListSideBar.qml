@@ -101,14 +101,14 @@ Rectangle{
                 rotation: treeDelegate.expanded ? 90 : 0
                 color: "red"
                 font.bold: true
-                font.pixelSize: 16 * root.aspectRatio
+                font.pixelSize: 16 * root.fontSizeMultiplier
                 height: font.pixelSize
             }
             contentItem: Text {
                 id: label
                 x: padding + (treeDelegate.isTreeNode ? (treeDelegate.depth + 1) * treeDelegate.indent : 0)
                 width: treeDelegate.width - treeDelegate.padding - x
-                font.pixelSize: treeDelegate.hasChildren ? 20 * root.aspectRatio : 16 * root.aspectRatio
+                font.pixelSize: treeDelegate.hasChildren ? 20 * root.fontSizeMultiplier : 16 * root.fontSizeMultiplier
 
                 height: treeDelegate.hasChildren ? font.pixelSize : font.pixelSize * 2
                 clip: true
