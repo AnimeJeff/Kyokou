@@ -74,7 +74,7 @@
 //         return servers;
 //     }
 
-//     QString extractSource(const VideoServer &server) const override
+//     QList<Video> extractSource(const VideoServer &server) const override
 //     {
 //         return "D:\\TV\\batman.mp4";
 //     };

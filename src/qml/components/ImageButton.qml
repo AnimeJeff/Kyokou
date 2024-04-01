@@ -2,23 +2,16 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 
 
-Item {
+Image {
     id:imageButton
-    property alias source: image.source
+
     property string hoverSource: "" // Source for the image on hover
     property alias cursorShape: mouseArea.cursorShape
     property bool selected
     property bool enabled: true
     signal clicked()
 
-    width: image.width
-    height: image.height
-
-    Image {
-        id: image
-        anchors.fill: parent
-        fillMode: Image.PreserveAspectFit
-    }
+    fillMode: Image.PreserveAspectFit
 
     MouseArea {
         id: mouseArea

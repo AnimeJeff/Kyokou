@@ -50,12 +50,16 @@ Window {
     }
 
     TitleBar {
+        z:root.z
         id:titleBar
+        visible: !(pipMode || fullscreen)
         focus: false
     }
 
     SideBar {
+        z:root.z
         id:sideBar
+        visible: !(pipMode || fullscreen)
         anchors{
             left: parent.left
             top:titleBar.bottom
@@ -65,6 +69,7 @@ Window {
 
     StackView {
         id:stackView
+        z:root.z
         visible: true
         anchors{
             top: titleBar.bottom
@@ -111,14 +116,78 @@ Window {
         }
     }
 
-
-
     MpvPage {
+        z:root.z
         id:mpvPage
-        visible: false
+        visible: true
         anchors.fill: root.fullscreen || root.pipMode ? parent : stackView
-        // anchors.fill: root.playerFillWindow ? parent : stackView
+        Component.onCompleted: {
+            if (app.playList.launchPath.toString().trim() !== "") {
+                sideBar.gotoPage(3)
+                setTimeout(()=>mpv.open(app.playList.launchPath), 100)
+            } else {
+                app.latest(1)
+                visible = false
+            }
+
+        }
     }
+
+    Dialog {
+        id: notifier
+        modal: true
+        width: parent.width / 3
+        height: parent.height / 4
+        anchors.centerIn: parent
+        focus: false
+        property alias headerText:headerText.text
+        property alias text:notifierMessage.text
+
+        contentItem: Rectangle {
+            color: "#f2f2f2"
+            border.color: "#c2c2c2"
+            border.width: 1
+            radius: 10
+            anchors.centerIn: parent
+            Text {
+                id:headerText
+                text: "Error"
+                font.pointSize: 16
+                font.bold: true
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.top: parent.top
+                anchors.topMargin: 20
+            }
+            Text {
+                id: notifierMessage
+                text: "An error has occurred."
+                font.pointSize: 14
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.verticalCenter: parent.verticalCenter
+            }
+            Button {
+                text: "OK"
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: 10
+                anchors.horizontalCenter: parent.horizontalCenter
+                onClicked: notifier.close()
+            }
+        }
+        Connections {
+            target: errorHandler
+            function onShowWarning(msg){
+                notifierMessage.text = msg
+                notifier.open()
+            }
+        }
+        onClosed: {
+            if (mpvPage.visible)
+                mpvPage.forceActiveFocus()
+        }
+    }
+
+
+
 
 
     ParallelAnimation {
@@ -166,8 +235,7 @@ Window {
         {
             xanime.to = 0
             yanime.to = 0
-            if (root.x !== 0 && root.y !== 0)
-            {
+            if (root.x !== 0 && root.y !== 0) {
                 lastX = root.x
                 lastY = root.y
             }
@@ -210,9 +278,7 @@ Window {
 
     onPipModeChanged: {
         if (resizingAnimation.running) return
-        if (pipMode)
-        {
-            mpvPage.progressBar.visible = false;
+        if (pipMode) {
             mpvPage.playListSideBar.visible = false;
             xanime.to = Screen.desktopAvailableWidth - Screen.width/3
             yanime.to = Screen.desktopAvailableHeight - Screen.height/2.3
@@ -227,8 +293,7 @@ Window {
             sideBar.gotoPage(3)
             // playerFillWindow = true
         }
-        else
-        {
+        else {
             xanime.to = fullscreen || maximised ? 0 : lastX
             yanime.to = fullscreen || maximised ? 0 : lastY
             widthanime.to = fullscreen ? Screen.width : maximised ? Screen.desktopAvailableWidth : 1080
@@ -307,8 +372,8 @@ Window {
         }
     }
 
-    Shortcut
-    {
+
+    Shortcut {
         sequence: "Ctrl+A"
         onActivated:
         {
@@ -337,6 +402,7 @@ Window {
         callbackTimer.running = true;
     }
     // MouseArea {
+    //     z:root.z - 1
     //     anchors.fill: parent
     //     acceptedButtons: Qt.ForwardButton | Qt.BackButton
     //     propagateComposedEvents: true

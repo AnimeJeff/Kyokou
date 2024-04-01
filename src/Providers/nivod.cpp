@@ -108,20 +108,20 @@ void Nivod::loadDetails(ShowData &show) const {
 
 
 
-QString Nivod::extractSource(const VideoServer &server) const {
+QList<Video> Nivod::extractSource(const VideoServer &server) const {
     auto codes = Functions::split(server.link, '&');
     std::map<std::string, std::string> data = {{"play_id_code", codes[1]},
                                                {"show_id_code", codes[0]},
                                                {"oid", "1"},
                                                {"episode_id", "0"}};
     auto responseJson = callAPI("https://api.nivodz.com/show/play/info/WEB/3.3", data);
-    auto playUrl = responseJson["entity"].toObject()["plays"].toArray()[0].toObject()["playUrl"].toString ();
+    auto source = responseJson["entity"].toObject()["plays"].toArray()[0].toObject()["playUrl"].toString ();
     // QJsonDocument doc(responseJson);
     // QString jsonString = doc.toJson(QJsonDocument::Indented);
     // qDebug().noquote() << jsonString;
 
     // qDebug() << QString::fromStdString(playUrl);
-    return playUrl;
+    return { Video(source) };
 }
 
 
@@ -144,21 +144,6 @@ QJsonObject Nivod::callAPI(const std::string &url, const std::map<std::string, s
 
 
 }
-
-// QMap<QString, QString> Nivod::objKeySort(const QMap<QString, QString> &inputMap) const {
-
-//     if (inputMap.isEmpty())
-//         return inputMap;
-
-//     QMap<QString, QString> sortedMap;
-//     for (const auto &key : inputMap.keys()) {
-//         const QString &value = inputMap.value(key);
-//         if (key.isEmpty() || value.isEmpty() || key == "sign")
-//             continue;
-//         sortedMap.insert(key, value);
-//     }
-//     return sortedMap;
-// }
 
 std::string Nivod::createSign(const std::map<std::string, std::string> &bodyMap, const std::string &secretKey) const {
 
@@ -208,3 +193,17 @@ std::string Nivod::decryptedByDES(const std::string &input) const {
 
 
 
+// QMap<QString, QString> Nivod::objKeySort(const QMap<QString, QString> &inputMap) const {
+
+//     if (inputMap.isEmpty())
+//         return inputMap;
+
+//     QMap<QString, QString> sortedMap;
+//     for (const auto &key : inputMap.keys()) {
+//         const QString &value = inputMap.value(key);
+//         if (key.isEmpty() || value.isEmpty() || key == "sign")
+//             continue;
+//         sortedMap.insert(key, value);
+//     }
+//     return sortedMap;
+// }

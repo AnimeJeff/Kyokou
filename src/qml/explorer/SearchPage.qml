@@ -12,6 +12,7 @@ Item {
             top:parent.top
             topMargin: 5
         }
+        focus: true
         height: 40
     }
 
@@ -73,9 +74,11 @@ Item {
     }
 
 
+
     ShowContainer {
         id:showGridView
         model: app.explorer
+        focus: false
         anchors {
             top: searchBar.bottom
             left: parent.left
@@ -101,6 +104,10 @@ Item {
                 if (searchBar.textField.activeFocus)
                     searchPage.forceActiveFocus()
                 break;
+            case Qt.Key_Tab:
+                app.cycleProviders()
+                event.accepted = true
+                break;
             case Qt.Key_Enter:
                 searchBar.search()
                 break;
@@ -108,10 +115,10 @@ Item {
                 searchBar.textField.forceActiveFocus()
                 break;
             case Qt.Key_P:
-                searchBar.popular()
+                app.popular(1)
                 break;
             case Qt.Key_L:
-                searchBar.latest()
+                app.latest(1)
                 break;
             case Qt.Key_Up:
                 showGridView.flick(0,500)

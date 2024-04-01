@@ -154,14 +154,15 @@ QList<VideoServer> Haitu::loadServers(const PlaylistItem *episode) const
     // return QList<VideoServer>{{"default",episode->link}};;
 }
 
-QString Haitu::extractSource(const VideoServer &server) const
+QList<Video> Haitu::extractSource(const VideoServer &server) const
 {
     std::string response = NetworkClient::get(hostUrl + server.link).body;
     std::smatch match;
     if (!std::regex_search(response, match, player_aaaa_regex))
         throw "Failed to extract m3u8";
     // std::string matchedText = ;
-    auto url = QJsonDocument::fromJson (match[1].str ().c_str ()).object ()["url"].toString ();
+    auto source = QJsonDocument::fromJson (match[1].str ().c_str ()).object ()["url"].toString ();
     // qDebug()<<url;
-    return url;
+
+    return { Video(source) };
 }

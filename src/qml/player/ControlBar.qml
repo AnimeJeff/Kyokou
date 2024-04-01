@@ -3,15 +3,9 @@ import QtQuick.Controls 2.3
 import QtQuick.Layouts 1.3
 import "../components"
 import MpvPlayer 1.0
-Control {
+Item {
     id: controlBar
-    required property MpvObject mpv
-    background: Rectangle {
-        color: '#d0303030'
-    }
-    hoverEnabled: true
-
-
+    property bool hovered: hoverHandler.hovered || sliderHovered
     signal sidebarButtonClicked()
     signal folderButtonClicked()
     signal seekRequested(int time)
@@ -20,15 +14,18 @@ Control {
     signal volumeButtonClicked()
     signal serversButtonClicked()
 
-    property bool isPlaying: false
-    property int time: 0
+
+    required property bool isPlaying
+    required property int time
+    required property int duration
+    required property int volume
+    property alias volumeButton: volumeButton
+
     onTimeChanged:{
         if (!timeSlider.pressed)
             timeSlider.value = time;
     }
-    property int duration: 0
-    property alias volumeButton: volumeButton
-    property int buttonSize : height * 0.5
+
 
     function toHHMMSS(seconds){
         var hours = Math.floor(seconds / 3600);
@@ -44,9 +41,35 @@ Control {
         return hours + minutes + ':' + seconds;
     }
 
-    ColumnLayout {
-        anchors.fill: parent
-        spacing: 1
+    property bool sliderHovered: timeSlider.hovered || timeSlider.pressed
+
+    Item{
+        id:spacer
+        anchors {
+            top: parent.top
+            left: parent.left
+            right: parent.right
+        }
+        height: parent.height * 0.1
+
+    }
+
+
+    Rectangle {
+        color: '#d0303030'
+        id:backgroundRect
+        anchors {
+            top: sliderHovered ? controlBar.top : spacer.bottom
+            left: parent.left
+            right: parent.right
+            bottom: parent.bottom
+        }
+
+        HoverHandler {
+            id: hoverHandler
+            acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+            // cursorShape: Qt.PointingHandCursor
+        }
         Slider {
             id: timeSlider
             from: 0
@@ -54,9 +77,15 @@ Control {
             focusPolicy: Qt.NoFocus
             hoverEnabled: true
             live: true
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            Layout.preferredHeight: 1
+            z:backgroundRect.z + 1
+            anchors {
+                top:parent.top
+                left: parent.left
+                right: parent.right
+                bottom: controlButtons.top
+                leftMargin: 10
+                rightMargin: 10
+            }
             onPressedChanged: {
                 if (!pressed)  // released
                     seekRequested(value);
@@ -65,14 +94,11 @@ Control {
                 anchors.fill: parent
                 acceptedButtons: Qt.NoButton
                 cursorShape: Qt.PointingHandCursor
-                propagateComposedEvents: true
             }
 
             background: Rectangle {
-                id:backgroundRect
                 x: timeSlider.leftPadding
-                // y: timeSlider.availableHeight / 2 - height
-                implicitHeight: timeSlider.hovered || timeSlider.pressed ? controlBar.height * 0.2 : controlBar.height * 0.1
+                implicitHeight: sliderHovered ? controlBar.height * 0.2 : controlBar.height * 0.1
                 width: timeSlider.availableWidth
                 height: implicitHeight
                 color: "#828281" //grey
@@ -86,7 +112,7 @@ Control {
 
             handle: Rectangle {
                 id: handle
-                visible: timeSlider.hovered || timeSlider.pressed
+                visible: sliderHovered
                 width: controlBar.height * 0.2
                 height: controlBar.height * 0.2
                 radius: width / 2
@@ -98,33 +124,38 @@ Control {
             }
         }
 
+
         RowLayout {
-            Layout.fillWidth: true
-            Layout.leftMargin: 10
-            Layout.rightMargin: 10
-            Layout.fillHeight: true
-            Layout.preferredHeight: 7
+            id: controlButtons
+            anchors {
+                left: parent.left
+                right: parent.right
+                bottom: parent.bottom
+                leftMargin: 10
+                rightMargin: 10
+            }
+            height: controlBar.height * 0.8
             ImageButton {
                 id: playPauseButton
                 source: isPlaying ? "qrc:/resources/images/pause.png" : "qrc:/resources/images/play.png"
-                Layout.preferredWidth: buttonSize
-                Layout.preferredHeight: buttonSize
+                Layout.preferredWidth: height
+                Layout.fillHeight: true
                 onClicked: playPauseButtonClicked()
             }
             ImageButton {
                 id: volumeButton
-                source: mpv.volume === 0 ? "qrc:/resources/images/mute_volume.png" :
-                                           mpv.volume < 25 ? "qrc:/resources/images/low_volume.png" :
-                                                             mpv.volume < 75 ? "qrc:/resources/images/mid_volume.png" : "qrc:/resources/images/high_volume.png"
-                Layout.preferredWidth: buttonSize
-                Layout.preferredHeight: buttonSize
+                source: volume === 0 ? "qrc:/resources/images/mute_volume.png" :
+                                           volume < 25 ? "qrc:/resources/images/low_volume.png" :
+                                                             volume < 75 ? "qrc:/resources/images/mid_volume.png" : "qrc:/resources/images/high_volume.png"
+                Layout.fillHeight: true
+                Layout.preferredWidth: height
                 onClicked: volumeButtonClicked()
             }
             ImageButton {
                 id: serversButton
                 source: "qrc:/resources/images/servers.png"
-                Layout.preferredWidth: buttonSize
-                Layout.preferredHeight: buttonSize
+                Layout.fillHeight: true
+                Layout.preferredWidth: height
                 onClicked: serversButtonClicked()
             }
 
@@ -132,8 +163,8 @@ Control {
                 id: timeText
                 text: `${toHHMMSS(time)} / ${toHHMMSS(duration)}`
                 color: "white"
-                font.pixelSize: buttonSize * 0.7
-
+                font.pixelSize: height * 0.8
+                Layout.fillHeight: true
             }
             //spacer
             Item{
@@ -143,41 +174,43 @@ Control {
             ImageButton {
                 id: pipButton
                 source: "qrc:/resources/images/pip.png"
-                // hoverImage: "qrc:/resources/images/pip_hover.png"
-                Layout.preferredWidth: buttonSize
-                Layout.preferredHeight: buttonSize
+                Layout.fillHeight: true
+                Layout.preferredWidth: height
                 onClicked: root.pipMode = true
             }
+
             ImageButton {
                 id: explorerButton
                 source: "qrc:/resources/images/folder.png"
-                // hoverImage: "qrc:/resources/images/folder_hover.png"
-                Layout.preferredWidth: buttonSize
-                Layout.preferredHeight: buttonSize
+                Layout.fillHeight: true
+                Layout.preferredWidth: height
                 onClicked: folderButtonClicked()
             }
 
             ImageButton {
                 id: settingsButton
                 source: "qrc:/resources/images/player_settings.png"
-                // hoverImage: "qrc:/resources/images/player_settings_hover.png"
-                Layout.preferredWidth: buttonSize
-                Layout.preferredHeight: buttonSize
+                Layout.fillHeight: true
+                Layout.preferredWidth: height
                 onClicked: settingsButtonClicked()
             }
 
             ImageButton {
                 id: sidebarButton
                 source: "qrc:/resources/images/playlist.png"
-                // hoverImage: "qrc:/resources/images/playlist_hover.png"
-                Layout.preferredWidth: buttonSize
-                Layout.preferredHeight: buttonSize
+                Layout.fillHeight: true
+                Layout.preferredWidth: height
                 onClicked: sidebarButtonClicked()
             }
 
         }
     }
 
-
-
 }
+
+
+
+
+
+
+

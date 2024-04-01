@@ -10,16 +10,11 @@ RowLayout {
     function search(){
         app.search(searchTextField.text, 1)
         root.lastSearch = searchTextField.text
-        parent.forceActiveFocus()
-    }
-    function  latest(){
-        app.latest(1)
-    }
-    function popular(){
-        app.popular(1)
+        // parent.forceActiveFocus()
     }
 
     CustomTextField {
+        focusPolicy: Qt.NoFocus
         checkedColor: "#727CF5"
         id:searchTextField
         color: "white"
@@ -30,6 +25,7 @@ RowLayout {
         placeholderTextColor: "gray"
         text: root.lastSearch
         font.pixelSize: 20
+        activeFocusOnTab:false
         onAccepted: search()
     }
     
@@ -41,6 +37,7 @@ RowLayout {
         Layout.fillWidth: true
         fontSize:20
         radius: 20
+        activeFocusOnTab:false
         focusPolicy: Qt.NoFocus
         onClicked: search()
     }
@@ -52,9 +49,10 @@ RowLayout {
         Layout.fillWidth: true
         radius: 20
         fontSize:20
+        activeFocusOnTab:false
         Layout.preferredWidth: 1
         focusPolicy: Qt.NoFocus
-        onClicked:latest()
+        onClicked: app.latest(1)
     }
     
     CustomButton {
@@ -64,9 +62,10 @@ RowLayout {
         Layout.fillWidth: true
         fontSize:20
         radius: 20
+        activeFocusOnTab:false
         Layout.preferredWidth: 1
         focusPolicy: Qt.NoFocus
-        onClicked: popular()
+        onClicked: app.popular(1)
     }
 
     CustomComboBox {
@@ -78,8 +77,8 @@ RowLayout {
         fontSize: 20
         model: app
         currentIndex: app.currentProviderIndex
-        onActivated: (index) => {app.currentProviderIndex.listType = index}
-        // onCurrentIndexChanged: app.currentProviderIndex = providersComboBox.currentIndex
+        activeFocusOnTab:false
+        onActivated: (index) => {app.currentProviderIndex = index}
         text: "text"
 
     }
@@ -91,15 +90,15 @@ RowLayout {
         Layout.fillHeight: true
         contentRadius: 20
         fontSize: 20
+        activeFocusOnTab:false
         model: app.availableShowTypes
         currentIndex: app.currentSearchTypeIndex
         currentIndexColor: "red"
-        onActivated: (index) => {app.currentSearchTypeIndex.listType = index}
-        // onCurrentIndexChanged: app.currentSearchTypeIndex = typeComboBox.currentIndex
+        onActivated: (index) => { app.currentShowTypeIndex = index}
         Component.onCompleted: typeComboBox.currentIndex = app.currentSearchTypeIndex
         Connections {
             target: app
-            function onCurrentSearchTypeIndexChanged(){
+            function onCurrentShowTypeIndexChanged(){
                 typeComboBox.currentIndex = app.currentSearchTypeIndex;
             }
         }

@@ -16,7 +16,6 @@ Item {
     property real labelFontSize: 24 * root.fontSizeMultiplier
     property var currentShow: app.currentShow
 
-
     Image {
         id: posterImage
         source: app.currentShow.exists ? currentShow.coverUrl : "qrc:/resources/images/error_image.png"
@@ -55,6 +54,12 @@ Item {
             left:posterImage.right
             right: episodeList.left
         }
+        MouseArea{
+            anchors.fill: parent
+            onClicked:  Qt.openUrlExternally(`https://anilist.co/search/anime?search=${encodeURIComponent(titleText.text)}`);
+            cursorShape: Qt.PointingHandCursor
+        }
+
         height: contentHeight
     }
 
@@ -88,27 +93,27 @@ Item {
             top: posterImage.bottom
             left: parent.left
             right: posterImage.right
-            topMargin: 10
+            topMargin: 5
         }
-        height: parent.height * 0.05
+        focus: false
+        activeFocusOnTab: false
+        height: parent.height * 0.07
 
         currentIndex: app.currentShow.listType + 1
         Component.onCompleted: {
             if (app.currentShow.inWatchList)
-                listTypeModel.set(0, {text: "Add to Library"})
-            else
                 listTypeModel.set(0, {text: "Remove from Library"})
+            else
+                listTypeModel.set(0, {text: "Add to Library"})
         }
 
         fontSize: 20
         onActivated: (index) => {
                          if (index === 0) {
                              app.removeCurrentShowFromLibrary()
-                             console.log("removed")
                              listTypeModel.set(0, {text: "Add to Library"})
                          } else {
                              app.addCurrentShowToLibrary(index - 1)
-                             console.log("added", index - 1)
                              listTypeModel.set(0, {text: "Remove from Library"})
                          }
                      }
@@ -140,7 +145,16 @@ Item {
         width: descriptionBox.width * 0.5
         height: libraryComboBox.height
     }
-
+    Keys.enabled: true
+    Keys.onPressed: (event) => {
+                        switch (event.key){
+                            case Qt.Key_Space:
+                            if (continueWatchingButton.visible) {
+                                app.continueWatching();
+                            }
+                            break
+                        }
+                    }
 
     ColumnLayout{
         anchors {
@@ -215,21 +229,39 @@ Item {
             font.pixelSize: labelFontSize
             color: "white"
 
-            // Layout.preferredWidth: 2
             Layout.preferredHeight: implicitHeight
-            //Layout.fillHeight: true
             Layout.fillWidth: true
         }
-        Text {
+        RowLayout {
+            Layout.preferredHeight: implicitHeight
+            Layout.fillWidth: true
             Layout.alignment: Qt.AlignTop | Qt.AlignLeft
-            text: `<b>GENRE(S):</b> <font size="-1.0">${currentShow.genresString}</font>`
-            color: "white"
-            font.bold: true
-            font.pixelSize: labelFontSize
-            Layout.preferredHeight: implicitHeight
-            Layout.fillWidth: true
+            // Layout.preferredHeight: implicitHeight
+            Text {
+                text: "<b>GENRE(S):</b>"
+                font.pixelSize: 24 * root.fontSizeMultiplier
+                color: "white"
+                Layout.fillHeight: true
+            }
+            Text {
+                text: currentShow.genresString
+                font.pixelSize: 23 * root.fontSizeMultiplier
+                color: "white"
+                wrapMode: Text.Wrap
+                Layout.fillWidth: true
+                Layout.fillHeight: true
 
+            }
         }
+
+        // Text {
+        //     text: `<b>GENRE(S):</b> <font size="-1.0">${currentShow.genresString}</font>`
+        //     color: "white"
+        //     font.bold: true
+        //     font.pixelSize: labelFontSize
+
+        //     Layout.fillWidth: true
+        // }
 
 
     }

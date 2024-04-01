@@ -27,7 +27,7 @@ public:
     int getTotalEpisodes(const std::string &link) const override {
         return getInfoJson(link)["plays"].toArray().size();
     }
-    QString extractSource(const VideoServer& server) const override;
+    QList<Video> extractSource(const VideoServer& server) const override;
 
 private:
     QJsonObject getInfoJson(const std::string& link) const;

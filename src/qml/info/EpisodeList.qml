@@ -60,52 +60,53 @@ Item{
         delegate: Rectangle {
             id: delegateRect
             width: list.width
-            height: 50 < (episodeStr.height + 10) ? (episodeStr.height + 10) : 50
+            height: 60
             border.width: 2
             border.color: "black"
             color: app.currentShow.episodeList.lastWatchedIndex === index ? "red" : "black"
-            Text {
-                id:episodeStr
-                text:  model.fullTitle
-                font.pixelSize: 20 * root.fontSizeMultiplier
-                anchors{
-                    left:parent.left
-                    right:parent.right
-
-                    top:parent.top
-                    leftMargin: 10
-                    rightMargin: 10
-                    topMargin: 10
-                    bottomMargin: 10
-                }
-                wrapMode: Text.Wrap
-                color: "white"
-            }
             MouseArea {
                 anchors.fill: parent
                 hoverEnabled: true
                 onEntered: delegateRect.border.color = "white"
                 onExited: delegateRect.border.color = delegateRect.color
-
-
                 onClicked:{
                     app.playFromEpisodeList(index)
                 }
             }
-
-            ImageButton {
-                source: "qrc:/resources/images/download-button.png"
-                height: parent.height * 0.8
-                width: parent.height * 0.8
-                anchors.right: parent.right
-
-
-                onClicked: {
-                    app.downloadCurrentShow(index)
-                    source = "qrc:/resources/images/download_selected.png"
-                    enabled = false;
+            RowLayout {
+                anchors{
+                    left:parent.left
+                    right:parent.right
+                    top:parent.top
+                    bottom: parent.bottom
+                    margins: 3
                 }
+
+                Text {
+                    id:episodeStr
+                    text:  model.fullTitle
+                    font.pixelSize: 20 * root.fontSizeMultiplier
+                    Layout.fillHeight: true
+                    Layout.fillWidth: true
+                    elide: Text.ElideRight
+                    wrapMode: Text.Wrap
+                    color: "white"
+                }
+
+                ImageButton {
+                    source: "qrc:/resources/images/download-button.png"
+                    Layout.preferredWidth: height
+                    Layout.preferredHeight: 50
+                    Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                    onClicked: {
+                        enabled = false;
+                        source = "qrc:/resources/images/download_selected.png"
+                        app.downloadCurrentShow(index)
+                    }
+                }
+
             }
+
 
 
         }

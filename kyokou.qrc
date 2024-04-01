@@ -56,7 +56,6 @@
         <file>src/qml/components/CustomButton.qml</file>
         <file>src/qml/components/CustomComboBox.qml</file>
         <file>src/qml/components/CustomTextField.qml</file>
-        <file>src/qml/components/HoverCursorArea.qml</file>
         <file>src/qml/components/ImageButton.qml</file>
         <file>src/qml/components/LoadingScreen.qml</file>
         <file>src/qml/download/DownloadPage.qml</file>
@@ -76,5 +75,6 @@
         <file>src/qml/settings.qml</file>
         <file>src/qml/SideBar.qml</file>
         <file>src/qml/TitleBar.qml</file>
+        <file>src/qml/player/MpvPlayer.qml</file>
     </qresource>
 </RCC>

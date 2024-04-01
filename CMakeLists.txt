@@ -30,6 +30,7 @@ qt_add_executable(kyokou
     kyokou.qrc
     src/Data/showdata.cpp
     src/Data/video.h src/Data/video.cpp
+    src/Components/logger.h src/Components/logger.cpp
 )
 
 # Include directories

@@ -28,5 +28,5 @@ public:
         return 0;
     }
     QList<VideoServer> loadServers(const PlaylistItem* episode) const override;
-    QString extractSource(const VideoServer &server) const override;
+    QList<Video> extractSource(const VideoServer &server) const override;
 };

@@ -22,7 +22,8 @@
 #include <cryptopp/filters.h>
 #include <cryptopp/modes.h>
 
-#include <regex>
+// #include <regex>
+#include "Components/functions.h"
 
 class GogoCDN
 {
@@ -59,7 +60,7 @@ public:
 
             std::string encryptedId = encrypt(id, keysAndIv.key, keysAndIv.iv);
             //qDebug() << "encryptedId: " << encryptedId.c_str ();
-            std::string encryptedUrl = "https://" + getHostFromUrl(link)+ "/encrypt-ajax.php?id=" + encryptedId + end + "&alias=" + id;
+            std::string encryptedUrl = "https://" + Functions::getHostFromUrl(link)+ "/encrypt-ajax.php?id=" + encryptedId + end + "&alias=" + id;
             //qDebug() << "encryptedUrl: " << encryptedUrl.c_str ();
             std::string encrypted = NetworkClient::post(encryptedUrl, {{"X-Requested-With", "XMLHttpRequest"}}).body;
             //qDebug() << "encrypted: " << encrypted.c_str ();
@@ -77,14 +78,7 @@ public:
         }
         return "";
     }
-    static std::string getHostFromUrl(const std::string& url){
-        std::regex regex("^(?:https?://)?(?:www\\.)?([^:/\\s]+)");
-        std::smatch match;
-        if (std::regex_search(url, match, regex)){
-            return match[1];
-        }
-        return "";
-    }
+
     static std::string encrypt(const std::string& str, const std::string& key, const std::string& iv)
     {
         CryptoPP::AES::Encryption aesKey(reinterpret_cast<const unsigned char*>(key.data()), key.size());

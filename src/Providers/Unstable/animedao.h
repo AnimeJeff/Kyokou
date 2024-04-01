@@ -46,7 +46,7 @@
 //    QList<VideoServer> loadServers(const PlaylistItem *episode) override {
 //        return QList<VideoServer>{};
 //    };
-//    QString extractSource(VideoServer &server) override {
+//    QList<Video> extractSource(VideoServer &server) override {
 //        return "";
 //    };
 //};

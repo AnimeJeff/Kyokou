@@ -47,7 +47,7 @@ Rectangle {
         if (currentPage!==index){
             currentPage = index
             if (index === 3) {
-                mpvPage.progressBar.peak(2000)
+                mpv.peak(2000)
                 mpvPage.visible = true
                 stackView.visible = false
                 mpvPage.forceActiveFocus()
@@ -120,7 +120,7 @@ Rectangle {
             source: "qrc:/resources/gifs/basketball.gif"
             Layout.preferredWidth: sideBar.width
             Layout.preferredHeight: sideBar.width
-            MouseArea {cursorShape: Qt.PointingHandCursor}
+            // MouseArea {cursorShape: Qt.PointingHandCursor}
         }
         Rectangle {
             property string orientation: "vertical"
@@ -134,32 +134,32 @@ Rectangle {
 
 
 
-        Item {
-            Layout.preferredWidth: sideBar.width
-            Layout.preferredHeight: sideBar.width
+        // Item {
+        //     Layout.preferredWidth: sideBar.width
+        //     Layout.preferredHeight: sideBar.width
 
-            Image {
-                id: settingsImage
-                source: "qrc:/resources/images/settings.png"
-                anchors.fill: parent
-                visible: true // Hide this and use the layer as the visible entity
-                layer.enabled: true
-                layer.effect: BrightnessContrast {
-                    brightness: 1.0 // Adjust these values as needed
-                    contrast: 0.5
-                }
-            }
+        //     Image {
+        //         id: settingsImage
+        //         source: "qrc:/resources/images/settings.png"
+        //         anchors.fill: parent
+        //         visible: true // Hide this and use the layer as the visible entity
+        //         layer.enabled: true
+        //         layer.effect: BrightnessContrast {
+        //             brightness: 1.0 // Adjust these values as needed
+        //             contrast: 0.5
+        //         }
+        //     }
 
-            // Use a MouseArea for interaction, if needed
-            MouseArea {
-                anchors.fill: parent
-                onClicked: {
-                    onClicked: gotoPage(5)
-                    //     // selected: currentPage === 4
-                    // Your click handling logic here
-                }
-            }
-        }
+        //     // Use a MouseArea for interaction, if needed
+        //     MouseArea {
+        //         anchors.fill: parent
+        //         onClicked: {
+        //             onClicked: gotoPage(5)
+        //             //     // selected: currentPage === 4
+        //             // Your click handling logic here
+        //         }
+        //     }
+        // }
 
         // BrightnessContrast {
         //     anchors.fill: lol

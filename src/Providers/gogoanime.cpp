@@ -49,11 +49,9 @@ QList<ShowData> Gogoanime::latest(int page, int type)
     std::string url = "https://ajax.gogocdn.net/ajax/page-recent-release.html?page=" + std::to_string (page) + "&type=1";
     auto response = NetworkClient::get(url);
     pugi::xpath_node_set animeNodes = response.document().select("//ul[@class='items']/li");
-
     if (animeNodes.empty()) return animes;
 
-    for (pugi::xpath_node_set::const_iterator it = animeNodes.begin(); it != animeNodes.end(); ++it)
-    {
+    for (pugi::xpath_node_set::const_iterator it = animeNodes.begin(); it != animeNodes.end(); ++it) {
         QString coverUrl = it->selectFirst(".//img").attr("src").as_string();
         static QRegularExpression re{R"(([\w-]*?)(?:-\d{10})?\.)"};
         auto lastSlashIndex =  coverUrl.lastIndexOf("/");
@@ -79,32 +77,23 @@ void Gogoanime::loadDetails(ShowData &anime) const
     std::string alias = doc.selectFirst ("//input[@id='alias_anime']").attr ("value").as_string ();
     // std::string epStart = lastEpisode > 1000 ? std::to_string(lastEpisode - 99) : "0";
     std::string epStart = "0";
-    try
-    {
-        //        std::string link = "https://ajax.gogo-load.com/ajax/load-list-episode?ep_start=" + epStart + "&ep_end="  + std::to_string (lastEpisode)+ "&id=" + animeId;
-        std::string link = "https://ajax.gogocdn.net/ajax/load-list-episode?ep_start="
-                           + epStart + "&ep_end="  + std::to_string (lastEpisode)
-                           + "&id=" + animeId + "&default_ep=0" + "&alias=" + alias;
+    std::string link = "https://ajax.gogocdn.net/ajax/load-list-episode?ep_start="
+                       + epStart + "&ep_end="  + std::to_string (lastEpisode)
+                       + "&id=" + animeId + "&default_ep=0" + "&alias=" + alias;
 
-        pugi::xpath_node_set episodeNodes = NetworkClient::get(link).document().select("//li/a");
-        for (pugi::xpath_node_set::const_iterator it = episodeNodes.end() - 1; it != episodeNodes.begin() - 1; --it)
+    pugi::xpath_node_set episodeNodes = NetworkClient::get(link).document().select("//li/a");
+    for (pugi::xpath_node_set::const_iterator it = episodeNodes.end() - 1; it != episodeNodes.begin() - 1; --it) {
+        QString title = QString::fromStdString (it->selectText (".//div")).replace("EP", "").trimmed ();
+        float number = -1;
+        bool ok;
+        float intTitle = title.toFloat (&ok);
+        if (ok)
         {
-            QString title = QString::fromStdString (it->selectText (".//div")).replace("EP", "").trimmed ();
-            float number = -1;
-            bool ok;
-            float intTitle = title.toFloat (&ok);
-            if (ok)
-            {
-                number = intTitle;
-                title = "";
-            }
-            std::string link = it->attr ("href").value ();
-            anime.addEpisode(number, link, title);
+            number = intTitle;
+            title = "";
         }
-    }
-    catch(...)
-    {
-        qDebug() << "oof " ;
+        std::string link = it->attr ("href").value ();
+        anime.addEpisode(number, link, title);
     }
 
     if (auto pNodes = doc.select ("//div[@class='description']/p"); !pNodes.empty ()) {
@@ -122,7 +111,17 @@ void Gogoanime::loadDetails(ShowData &anime) const
         }
     }
     anime.status = doc.selectFirst ("//span[contains(text(),'Status')]/following-sibling::a").node ().child_value ();
-    anime.releaseDate = QString(doc.selectFirst ("//span[contains(text() ,'Released')]").parent ().text ().as_string ());
+
+    if (pugi::xml_node statusTextNode =
+        doc.selectFirst ("//span[contains(text(),'Status')]/following-sibling::a").node ();
+        statusTextNode.type() == pugi::node_pcdata)
+        anime.releaseDate = statusTextNode.child_value ();
+
+    if (pugi::xml_node releasedTextNode =
+        doc.selectFirst ("//span[contains(text() ,'Released')]/following-sibling::text()").node ();
+        releasedTextNode.type() == pugi::node_pcdata)
+        anime.releaseDate = releasedTextNode.value();
+
     pugi::xpath_node_set genreNodes = doc.select ("//span[contains(text(),'Genre')]/following-sibling::a");
     for (pugi::xpath_node_set::const_iterator it = genreNodes.begin(); it != genreNodes.end(); ++it)
     {
@@ -130,7 +129,6 @@ void Gogoanime::loadDetails(ShowData &anime) const
         anime.genres.push_back (genre);
     }
 }
-
 
 CSoup Gogoanime::getInfoPage(const std::string& link) const
 {
@@ -173,16 +171,17 @@ QList<VideoServer> Gogoanime::loadServers(const PlaylistItem *episode) const
     return servers;
 }
 
-QString Gogoanime::extractSource(const VideoServer &server) const
+QList<Video> Gogoanime::extractSource(const VideoServer &server) const
 {
+
     auto serverName = server.name.toLower ();
-    try
-    {
+    try {
         if (serverName.contains ("vidstreaming") ||
             serverName.contains ("gogo"))
         {
             GogoCDN extractor;
-            return extractor.extract(server.link);
+            auto source = extractor.extract(server.link);
+            return { Video(source) };
         }
     }
     catch (QException &e)
@@ -190,5 +189,5 @@ QString Gogoanime::extractSource(const VideoServer &server) const
         ErrorHandler::instance ().show ("Cannot find extract " + QString::fromStdString (server.link));
     }
 
-    return "";
+    return {};
 }

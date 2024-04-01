@@ -2,6 +2,7 @@
 #include <QDebug>
 #include "showprovider.h"
 #include <QJsonArray>
+#include <Data/video.h>
 
 class AllAnime : public ShowProvider
 {
@@ -172,18 +173,18 @@ public:
         return servers;
     }
 
-    QString extractSource(const VideoServer& server) const override {
+    QList<Video> extractSource(const VideoServer& server) const override {
         QString endPoint = NetworkClient::get(hostUrl + "getVersion").JSONOBJECT()["episodeIframeHead"].toString();
         auto decryptedLink = decryptSource(server.link);
-        //qDebug().noquote() << "Log (AllAnime): Decrypted link" << decryptedLink;
-        QString source;
+        //qInfo().noquote() << "Log (AllAnime): Decrypted link" << decryptedLink;
+        // QString source;
 
         if (decryptedLink.starts_with("/apivtwo/")) {
             decryptedLink.insert (14,".json");
             QJsonObject jsonResponse = NetworkClient::get(endPoint.toStdString () + decryptedLink, headers).JSONOBJECT();
             QJsonArray links = jsonResponse["links"].toArray();
 
-            // qDebug() .noquote()<< decryptedLink;
+            // qInfo() .noquote()<< decryptedLink;
             // qDebug ().noquote() << endPoint.toStdString () + decryptedLink;
             //qDebug() .noquote() << "response json \n" << QJsonDocument(jsonResponse).toJson ();
 
@@ -192,14 +193,14 @@ public:
                 QJsonObject linkObject = value.toObject();
                 if (!linkObject["dash"].toBool ())
                 {
-                    QString linkString = linkObject["link"].toString();
-                    return linkString;
+                    QString source = linkObject["link"].toString();
+                    return { Video(source) };
                 }
 
             }
         }
 
-        return source;
+        return {};
     }
 
     std::string decryptSource(const std::string& input) const {

@@ -40,7 +40,7 @@
 //    {
 //        return QList<VideoServer>();
 //    };
-//    QString extractSource(VideoServer &server){
+//    QList<Video> extractSource(VideoServer &server){
 //        return "";
 //    };
 //};

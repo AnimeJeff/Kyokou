@@ -11,14 +11,21 @@ Rectangle{
         z: parent.z + 1
         loading: app.loading
     }
-    //https://doc.qt.io/qt-6/qtquick-tutorials-dynamicview-dynamicview3-example.html
+    Keys.onPressed: (event) => {
+                        if (event.key === Qt.Key_Tab) {
+                            event.accepted = true
+                            app.watchList.cycleDisplayingListType() ;
+                            listTypeComboBox.currentIndex = app.watchList.listType
+                        }
+                    }
 
     CustomComboBox {
         id:listTypeComboBox
-        anchors{
+        anchors {
             left: parent.left
             top: parent.top
         }
+
         width: parent.width * 0.2
         height: 35
         fontSize: 20
@@ -32,6 +39,7 @@ Rectangle{
         text: "text"
         currentIndex: app.watchList.listType
         onActivated: (index) => {app.watchList.listType = index}
+
     }
 
     WatchListContainer {

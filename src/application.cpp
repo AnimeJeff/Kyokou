@@ -62,6 +62,93 @@ Application::~Application() {
         delete m_downloader;
 }
 
+void Application::search(const QString &query, int page) {
+    int type = m_availableTypes[m_currentShowTypeIndex];
+    m_searchResultsModel.search (query, page, type, m_currentSearchProvider);
+}
+
+void Application::latest(int page) {
+    int type = m_availableTypes[m_currentShowTypeIndex];
+    m_searchResultsModel.latest (page, type, m_currentSearchProvider);
+}
+
+void Application::popular(int page) {
+    int type = m_availableTypes[m_currentShowTypeIndex];
+    m_searchResultsModel.popular (page,type,m_currentSearchProvider);
+}
+
+void Application::loadShow(int index, bool fromWatchList) {
+    setLoading (true);
+    if (fromWatchList) {
+        auto showJson = m_watchListModel.loadShow(index);
+        if (showJson.isEmpty ()) return;
+        QString providerName = showJson["provider"].toString ();
+        if (!m_providersMap.contains(providerName)) return;
+        auto provider = m_providersMap[providerName];
+        std::string link = showJson["link"].toString ().toStdString ();
+        QString title = showJson["title"].toString ();
+        QString coverUrl = showJson["cover"].toString ();
+        int lastWatchedIndex = showJson["lastWatchedIndex"].toInt ();
+        int type = showJson["type"].toInt ();
+        auto show = ShowData(title, link, coverUrl, provider, "", type, lastWatchedIndex);
+        m_showManager.setShow(show);
+        m_showManager.setListType (m_watchListModel.getCurrentListType());
+    } else {
+        auto show = m_searchResultsModel.at(index);
+        m_watchListModel.syncShow (show);
+        m_showManager.setShow(show);
+    }
+}
+
+void Application::addCurrentShowToLibrary(int listType)
+{
+    m_watchListModel.add (m_showManager.getShow (), listType); //either changes the list type or adds to library
+    m_showManager.setListType(listType);
+}
+
+void Application::removeCurrentShowFromLibrary()
+{
+    m_watchListModel.remove (m_showManager.getShow ());
+    m_showManager.setListType(-1);
+}
+
+void Application::playFromEpisodeList(int index)
+{
+    m_playlist.replaceCurrentPlaylist (m_showManager.getPlaylist ());
+    m_playlist.play (0, m_showManager.correctIndex(index));
+}
+
+void Application::continueWatching()
+{
+    int index = m_showManager.getContinueIndex();
+    if (index < 0) {
+        qDebug() << "Error: Invalid continue index";
+        return;
+    }
+    playFromEpisodeList(index);
+}
+
+void Application::downloadCurrentShow(int startIndex, int count)
+{
+    m_downloader->downloadShow (m_showManager.getShow (), m_showManager.correctIndex(startIndex), count); //TODO
+}
+
+void Application::updateLastWatchedIndex() {
+    PlaylistItem *currentPlaylist = m_playlist.getCurrentPlaylist();
+    auto showPlaylist = m_showManager.getPlaylist ();
+    if (!showPlaylist || !currentPlaylist) {//TODO local file
+        qDebug() << "error: playlist returned nullptr";
+        return;
+    }
+
+    if (showPlaylist->link == currentPlaylist->link) {
+        m_showManager.updateLastWatchedIndex (currentPlaylist->currentIndex);
+    }
+
+    //todo change playlist link to qstring
+    m_watchListModel.updateLastWatchedIndex (QString::fromStdString (currentPlaylist->link), currentPlaylist->currentIndex);
+
+}
 
 void Application::cancel()
 {
@@ -70,6 +157,28 @@ void Application::cancel()
         m_watcher.cancel ();
         setLoading (false);
     }
+}
+
+void Application::setCurrentProviderIndex(int index) {
+    if (index == m_currentProviderIndex) return;
+    int currentType = m_currentProviderIndex != -1 ? m_availableTypes[m_currentShowTypeIndex] : -1;
+    m_currentProviderIndex = index;
+    m_currentSearchProvider = m_providers.at (index);
+    m_availableTypes = m_currentSearchProvider->getAvailableTypes ();
+    emit currentProviderIndexChanged();
+    int searchTypeIndex = searchTypeIndex == -1 ? -1 : m_availableTypes.indexOf (currentType);
+    m_currentShowTypeIndex = searchTypeIndex == -1 ? 0 : searchTypeIndex;
+    emit currentShowTypeIndexChanged();
+}
+
+void Application::setCurrentShowTypeIndex(int index) {
+    if (index == m_currentShowTypeIndex) return;
+    m_currentShowTypeIndex = index;
+    emit currentShowTypeIndexChanged ();
+}
+
+void Application::cycleProviders() {
+    setCurrentProviderIndex((m_currentProviderIndex + 1) % m_providers.count ());
 }
 
 int Application::rowCount(const QModelIndex &parent) const{

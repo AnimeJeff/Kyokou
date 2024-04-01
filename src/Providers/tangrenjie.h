@@ -20,7 +20,7 @@
 //     void loadDetails(ShowData& show) const override;
 //     int getTotalEpisodes(const std::string& link) const override;
 //     QList<VideoServer> loadServers(const PlaylistItem *episode) const override;
-//     QString extractSource(VideoServer &server) const override;
+//     QList<Video> extractSource(VideoServer &server) const override;
 
 
 // private:

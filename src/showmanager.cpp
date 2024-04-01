@@ -45,15 +45,14 @@ void ShowManager::setShow(const ShowData &show) {
     return;
   }
 
-
   m_show = show;
   m_watcher.setFuture(QtConcurrent::run([this]() {
     if (m_show.provider) {
-      qDebug() << "Log (ShowManager)： Loading details for" << m_show.title
+      qInfo() << "Log (ShowManager)： Loading details for" << m_show.title
                << "with" << m_show.provider->name()
                << "using the link:" << m_show.link;
       m_show.provider->loadDetails(m_show);
-      qDebug() << "Log (ShowManager)： Successfully loaded details for"
+      qInfo() << "Log (ShowManager)： Successfully loaded details for"
                << m_show.title;
     } else {
       throw MyException(

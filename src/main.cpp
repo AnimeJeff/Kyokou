@@ -11,6 +11,7 @@
 #include <QtGlobal>
 
 #include <QFontDatabase>
+#include "Components/logger.h"
 #include "Mpv/mpvObject.h"
 #include "application.h"
 #include <QtPlugin>
@@ -24,8 +25,10 @@ int main(int argc, char *argv[]){
 
     QQuickWindow::setGraphicsApi(QSGRendererInterface::OpenGLRhi);
     QGuiApplication app(argc, argv);
-    Application application(QString::fromLocal8Bit (argv[1]));
 
+    Application application(QString::fromLocal8Bit (argv[1]));
+    //Logger logger;
+    //logger.init ();
 
 
     QQmlApplicationEngine engine;

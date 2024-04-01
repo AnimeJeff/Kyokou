@@ -25,7 +25,6 @@ Popup {
 
     MouseArea {
         anchors.fill: parent
-        propagateComposedEvents: false
         hoverEnabled: true
         preventStealing: true
         onClicked: {

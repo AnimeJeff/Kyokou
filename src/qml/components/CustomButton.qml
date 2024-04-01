@@ -1,5 +1,5 @@
 import QtQuick.Controls
-import QtQuick
+import QtQuick 2.15
 
 Button {
     id: button

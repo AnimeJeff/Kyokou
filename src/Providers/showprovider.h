@@ -8,11 +8,7 @@
 #include <QFutureWatcher>
 #include <QNetworkReply>
 #include <QString>
-
-
-// class ShowData;
-// class VideoServer;
-// class PlaylistItem;
+#include "Data/video.h"
 
 class ShowProvider : public QObject {
     Q_OBJECT
@@ -32,10 +28,9 @@ public:
     virtual void loadDetails(ShowData &show) const = 0;
     virtual int getTotalEpisodes(const std::string &link) const = 0;
     virtual QList<VideoServer> loadServers(const PlaylistItem *episode) const = 0;
-    virtual QString extractSource(const VideoServer &server) const = 0;
+    virtual QList<Video> extractSource(const VideoServer &server) const = 0;
 
-    void setPreferredServer(const QString &serverName)
-    {
+    void setPreferredServer(const QString &serverName) {
         m_preferredServer = serverName;
     }
 

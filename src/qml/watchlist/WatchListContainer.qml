@@ -17,7 +17,7 @@ GridView {
     property bool isDragging: false
 
     property int heldZ: z + 1000
-
+    //https://doc.qt.io/qt-6/qtquick-tutorials-dynamicview-dynamicview3-example.html
     model: DelegateModel {
         id: visualModel
         model:app.watchList
@@ -124,9 +124,9 @@ GridView {
                                    let newIndex = dragArea.DelegateModel.itemsIndex
                                    if (content.view.dragFromIndex === -1){
                                        content.view.dragFromIndex = oldIndex
-                                       console.log("from", content.view.dragFromIndex)
+                                       // console.log("from", content.view.dragFromIndex)
                                    }
-                                   console.log("to", newIndex)
+                                   // console.log("to", newIndex)
                                    content.view.dragToIndex = newIndex
                                    visualModel.items.move(oldIndex, newIndex)
                                }
@@ -145,7 +145,6 @@ GridView {
         property int showIndex
         MenuItem {
             text: "Remove from library"
-            onClicked: app.watchList.removeAt(contextMenu.showIndex, -1)
             onTriggered:  {
                 app.watchList.removeAt(contextMenu.showIndex, -1)
             }
@@ -166,7 +165,7 @@ GridView {
                 model: app.watchList.changeableListTypes
                 delegate: MenuItem {
                     text: app.watchList.displayableListType(modelData)
-                    onClicked: app.watchList.changeListTypeAt(contextMenu.showIndex, modelData, -1)
+                    onTriggered: app.watchList.changeListTypeAt(contextMenu.showIndex, modelData, -1)
                 }
                 onObjectAdded: (index, object) => changeListTypeMenu.insertItem(index, object)
                 onObjectRemoved: (index, object) => changeListTypeMenu.removeItem(object)

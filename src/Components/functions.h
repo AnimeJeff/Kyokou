@@ -41,6 +41,14 @@ inline void httpsIfy(std::string& text){
 inline bool containsSubstring(const std::string& str, const std::string& substr){
     return str.find(substr) != std::string::npos;
 }
+inline std::string getHostFromUrl(const std::string& url){
+    std::regex regex("^(?:https?://)?(?:www\\.)?([^:/\\s]+)");
+    std::smatch match;
+    if (std::regex_search(url, match, regex)){
+        return match[1];
+    }
+    return "";
+}
 
 
 
