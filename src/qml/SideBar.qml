@@ -50,12 +50,10 @@ Rectangle {
                 mpv.peak(2000)
                 mpvPage.visible = true
                 stackView.visible = false
-                mpvPage.forceActiveFocus()
             } else {
                 stackView.visible = true
                 mpvPage.visible = false
                 stackView.replace(pages[index])
-                stackView.forceActiveFocus()
             }
 
         }

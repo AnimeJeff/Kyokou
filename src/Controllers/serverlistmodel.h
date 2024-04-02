@@ -38,8 +38,10 @@ public:
                     auto& server = servers.at (i);
                     qDebug() << "Log (ServerList): Using preferred server" << server.name;
                     videos = provider->extractSource(server);
-                    serverIndex = i;
-                    break;
+                    if (!videos.isEmpty ()) {
+                        serverIndex = i;
+                        break;
+                    }
                 }
             }
             if (serverIndex == -1)
@@ -62,35 +64,46 @@ public:
         return { videos, serverIndex};
     }
 
-    QList<Video> autoSelectServer() {
-        auto sourceAndIndex = autoSelectServer(m_servers, m_provider);
-        m_currentIndex = sourceAndIndex.second;
-        emit currentIndexChanged();
-        return sourceAndIndex.first;
-    }
-
     QList<Video> load(int index = -1) {
         // auto select a working server
         QList<Video> videos;
         if (index == -1) {
-            return autoSelectServer ();
+            // videos = autoSelectServer ();
+            auto sourceAndIndex = autoSelectServer(m_servers, m_provider);
+            videos = sourceAndIndex.first;
+            if (!videos.isEmpty ()) {
+                m_currentIndex = sourceAndIndex.second;
+                emit currentIndexChanged();
+            } else {
+                qInfo() << "Log (ServerList): Failed to find a working server";
+            }
+            return videos;
         } else if (index < 0 || index >= m_servers.size ()) return {};
 
         auto& server = m_servers.at (index);
-        qDebug() << "Log (ServerList): Using server" << server.name;
+        qInfo() << "Log (ServerList): Fetching source from server" << server.name;
         videos = m_provider->extractSource(server);
         m_currentIndex = index;
-        m_provider->setPreferredServer (server.name);
         emit currentIndexChanged();
+
+        if (videos.isEmpty ()) {
+            qInfo() << "Log (ServerList): Failed to fetch source from" << server.name;
+        } else {
+            m_provider->setPreferredServer (server.name);
+        }
         return videos;
     }
 
     void setCurrentIndex(int index) {
         if (index == m_currentIndex) return;
+        int previousIndex = m_currentIndex;
         auto videos = load(index);
         if (!videos.isEmpty ()) {
             qInfo() << "Log (ServerList): Fetched source" << videos.first ().videoUrl;
             MpvObject::instance()->open (videos.first ());
+        } else {
+            m_currentIndex = previousIndex;
+            emit currentIndexChanged ();
         }
     }
 
