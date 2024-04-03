@@ -59,7 +59,7 @@ QList<ShowData> Nivod::parseShows(const QJsonArray &showArrayJson)
 
         QString title = item["showTitle"].toString();
         QString coverUrl = item["showImg"].toString();
-        std::string link = item["showIdCode"].toString().toStdString ();
+        QString link = item["showIdCode"].toString();
         QString latestTxt;
         if (!item["episodesTxt"].isUndefined() && !item["episodesTxt"].isNull()) {
             latestTxt = item["episodesTxt"].toString();
@@ -76,9 +76,9 @@ QList<ShowData> Nivod::parseShows(const QJsonArray &showArrayJson)
 }
 
 
-QJsonObject Nivod::getInfoJson(const std::string &link) const {
+QJsonObject Nivod::getInfoJson(const QString &link) const {
     return callAPI("https://api.nivodz.com/show/detail/WEB/3.3",
-                   {{"show_id_code", link}, {"episode_id", "0"}})["entity"].toObject ();
+                   {{"show_id_code", link.toStdString ()}, {"episode_id", "0"}})["entity"].toObject ();
 }
 
 void Nivod::loadDetails(ShowData &show) const {
@@ -103,7 +103,7 @@ void Nivod::loadDetails(ShowData &show) const {
             number = intTitle;
             title = "";
         }
-        QString link = QString::fromStdString (show.link) + "&" + episode["playIdCode"].toString ();
+        QString link = show.link + "&" + episode["playIdCode"].toString ();
         show.addEpisode(number, link, title);
     }
 }

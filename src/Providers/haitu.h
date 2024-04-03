@@ -23,7 +23,7 @@ public:
     QList<ShowData> filterSearch(const std::string &query, const std::string &sortBy, int page);
 
     void loadDetails(ShowData& show) const override;
-    int getTotalEpisodes(const std::string& link) const override
+    int getTotalEpisodes(const QString& link) const override
     {
         return 0;
     }

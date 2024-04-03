@@ -18,7 +18,7 @@ public:
     QVector<ShowData> filterSearch(std::string url);
 
     void loadDetails(ShowData &show) const override;
-    int getTotalEpisodes(const std::string &link) const override { return 0; };
+    int getTotalEpisodes(const QString &link) const override { return 0; };
     QVector<VideoServer> loadServers(const PlaylistItem *episode) const override;;
     QList<Video> extractSource(const VideoServer &server) const override;
 

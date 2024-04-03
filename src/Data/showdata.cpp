@@ -4,8 +4,7 @@
 
 void ShowData::addEpisode(float number, const QString &link, const QString &name) {
     if (!playlist) {
-        playlist = new PlaylistItem(title, provider, QString::fromStdString (this->link), nullptr);
-        if (lastWatchedIndex > -1) playlist->currentIndex = lastWatchedIndex;
+        playlist = new PlaylistItem(title, provider, this->link, nullptr);
     }
     playlist->emplaceBack (number, link, name, false);
 }
@@ -14,9 +13,9 @@ QJsonObject ShowData::toJson() const {
     QJsonObject object;
     object["title"] = title;
     object["cover"] = coverUrl;
-    object["link"] = QString::fromStdString(link);
+    object["link"] = link;
     object["provider"] = provider->name();
-    object["lastWatchedIndex"] = lastWatchedIndex;
+    object["lastWatchedIndex"] = playlist ? playlist->currentIndex : -1;
     object["type"] = type;
     return object;
 }
@@ -24,7 +23,7 @@ QJsonObject ShowData::toJson() const {
 QString ShowData::toString() const {
     QStringList stringList;
     stringList << "Title: " << title  << "\n"
-               << "Link: " << QString::fromStdString (link) << "\n"
+               << "Link: " << link << "\n"
                << "Cover URL: " << coverUrl << "\n"
                << "Provider: " << provider->name() << "\n";
     if (!latestTxt.isEmpty ()) {

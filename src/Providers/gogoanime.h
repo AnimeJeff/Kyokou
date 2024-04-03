@@ -19,11 +19,11 @@ public:
     QList<ShowData> latest(int page, int type = 0) override;
 
     void loadDetails(ShowData& anime) const override;
-    int getTotalEpisodes(const std::string& link) const override;
+    int getTotalEpisodes(const QString& link) const override;
     QList<VideoServer> loadServers(const PlaylistItem* episode) const override;
     QList<Video> extractSource(const VideoServer& server) const override;
 private:
-    CSoup getInfoPage(const std::string& link) const;
+    CSoup getInfoPage(const QString& link) const;
     std::string getEpisodesLink(const CSoup& doc) const;
 };
 

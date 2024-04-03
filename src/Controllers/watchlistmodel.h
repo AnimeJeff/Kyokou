@@ -106,14 +106,6 @@ public:
             info.listType = listType;
             info.lastWatchedIndex = showObject["lastWatchedIndex"].toInt(-1);
             info.lastPlayTime = showObject["lastPlayTime"].toInt(0);
-            // if (showObject.contains("lastWatchedIndex")) {
-
-                // show.lastWatchedIndex = lastWatchedIndex;
-                // if (auto playlist = show.getPlaylist ()) {
-                //     playlist->currentIndex = lastWatchedIndex;
-                // }
-            // }
-            // show.setListType(listType);
         }
         return info;
     }

@@ -15,9 +15,9 @@ QList<ShowData> Gogoanime::search(QString query, int page, int type)
     for (pugi::xpath_node_set::const_iterator it = animeNodes.begin(); it != animeNodes.end(); ++it)
     {
         auto anchor = it->selectFirst(".//p[@class='name']/a");
-        auto title = anchor.attr("title").as_string();
-        auto coverUrl = it->selectFirst(".//img").attr("src").as_string();
-        auto link = anchor.attr ("href").as_string ();
+        QString title = anchor.attr("title").as_string();
+        QString coverUrl = it->selectFirst(".//img").attr("src").as_string();
+        QString link = anchor.attr ("href").as_string ();
         animes.emplaceBack(title, link, coverUrl, this);
     }
 
@@ -32,11 +32,11 @@ QList<ShowData> Gogoanime::popular(int page, int type)
     for (pugi::xpath_node_set::const_iterator it = animeNodes.begin(); it != animeNodes.end(); ++it)
     {
         pugi::xpath_node anchor = it->selectFirst ("a");
-        std::string link = anchor.attr("href").as_string ();
+        QString link = anchor.attr("href").as_string ();
         QString coverUrl = QString(anchor.selectFirst(".//div[@class='thumbnail-popular']").attr ("style").as_string ());
         coverUrl = coverUrl.split ("'").at (1);
         QString title = anchor.attr ("title").as_string ();
-        animes.push_back (ShowData (title, link, coverUrl, this));
+        animes.emplaceBack (title, link, coverUrl, this);
         animes.last ().latestTxt = it->selectText (".//p[last()]/a");
     }
 
@@ -61,7 +61,7 @@ QList<ShowData> Gogoanime::latest(int page, int type)
             continue;
         }
         QString title = QString(it->selectFirst (".//p[@class='name']/a").node ().child_value ()).trimmed ().replace("\n", " ");
-        std::string link = "/category/" + id.captured (1).toStdString ();
+        QString link = "/category/" + id.captured (1);
         animes.emplaceBack (title, link, coverUrl, this, it->selectText (".//p[@class='episode']"));
     }
 
@@ -129,12 +129,11 @@ void Gogoanime::loadDetails(ShowData &anime) const
     }
 }
 
-CSoup Gogoanime::getInfoPage(const std::string& link) const
+CSoup Gogoanime::getInfoPage(const QString& link) const
 {
-    auto response = NetworkClient::get(hostUrl + link);
-    if (response.code == 404)
-    {
-        QString errorMessage = "Invalid URL: '" + QString::fromStdString (hostUrl + link +"'");
+    auto response = NetworkClient::get(hostUrl + link.toStdString ());
+    if (response.code == 404) {
+        QString errorMessage = "Invalid URL: '" + QString::fromStdString (hostUrl) + link + "'";
         MyException(errorMessage).raise();
     }
     return response.document ();
@@ -147,7 +146,7 @@ std::string Gogoanime::getEpisodesLink(const CSoup &doc) const
     return "https://ajax.gogocdn.net/ajax/load-list-episode?ep_start=0&ep_end=" + lastEpisode + "&id=" + animeId;
 }
 
-int Gogoanime::getTotalEpisodes(const std::string& link) const
+int Gogoanime::getTotalEpisodes(const QString& link) const
 {
     auto doc = getInfoPage (link);
     return NetworkClient::get(getEpisodesLink(doc)).document ().select("//ul/li/a").size ();

@@ -26,7 +26,7 @@ public:
     virtual QList<ShowData> latest(int page, int type) = 0;
 
     virtual void loadDetails(ShowData &show) const = 0;
-    virtual int getTotalEpisodes(const std::string &link) const = 0;
+    virtual int getTotalEpisodes(const QString &link) const = 0;
     virtual QList<VideoServer> loadServers(const PlaylistItem *episode) const = 0;
     virtual QList<Video> extractSource(const VideoServer &server) const = 0;
 

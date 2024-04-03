@@ -2,24 +2,6 @@
 #include <pugixml/pugixml.hpp>
 QList<ShowData> Haitu::search(QString query, int page, int type)
 {
-    // QList<ShowData> shows;
-
-    // std::string url = hostUrl + "vodsearch/" + query.toStdString () + "----------" + std::to_string (page) + "---.html";
-    // auto showNodes = NetworkClient::get(url).document().select("//div[@class='module-items']/div");
-    // for (pugi::xpath_node_set::const_iterator it = showNodes.begin(); it != showNodes.end(); ++it)
-    // {
-    //     auto img = it->selectFirst(".//img");
-    //     QString title = img.attr("alt").as_string();
-    //     QString coverUrl = img.attr("data-src").as_string();
-    //     if (!coverUrl.startsWith ("http"))
-    //     {
-    //         coverUrl = QString::fromStdString (hostUrl) + coverUrl;
-    //     }
-    //     std::string link = it->selectFirst(".//div[@class='module-item-pic']/a").attr ("href").as_string ();
-    //     shows.emplaceBack(title, link, coverUrl, this);
-    // }
-
-    // return shows;
     query.replace (" ", "+");
     return filterSearch(QUrl::toPercentEncoding (query).toStdString (), "--", page);
 }
@@ -51,7 +33,7 @@ QList<ShowData> Haitu::filterSearch(const std::string &query, const std::string 
             coverUrl = QString::fromStdString (hostUrl) + coverUrl;
         }
         // qDebug() << title <<coverUrl;
-        std::string link = it->selectFirst (".//div[@class='module-item-pic']/a").attr ("href").as_string ();
+        QString link = it->selectFirst (".//div[@class='module-item-pic']/a").attr ("href").as_string ();
         QString latestText;
         int type = -1;
 
@@ -70,7 +52,7 @@ QList<ShowData> Haitu::filterSearch(const std::string &query, const std::string 
 
 void Haitu::loadDetails(ShowData &show) const
 {
-    auto doc = NetworkClient::get(hostUrl + show.link).document ();
+    auto doc = NetworkClient::get(hostUrl + show.link.toStdString ()).document ();
 
     auto infoItems = doc.select ("//div[@class='video-info-items']/div");
     show.releaseDate = infoItems[2].node ().child_value ();

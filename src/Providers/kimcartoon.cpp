@@ -15,7 +15,7 @@ QVector<ShowData> Kimcartoon::search(QString query, int page, int type) {
         QString title = QString(it->selectText (".//span")).replace ('\n'," ").trimmed ();
         QString coverUrl = it->selectFirst (".//img").attr ("src").as_string ();
         if (coverUrl.startsWith ('/')) coverUrl = QString::fromStdString (hostUrl) + coverUrl;
-        std::string link = it->attr ("href").as_string ();
+        QString link = it->attr ("href").as_string ();
         shows.emplaceBack(title, link, coverUrl, this, "", ShowData::ANIME);
     }
 
@@ -46,7 +46,7 @@ QVector<ShowData> Kimcartoon::filterSearch(std::string url) {
         QString title = QString(it->selectText (".//span")).replace ('\n'," ").trimmed ();
         QString coverUrl = it->selectFirst("./img").attr("src").as_string();
         if (coverUrl.startsWith ('/')) coverUrl = QString::fromStdString (hostUrl) + coverUrl;
-        std::string link = it->attr("href").as_string();
+        QString link = it->attr("href").as_string();
         shows.emplaceBack(title, link, coverUrl, this);
     }
 
@@ -55,7 +55,7 @@ QVector<ShowData> Kimcartoon::filterSearch(std::string url) {
 }
 
 void Kimcartoon::loadDetails(ShowData &show) const {
-    auto doc = NetworkClient::get(hostUrl + show.link).document();
+    auto doc = NetworkClient::get(hostUrl + show.link.toStdString ()).document();
     auto infoDiv = doc.selectFirst("//div[@class='barContent']");
 
     if (pugi::xml_node descriptionParagraph

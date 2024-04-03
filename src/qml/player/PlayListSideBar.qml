@@ -60,6 +60,7 @@ Rectangle{
                                      return
                                  }
                                  if (current === app.playList.currentIndex) return;
+                                 root.mpv.pause()
                                  app.playList.load(current)
                              }
         }

@@ -1,5 +1,5 @@
 #include "video.h"
-
+#include <sstream>
 
 void Video::addHeader(const std::string &key, const std::string &value) {
     m_headers[key] = value;

@@ -62,7 +62,7 @@
 //         }
 //     }
 
-//     int getTotalEpisodes(const std::string& link)const override
+//     int getTotalEpisodes(const QString& link)const override
 //     {
 //         return 0;
 //     }

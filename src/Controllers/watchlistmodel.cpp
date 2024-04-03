@@ -74,38 +74,12 @@ QJsonObject WatchListModel::loadShow(int index) {
     return show;
 }
 
-void WatchListModel::syncShow(ShowData& show)
-{
-    QString showLink = QString::fromStdString(show.link);
 
-    // Check if the show exists in the hashmap
-    if (m_showHashmap.contains (showLink))
-    {
-        // Retrieve the list type and index for the show
-        QPair<int, int> listTypeAndIndex = m_showHashmap.value(showLink);
-        int listType = listTypeAndIndex.first;
-        int index = listTypeAndIndex.second;
-        QJsonArray list = m_watchListJson.at(listType).toArray();
-        QJsonObject showObject = list.at(index).toObject();
-
-        // Sync details
-        if (showObject.contains("lastWatchedIndex")) {
-            int lastWatchedIndex = showObject["lastWatchedIndex"].toInt();
-            show.lastWatchedIndex = lastWatchedIndex;
-            if (auto playlist = show.getPlaylist ()) {
-                playlist->currentIndex = lastWatchedIndex;
-            }
-        }
-        show.setListType(listType);
-    }
-}
 
 void WatchListModel::add(ShowData& show, int listType)
 {
-    QString link = QString::fromStdString (show.link);
-
     // Check if the show is already in the library, and if so, change its list type
-    if (m_showHashmap.contains (link)) {
+    if (m_showHashmap.contains (show.link)) {
         changeShowListType (show, listType);
     } else {
         // Convert ShowData to QJsonObject
@@ -117,7 +91,7 @@ void WatchListModel::add(ShowData& show, int listType)
         m_watchListJson[listType] = list; // Update the list in m_jsonList
 
         // Update the hashmap
-        m_showHashmap[link] = qMakePair(listType, list.count () - 1);
+        m_showHashmap[show.link] = qMakePair(listType, list.count () - 1);
 
         // Model update signals
         if (m_currentListType == listType) {
@@ -133,11 +107,10 @@ void WatchListModel::add(ShowData& show, int listType)
 void WatchListModel::changeShowListType(ShowData &show, int newListType)
 {
     // Check if the library has the show
-    QString showLink = QString::fromStdString (show.link);
-    if (!m_showHashmap.contains (showLink)) return;
+    if (!m_showHashmap.contains (show.link)) return;
 
     // Retrieve the list type and the index of the show in the list
-    QPair<int, int> listTypeAndIndex = m_showHashmap.value(showLink);
+    QPair<int, int> listTypeAndIndex = m_showHashmap.value(show.link);
     int oldListType = listTypeAndIndex.first;
     int index = listTypeAndIndex.second;
     changeListTypeAt (index, newListType, oldListType);
@@ -195,12 +168,12 @@ void WatchListModel::changeListTypeAt(int index, int newListType, int oldListTyp
 
 void WatchListModel::remove(ShowData &show)
 {
-    QString showLink = QString::fromStdString(show.link);
+    // QString showLink = QString::fromStdString(show.link);
     // Check if the show exists in the hashmap
-    if (!m_showHashmap.contains(showLink)) return;
+    if (!m_showHashmap.contains(show.link)) return;
 
     // Extract list type and index from the hashmap
-    QPair<int, int> listTypeAndIndex = m_showHashmap.value(showLink);
+    QPair<int, int> listTypeAndIndex = m_showHashmap.value(show.link);
     int listType = listTypeAndIndex.first;
     int index = listTypeAndIndex.second;
 

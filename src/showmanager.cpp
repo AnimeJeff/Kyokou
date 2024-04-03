@@ -38,9 +38,7 @@ void ShowManager::setShow(const ShowData &show, ShowData::LastWatchInfo lastWatc
     }
 
     m_show = show;
-    m_show.lastWatchedIndex = lastWatchInfo.lastWatchedIndex;
     m_show.listType = lastWatchInfo.listType;
-
 
     m_watcher.setFuture(QtConcurrent::run([this, lastWatchInfo]() {
         if (m_show.provider) {
@@ -64,12 +62,12 @@ void ShowManager::setShow(const ShowData &show, ShowData::LastWatchInfo lastWatc
     }));
 }
 
-void ShowManager::updateLastWatchedIndex(int index) {
+void ShowManager::updateLastWatchedIndex() {
     Q_ASSERT(m_show.playlist);
-    if (index == m_show.lastWatchedIndex) return;
+    // if (index == m_show.playlist.lastWatchedIndex) return;
 
     // m_show.playlist->setLastPlayAt (index, 0);
-    m_show.lastWatchedIndex = index;
+    // m_show.lastWatchedIndex = index;
     // m_show.playlist->setLastPlayAt (index, 0);
     m_episodeListModel.updateLastWatchedIndex();
 }

@@ -9,18 +9,16 @@ class ShowProvider;
 
 struct ShowData
 {
-private:
-    ShowProvider* provider;
-public:
-    ShowData(const QString& title, const std::string& link, const QString& coverUrl,
-             ShowProvider* provider, const QString& latestTxt = "", int type = 0, int lastWatchedIndex = -1)
-        : title(title), link(link), coverUrl(coverUrl), provider(provider), latestTxt(latestTxt), type(type), lastWatchedIndex(lastWatchedIndex) {};
+    ShowData(const QString& title, const QString& link, const QString& coverUrl,
+             ShowProvider* provider, const QString& latestTxt = "", int type = 0)
+        : title(title), link(link), coverUrl(coverUrl), provider(provider), latestTxt(latestTxt), type(type) {};
 
 
     QString title = "";
-    std::string link = "";
+    QString link = "";
     QString coverUrl = "";
     QString latestTxt = "";
+    ShowProvider* provider;
     int type = 0;
     QString description = "";
     QString releaseDate = "";
@@ -29,12 +27,6 @@ public:
     QString updateTime = "";
     QString score = "";
     QString views = "";
-    int lastWatchedIndex = -1;
-    int lastPlayTime = 0;
-    friend class ShowManager;
-
-    void addEpisode(float number, const QString &link, const QString &name);
-    QJsonObject toJson() const;
 
 public:
 
@@ -60,12 +52,18 @@ public:
     };
     inline PlaylistItem *getPlaylist() const { return playlist; }
     inline ShowProvider *getProvider() const { return provider; }
-    void setListType(int newListType) { listType = newListType; }
 
+
+    friend class ShowManager;
+    void setListType(int newListType) { listType = newListType; } //todo
+
+    void addEpisode(float number, const QString &link, const QString &name);
+    QJsonObject toJson() const;
     QString toString() const;
 private:
-    PlaylistItem* playlist = nullptr;
     int listType = -1;
+    PlaylistItem* playlist = nullptr;
+
 };
 
 

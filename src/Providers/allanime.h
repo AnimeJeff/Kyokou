@@ -45,7 +45,7 @@ public:
 
             // Adding checks for empty values if necessary
             if (!title.isEmpty() && !link.isEmpty()) {
-                animes.append(ShowData(title, link.toStdString (), coverUrl, this));
+                animes.emplaceBack (title, link, coverUrl, this);
             }
         }
         return animes;
@@ -72,7 +72,7 @@ public:
             QString link = animeJson["_id"].toString();
 
             if (!title.isEmpty() && !link.isEmpty()) {
-                animes.append(ShowData(title, link.toStdString (), coverUrl, this));
+                animes.emplaceBack(title, link, coverUrl, this);
             }
         }
 
@@ -102,14 +102,16 @@ public:
 
             // Adding checks for empty values if necessary
             if (!title.isEmpty() && !link.isEmpty()) {
-                animes.append(ShowData(title, link.toStdString (), coverUrl, this));
+                animes.emplaceBack (title, link, coverUrl, this);
             }
         }
         return animes;
     };
 
     void loadDetails(ShowData& anime) const override {
-        std::string url = "https://api.allanime.day/api?variables={%22_id%22:%22" + anime.link +"%22}&extensions={%22persistedQuery%22:{%22version%22:1,%22sha256Hash%22:%229d7439c90f203e534ca778c4901f9aa2d3ad42c06243ab2c5e6b79612af32028%22}}";
+        std::string url = "https://api.allanime.day/api?variables={%22_id%22:%22"
+                          + anime.link.toStdString ()
+                          +"%22}&extensions={%22persistedQuery%22:{%22version%22:1,%22sha256Hash%22:%229d7439c90f203e534ca778c4901f9aa2d3ad42c06243ab2c5e6b79612af32028%22}}";
         auto jsonResponse = NetworkClient::get(url, headers).JSONOBJECT()["data"].toObject ()["show"].toObject ();
         anime.description =  jsonResponse["description"].toString ();
         anime.status = jsonResponse["status"].toString ();;
@@ -152,13 +154,14 @@ public:
         QJsonArray episodesArray = jsonResponse["availableEpisodesDetail"].toObject()["sub"].toArray();
         for (int i = episodesArray.size() - 1; i >= 0; --i) {
             QString episodeString = episodesArray.at(i).toString();
-            QString episodeUrl = QString("https://api.allanime.day/api?variables={\"showId\":\"%1\",\"translationType\":\"sub\",\"episodeString\":\"%2\"}&extensions={\"persistedQuery\":{\"version\":1,\"sha256Hash\":\"5f1a64b73793cc2234a389cf3a8f93ad82de7043017dd551f38f65b89daa65e0\"}}").arg(QString::fromStdString(anime.link), episodeString);
+            QString episodeUrl = QString("https://api.allanime.day/api?variables={\"showId\":\"%1\",\"translationType\":\"sub\",\"episodeString\":\"%2\"}&extensions={\"persistedQuery\":{\"version\":1,\"sha256Hash\":\"5f1a64b73793cc2234a389cf3a8f93ad82de7043017dd551f38f65b89daa65e0\"}}")
+                                     .arg(anime.link, episodeString);
             anime.addEpisode(episodeString.toFloat(), episodeUrl, "");
         }
 
 
     };
-    int getTotalEpisodes(const std::string& link) const override {
+    int getTotalEpisodes(const QString& link) const override {
 
         return 0;
     };

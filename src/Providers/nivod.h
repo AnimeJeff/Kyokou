@@ -24,13 +24,13 @@ public:
     QList<VideoServer> loadServers(const PlaylistItem *episode) const override {
         return {VideoServer{"default", episode->link}};
     };
-    int getTotalEpisodes(const std::string &link) const override {
+    int getTotalEpisodes(const QString &link) const override {
         return getInfoJson(link)["plays"].toArray().size();
     }
     QList<Video> extractSource(const VideoServer& server) const override;
 
 private:
-    QJsonObject getInfoJson(const std::string& link) const;
+    QJsonObject getInfoJson(const QString& link) const;
     QList<ShowData> parseShows(const QJsonArray& showList);
     QList<ShowData> filterSearch(int page, const QString& sortBy,int type, const QString& regionId = "0", const QString& langId="0", const QString& yearRange = " ");
 

@@ -83,17 +83,17 @@ void Application::loadShow(int index, bool fromWatchList) {
         auto provider = m_providersMap[providerName];
 
         QString title = showJson["title"].toString ();
-        std::string link = showJson["link"].toString ().toStdString ();
+        QString link = showJson["link"].toString ();
         QString coverUrl = showJson["cover"].toString ();
         int lastWatchedIndex = showJson["lastWatchedIndex"].toInt ();
         int type = showJson["type"].toInt ();
-        auto show = ShowData(title, link, coverUrl, provider, "", type, lastWatchedIndex);
+        auto show = ShowData(title, link, coverUrl, provider, "", type);
         auto lastPlayTime = showJson["lastPlayTime"].toInt (0);
         int listType = m_watchListModel.getCurrentListType();
         m_showManager.setShow(show, {listType, lastWatchedIndex, lastPlayTime});
     } else {
         auto show = m_searchResultsModel.at(index);
-        auto lastWatchedInfo = m_watchListModel.getLastWatchInfo (QString::fromStdString (show.link));
+        auto lastWatchedInfo = m_watchListModel.getLastWatchInfo (show.link);
         m_showManager.setShow(show, lastWatchedInfo);
     }
 }
@@ -117,10 +117,7 @@ void Application::playFromEpisodeList(int index) {
 
 void Application::continueWatching() {
     int index = m_showManager.getContinueIndex();
-    if (index < 0) {
-        qDebug() << "Error: Invalid continue index";
-        return;
-    }
+    if (index < 0) index = 0;
     playFromEpisodeList(index);
 }
 
@@ -131,14 +128,11 @@ void Application::downloadCurrentShow(int startIndex, int count) {
 void Application::updateLastWatchedIndex() {
     PlaylistItem *currentPlaylist = m_playlist.getCurrentPlaylist();
     auto showPlaylist = m_showManager.getPlaylist ();
-    if (!showPlaylist || !currentPlaylist) {
-        return;
-        //Program launched with a filepath so no showPlaylist
-    }
+    if (!showPlaylist || !currentPlaylist) return;
 
-    if (showPlaylist->link == currentPlaylist->link) {
-        m_showManager.updateLastWatchedIndex (currentPlaylist->currentIndex);
-    }
+    if (currentPlaylist->hasSameLink(showPlaylist))
+        m_showManager.updateLastWatchedIndex ();
+
     m_watchListModel.updateLastWatchedIndex (currentPlaylist->link, currentPlaylist->currentIndex);
 }
 

@@ -18,7 +18,7 @@
 //     QList<ShowData> latest(int page, int type) override;
 
 //     void loadDetails(ShowData& show) const override;
-//     int getTotalEpisodes(const std::string& link) const override;
+//     int getTotalEpisodes(const QString& link) const override;
 //     QList<VideoServer> loadServers(const PlaylistItem *episode) const override;
 //     QList<Video> extractSource(VideoServer &server) const override;
 

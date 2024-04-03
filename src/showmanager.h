@@ -33,7 +33,7 @@ class ShowManager : public QObject
 
     Q_PROPERTY(EpisodeListModel *episodeList READ episodeListModel CONSTANT)
 private:
-    inline bool exists() const { return !m_show.link.empty (); }
+    inline bool exists() const { return !m_show.link.isEmpty (); }
 private:
     ShowData m_show{"", "", "", nullptr};
     EpisodeListModel m_episodeListModel{this};
@@ -44,12 +44,10 @@ public:
 
     ShowData &getShow() { return m_show; }
     void setShow(const ShowData &show, ShowData::LastWatchInfo lastWatchInfo);
-    void updateLastWatchedIndex(int index);
+    void updateLastWatchedIndex();
     int correctIndex(int index) const;
     int getContinueIndex() const;
-    int getLastPlayTime() const {
-        return m_show.lastPlayTime;
-    }
+
 
 
     inline PlaylistItem *getPlaylist() const { return m_show.playlist; }

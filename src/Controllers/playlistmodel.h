@@ -9,40 +9,59 @@
 
 class PlaylistModel : public QAbstractItemModel {
     Q_OBJECT
-    // Q_PROPERTY(int playlistIndex READ getPlaylistIndex NOTIFY showNameChanged)
-    // Q_PROPERTY(int playlistItemIndex READ getPlaylistItemIndex NOTIFY showNameChanged)
     Q_PROPERTY(QModelIndex currentIndex READ getCurrentIndex NOTIFY currentIndexChanged)
     Q_PROPERTY(QString currentItemName READ getCurrentItemName NOTIFY currentIndexChanged)
-    Q_PROPERTY(bool loading READ isLoading NOTIFY loadingChanged)
-    // Q_PROPERTY(QUrl launchPath READ getLaunchPath CONSTANT)
     Q_PROPERTY(ServerListModel *serverList READ getServerList CONSTANT)
+    Q_PROPERTY(bool loading READ isLoading NOTIFY loadingChanged)
 
     QString getCurrentItemName() const {
-        if (m_playlists.isEmpty()) return "";
-        return m_playlists.first()->getDisplayName(m_playlists.first()->currentIndex);
+        auto currentPlaylist = m_rootPlaylist->currentItem ();
+        if (!currentPlaylist) return "";
+        return currentPlaylist->getDisplayNameAt (currentPlaylist->currentIndex);
     }
-    ServerListModel m_serverList;
+
 private:
     bool loading = false;
     bool isLoading() { return loading; }
-    void setLoading(bool b) {
-        loading = b;
+    void setLoading(bool value) {
+        loading = value;
         emit loadingChanged();
     }
 
+    QFileSystemWatcher m_folderWatcher;
     QFutureWatcher<QList<Video>> m_watcher;
+    ServerListModel m_serverList;
+    std::unique_ptr<PlaylistItem> m_rootPlaylist = std::make_unique<PlaylistItem>("root", nullptr, "", nullptr);
 
-    int m_playlistIndex = 0;
-    QList<PlaylistItem *> m_playlists;
+   ServerListModel *getServerList() { return &m_serverList; }
 
     QList<Video> loadOnlineSource(int playlistIndex, int itemIndex);
 
+    void registerPlaylist(PlaylistItem *playlist) {
+        playlistSet.insert(playlist->link);
+
+        // Watch playlist path if local folder
+        if (playlist->isLoadedFromFolder ()) {
+            m_folderWatcher.addPath (playlist->link);
+        }
+    }
+    void deregisterPlaylist(PlaylistItem *playlist) {
+        playlistSet.remove(playlist->link);
+
+        // Unwatch playlist path if local folder
+        if (playlist->isLoadedFromFolder ()) {
+            m_folderWatcher.removePath (playlist->link);
+        }
+    }
 public:
     explicit PlaylistModel(const QString &launchPath, QObject *parent = nullptr) {
-
         // Opens the file to play immediately when application launches
+
+        connect (&m_folderWatcher, &QFileSystemWatcher::directoryChanged, this, &PlaylistModel::onLocalDirectoryChanged);
+
         if (!launchPath.isEmpty ()) {
-            auto playlist = PlaylistItem::fromUrl(QUrl::fromUserInput(launchPath));
+            auto url = QUrl::fromUserInput(launchPath);
+            auto playlist = PlaylistItem::fromUrl(url);
             if (playlist) {
                 replaceCurrentPlaylist(playlist);
                 qDebug() << "Log (Playlist): Successfully opened launch path";
@@ -50,70 +69,56 @@ public:
         }
     };
 
-    ~PlaylistModel() {
-        for (auto &playlist : m_playlists) {
-            if (--playlist->useCount == 0)
-                delete playlist;
-        }
+    ~PlaylistModel() = default;
 
-    }
-
-    Q_INVOKABLE QModelIndex getCurrentIndex();
-    ServerListModel *getServerList() { return &m_serverList; }
 
     Q_INVOKABLE void load(QModelIndex index) {
         auto childItem = static_cast<PlaylistItem *>(index.internalPointer());
         auto parentItem = childItem->parent();
-
-        if (!parentItem) return;
+        if (parentItem == m_rootPlaylist.get ()) return;
         int itemIndex = childItem->row();
-        int playlistIndex = m_playlists.indexOf(parentItem);
+        int playlistIndex = m_rootPlaylist->indexOf(parentItem);
         play(playlistIndex, itemIndex);
     }
     Q_INVOKABLE void pasteOpen() {
         QString clipboardText = QGuiApplication::clipboard()->text();
         qInfo() << "Log (mpv): Pasting" << clipboardText;
         MpvObject::instance ()->showText (QByteArray("Pasting ") + clipboardText.toUtf8 ());
-        // addSubtitle ()
         if (clipboardText.endsWith(".vtt")) {
             MpvObject::instance ()->addSubtitle(clipboardText);
             MpvObject::instance ()->setSubVisible(true);
         } else {
-            auto playlist = PlaylistItem::fromUrl(clipboardText);
+            auto playlist = PlaylistItem::fromUrl(QUrl::fromUserInput (clipboardText));
             if (playlist) {
                 replaceCurrentPlaylist(playlist);
                 play ();
             }
         }
     }
+    QModelIndex getCurrentIndex();
 
     // Hashset containing all playlist links
     // prevents the same playlist being added
     QSet<QString> playlistSet;
-
-public slots:
-    // void replaceCurrentPlaylist(const QUrl &path);
-    bool play(int playlistIndex = -1, int itemIndex = -1);
-
+    Q_INVOKABLE bool play(int playlistIndex = -1, int itemIndex = -1);
     //  Traversing the playlist
-    void loadOffset(int offset);
-    void playNextItem() { loadOffset(1); }
-    void playPrecedingItem() { loadOffset(-1); }
+    Q_INVOKABLE void loadOffset(int offset);
+    Q_INVOKABLE void playNextItem() { loadOffset(1); }
+    Q_INVOKABLE void playPrecedingItem() { loadOffset(-1); }
 
+
+
+private slots:
+    void onLocalDirectoryChanged(const QString &path) {
+        // TODO
+        qInfo() << "Log (Playlist): Path" << path << "changed";
+
+    }
 public:
     void appendPlaylist(const QUrl &path);
     void appendPlaylist(PlaylistItem *playlist);
     void replaceCurrentPlaylist(PlaylistItem *playlist);
-    PlaylistItem *getCurrentPlaylist() const {
-        if (m_playlists.isEmpty () || m_playlistIndex < 0 ||
-            m_playlistIndex > m_playlists[m_playlistIndex]->size ())
-            return nullptr;
-
-        return m_playlists[m_playlistIndex];
-    }
-
-
-
+    PlaylistItem *getCurrentPlaylist() const { return m_rootPlaylist->currentItem (); }
 
 public:
     Q_SIGNAL void loadingChanged(void);
@@ -122,7 +127,7 @@ public:
     Q_SIGNAL void updatedLastWatchedIndex(void);
     Q_SIGNAL void showNameChanged(void);
 
-public:
+private:
     enum
     {
         TitleRole = Qt::UserRole,

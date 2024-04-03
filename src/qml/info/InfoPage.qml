@@ -132,9 +132,9 @@ Item {
     CustomButton {
         id:continueWatchingButton
         Layout.alignment: Qt.AlignTop | Qt.AlignLeft
-        visible: app.currentShow.episodeList.lastWatchedIndex !== -1
-        text: "Continue from " + app.currentShow.episodeList.continueEpisodeName
+        text: app.currentShow.episodeList.continueText
         onClicked: app.continueWatching()
+        visible: app.currentShow.episodeList.continueText.length !== 0
         fontSize: 20
         radius: height
         anchors {
@@ -149,9 +149,7 @@ Item {
     Keys.onPressed: (event) => {
                         switch (event.key){
                             case Qt.Key_Space:
-                            if (continueWatchingButton.visible) {
-                                app.continueWatching();
-                            }
+                            app.continueWatching();
                             break
                         }
                     }

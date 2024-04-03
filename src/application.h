@@ -96,15 +96,17 @@ public:
     Q_INVOKABLE void downloadCurrentShow(int startIndex, int count = 1);;
     Q_INVOKABLE void updateLastPlayTime() {
         // Update the last play time
-        if (auto lastPlaylist = m_playlist.getCurrentPlaylist(); lastPlaylist) {
-            qDebug() << "Updating last playlist" << lastPlaylist->link << MpvObject::instance ()->time ();
+        auto lastPlaylist = m_playlist.getCurrentPlaylist();
+        if (!lastPlaylist ||
+            lastPlaylist->hasSameLink(m_showManager.getPlaylist ())) return;
 
-            auto playlistType = lastPlaylist->at (lastPlaylist->currentIndex)->type;
-            if (playlistType == PlaylistItem::LOCAL)
-                lastPlaylist->updateHistoryFile (MpvObject::instance ()->time ());
-            else if (playlistType == PlaylistItem::ONLINE){
-                m_watchListModel.updateLastPlayTime (lastPlaylist->link, MpvObject::instance ()->time ());
-            }
+        qDebug() << "Updating last playlist" << lastPlaylist->link << MpvObject::instance ()->time ();
+        auto playlistType = lastPlaylist->at (lastPlaylist->currentIndex)->type;
+
+        if (lastPlaylist->isLoadedFromFolder ())
+            lastPlaylist->updateHistoryFile (MpvObject::instance ()->time ());
+        else {
+            m_watchListModel.updateLastPlayTime (lastPlaylist->link, MpvObject::instance ()->time ());
         }
     }
 signals:

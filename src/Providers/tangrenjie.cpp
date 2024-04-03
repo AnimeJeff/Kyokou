@@ -98,7 +98,7 @@
 //     }
 // }
 
-// int Tangrenjie::getTotalEpisodes(const std::string& link) const
+// int Tangrenjie::getTotalEpisodes(const QString& link) const
 // {
 //     CSoup doc = NetworkClient::get(hostUrl + link).document ();
 //     return doc.select("//ul[@class='content_playlist list_scroll clearfix']/li/a").size ();
