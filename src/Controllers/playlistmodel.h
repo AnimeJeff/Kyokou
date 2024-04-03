@@ -3,8 +3,6 @@
 #include <QDir>
 #include <QStandardItemModel>
 #include <QtConcurrent>
-#include <set>
-// #include "Components/errorhandler.h"
 #include "Data/showdata.h"
 #include "Controllers/serverlistmodel.h"
 #include "Data/playlistitem.h"
@@ -16,7 +14,7 @@ class PlaylistModel : public QAbstractItemModel {
     Q_PROPERTY(QModelIndex currentIndex READ getCurrentIndex NOTIFY currentIndexChanged)
     Q_PROPERTY(QString currentItemName READ getCurrentItemName NOTIFY currentIndexChanged)
     Q_PROPERTY(bool loading READ isLoading NOTIFY loadingChanged)
-    Q_PROPERTY(QUrl launchPath READ getLaunchPath CONSTANT)
+    // Q_PROPERTY(QUrl launchPath READ getLaunchPath CONSTANT)
     Q_PROPERTY(ServerListModel *serverList READ getServerList CONSTANT)
 
     QString getCurrentItemName() const {
@@ -33,17 +31,25 @@ private:
     }
 
     QFutureWatcher<QList<Video>> m_watcher;
-    QUrl m_launchPath;
 
     int m_playlistIndex = 0;
     QList<PlaylistItem *> m_playlists;
 
     QList<Video> loadOnlineSource(int playlistIndex, int itemIndex);
-    QUrl getLaunchPath() { return m_launchPath; }
-    QUrl nextVideoSource; // TODO
 
 public:
-    explicit PlaylistModel(QObject *parent = nullptr){  };
+    explicit PlaylistModel(const QString &launchPath, QObject *parent = nullptr) {
+
+        // Opens the file to play immediately when application launches
+        if (!launchPath.isEmpty ()) {
+            auto playlist = PlaylistItem::fromUrl(QUrl::fromUserInput(launchPath));
+            if (playlist) {
+                replaceCurrentPlaylist(playlist);
+                qDebug() << "Log (Playlist): Successfully opened launch path";
+            }
+        }
+    };
+
     ~PlaylistModel() {
         for (auto &playlist : m_playlists) {
             if (--playlist->useCount == 0)
@@ -55,28 +61,39 @@ public:
     Q_INVOKABLE QModelIndex getCurrentIndex();
     ServerListModel *getServerList() { return &m_serverList; }
 
-    Q_INVOKABLE bool load(QModelIndex index) {
+    Q_INVOKABLE void load(QModelIndex index) {
         auto childItem = static_cast<PlaylistItem *>(index.internalPointer());
         auto parentItem = childItem->parent();
 
-        if (!parentItem) return false;
+        if (!parentItem) return;
         int itemIndex = childItem->row();
         int playlistIndex = m_playlists.indexOf(parentItem);
         play(playlistIndex, itemIndex);
-        return true;
+    }
+    Q_INVOKABLE void pasteOpen() {
+        QString clipboardText = QGuiApplication::clipboard()->text();
+        qInfo() << "Log (mpv): Pasting" << clipboardText;
+        MpvObject::instance ()->showText (QByteArray("Pasting ") + clipboardText.toUtf8 ());
+        // addSubtitle ()
+        if (clipboardText.endsWith(".vtt")) {
+            MpvObject::instance ()->addSubtitle(clipboardText);
+            MpvObject::instance ()->setSubVisible(true);
+        } else {
+            auto playlist = PlaylistItem::fromUrl(clipboardText);
+            if (playlist) {
+                replaceCurrentPlaylist(playlist);
+                play ();
+            }
+        }
     }
 
-    // opens the file to play immediately when application launches
-    bool setLaunchPath(const QString &path);
-    std::set<std::string> playlistSet;
-    /*
-   * hashset containing all playlist links which prevents the same playlist from
-   * being added to the list of playlists
-   */
+    // Hashset containing all playlist links
+    // prevents the same playlist being added
+    QSet<QString> playlistSet;
 
 public slots:
-    void replaceCurrentPlaylist(const QUrl &path);
-    void play(int playlistIndex, int itemIndex);
+    // void replaceCurrentPlaylist(const QUrl &path);
+    bool play(int playlistIndex = -1, int itemIndex = -1);
 
     //  Traversing the playlist
     void loadOffset(int offset);
@@ -88,6 +105,10 @@ public:
     void appendPlaylist(PlaylistItem *playlist);
     void replaceCurrentPlaylist(PlaylistItem *playlist);
     PlaylistItem *getCurrentPlaylist() const {
+        if (m_playlists.isEmpty () || m_playlistIndex < 0 ||
+            m_playlistIndex > m_playlists[m_playlistIndex]->size ())
+            return nullptr;
+
         return m_playlists[m_playlistIndex];
     }
 
@@ -97,8 +118,8 @@ public:
 public:
     Q_SIGNAL void loadingChanged(void);
     Q_SIGNAL void currentIndexChanged(void);
-    Q_SIGNAL void sourceFetched();
-    Q_SIGNAL void updatedLastWatchedIndex();
+    Q_SIGNAL void sourceFetched(void);
+    Q_SIGNAL void updatedLastWatchedIndex(void);
     Q_SIGNAL void showNameChanged(void);
 
 public:

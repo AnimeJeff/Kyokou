@@ -92,15 +92,13 @@ void Haitu::loadDetails(ShowData &show) const
     serverNodes.sort (true);
     serverNamesNode.sort (true);
 
-    //pugi::xpath_node_set::const_iterator serverNode = serverNodes.begin(); serverNode != serverNodes.end(); ++serverNode
-
     PlaylistItem *playlist = nullptr;
     QMap<float, QString> episodesMap;
     // bool makeEpisodesHash = show.type == 2 || show.type == 4;
 
     for (int i = 0; i < serverNodes.size (); i++) {
         pugi::xpath_node serverNode = serverNodes[i];
-        std::string serverName = serverNamesNode[i].attr ("data-dropdown-value").as_string ();
+        QString serverName = serverNamesNode[i].attr ("data-dropdown-value").as_string ();
         //qDebug() << "serverName" << QString::fromStdString (serverName);
         pugi::xpath_node_set episodeNodes = serverNode.node ().select_nodes (".//a");
         //qDebug() << "episodes" << episodeNodes.size ();
@@ -117,7 +115,7 @@ void Haitu::loadDetails(ShowData &show) const
                 number = intTitle;
                 title.clear ();
             }
-            std::string link = it->attr ("href").as_string ();
+            QString link = it->attr ("href").as_string ();
             // qDebug() << "link" << QString::fromStdString (link);
 
             if (number > -1){
@@ -132,7 +130,7 @@ void Haitu::loadDetails(ShowData &show) const
     }
 
     for (auto [number, link] : episodesMap.asKeyValueRange()) {
-        show.addEpisode (number, link.toStdString (),"");
+        show.addEpisode (number, link,"");
     }
 
 
@@ -141,22 +139,20 @@ void Haitu::loadDetails(ShowData &show) const
 
 QList<VideoServer> Haitu::loadServers(const PlaylistItem *episode) const
 {
-    auto serversString = QString::fromStdString (episode->link).split (";");
+    auto serversString = episode->link.split (";");
     QList<VideoServer> servers;
-    for (auto& serverString: serversString)
-    {
+    for (auto& serverString: serversString) {
         auto serverNameAndLink = serverString.split (" ");
-        auto serverName = serverNameAndLink.first ();
-        auto serverLink = serverNameAndLink.last ();
-        servers.emplaceBack (serverName, serverLink.toStdString ());
+        QString serverName = serverNameAndLink.first ();
+        QString serverLink = serverNameAndLink.last ();
+        servers.emplaceBack (serverName, serverLink);
     }
     return servers;
-    // return QList<VideoServer>{{"default",episode->link}};;
 }
 
 QList<Video> Haitu::extractSource(const VideoServer &server) const
 {
-    std::string response = NetworkClient::get(hostUrl + server.link).body;
+    std::string response = NetworkClient::get(hostUrl + server.link.toStdString ()).body;
     std::smatch match;
     if (!std::regex_search(response, match, player_aaaa_regex))
         throw "Failed to extract m3u8";

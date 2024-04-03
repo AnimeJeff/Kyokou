@@ -7,13 +7,7 @@ Item{
     id:mpvPage
 
     property alias playListSideBar: playlistBar
-    Connections {
-        target: app.playList
-        function onSourceFetched() {
-            mpv.subVisible = true
-            sideBar.gotoPage(3)
-        }
-    }
+
 
     MpvPlayer {
         id:mpvPlayer
@@ -26,7 +20,6 @@ Item{
         }
     }
 
-    onVisibleChanged: if(visible) mpvPlayer.forceActiveFocus()
     PlayListSideBar {
         id:playlistBar
         anchors{

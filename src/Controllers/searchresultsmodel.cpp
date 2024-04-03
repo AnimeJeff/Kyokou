@@ -13,8 +13,7 @@ SearchResultsModel::SearchResultsModel(QObject *parent) : QAbstractListModel(par
             setLoading (false);
             return;
         }
-        try
-        {
+        try {
             auto results = m_watcher.result();
             m_canFetchMore = !results.isEmpty ();
             if (fetchingMore)

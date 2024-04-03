@@ -2,10 +2,9 @@
 #include "Data/playlistitem.h"
 #include "Providers/showprovider.h"
 
-void ShowData::addEpisode(float number, std::string link, QString name)
-{
+void ShowData::addEpisode(float number, const QString &link, const QString &name) {
     if (!playlist) {
-        playlist = new PlaylistItem(title, provider, this->link, nullptr);
+        playlist = new PlaylistItem(title, provider, QString::fromStdString (this->link), nullptr);
         if (lastWatchedIndex > -1) playlist->currentIndex = lastWatchedIndex;
     }
     playlist->emplaceBack (number, link, name, false);

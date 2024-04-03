@@ -57,8 +57,12 @@ public:
         }
         return "Undefined";
     }
-    void updateLastWatchedIndex(const QString& showLink, int lastWatchedIndex) {
+    inline void updateLastWatchedIndex(const QString& showLink, int lastWatchedIndex) {
         updateProperty(showLink, "lastWatchedIndex", lastWatchedIndex, INT);
+        updateProperty(showLink, "lastPlayTime", 0, INT);
+    }
+    inline void updateLastPlayTime(const QString& showLink, int lastPlayTime) {
+        updateProperty(showLink, "lastPlayTime", lastPlayTime, INT);
     }
     void updateProperty(const QString& showLink, QString propertyName, QVariant propertyValue, PropertyType propertyType){
         if (!m_showHashmap.contains(showLink)) return;
@@ -83,16 +87,44 @@ public:
         save(); // Save changes
     }
     void syncShow(ShowData& show);
+    ShowData::LastWatchInfo getLastWatchInfo(const QString& showLink) {
+        // Check if the show exists in the hashmap
+
+        int lastWatchedIndex = -1;
+        int lastPlayTime = 0;
+        ShowData::LastWatchInfo info;
+        if (m_showHashmap.contains (showLink))
+        {
+            // Retrieve the list type and index for the show
+            QPair<int, int> listTypeAndIndex = m_showHashmap.value(showLink);
+            int listType = listTypeAndIndex.first;
+            int index = listTypeAndIndex.second;
+            QJsonArray list = m_watchListJson.at(listType).toArray();
+            QJsonObject showObject = list.at(index).toObject();
+
+            // Sync details
+            info.listType = listType;
+            info.lastWatchedIndex = showObject["lastWatchedIndex"].toInt(-1);
+            info.lastPlayTime = showObject["lastPlayTime"].toInt(0);
+            // if (showObject.contains("lastWatchedIndex")) {
+
+                // show.lastWatchedIndex = lastWatchedIndex;
+                // if (auto playlist = show.getPlaylist ()) {
+                //     playlist->currentIndex = lastWatchedIndex;
+                // }
+            // }
+            // show.setListType(listType);
+        }
+        return info;
+    }
+
+
     void add(ShowData& show, int listType);
     void remove(ShowData& show);
     Q_INVOKABLE void removeAt(int index, int listType = -1) {
         if (listType < 0 || listType > 4) listType = m_currentListType;
         QJsonArray list = m_watchListJson[listType].toArray();
-        qDebug () << index << list.size ();
         if (index < 0 || index >= list.size ()) return;
-
-
-        qDebug() << index << displayableListType (static_cast<ListType>(listType));
 
         auto showLink = list[index].toObject ()["link"].toString ();
 
@@ -141,9 +173,14 @@ public:
 
 
     QJsonObject loadShow(int index);
+
+
+
     inline bool inWatchList(const QString& showLink){
         return m_showHashmap.contains (showLink);
     }
+
+
 private:
     void save();
 private:

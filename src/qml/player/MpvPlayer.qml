@@ -212,7 +212,7 @@ MpvObject {
         MenuItem {
             text: "Paste link"
             onTriggered:  {
-                mpv.pasteOpen()
+                app.playlist.pasteOpen()
             }
         }
         MenuItem {
@@ -232,12 +232,7 @@ MpvObject {
     FolderDialog {
         id:folderDialog
         currentFolder: "file:///D:/TV/"
-        onAccepted:
-        {
-            // console.log(folderDialog.selectedFolder)
-            app.playList.replaceCurrentPlaylist(folderDialog.selectedFolder)
-            app.playList.play(0, -1)
-        }
+        onAccepted: app.playFromFolder(folderDialog.selectedFolder)
     }
     Keys.enabled: true
     Keys.onPressed: event => handleKeyPress(event)
@@ -248,6 +243,8 @@ MpvObject {
                          }
                      }
 
+
+    Component.onDestruction: app.updateLastPlayTime()
 
     function handleCtrlModifiedKeyPress(key){
         switch(key) {
@@ -282,7 +279,7 @@ MpvObject {
             app.playList.playNextItem()
             break;
         case Qt.Key_V:
-            mpv.pasteOpen()
+            app.playlist.pasteOpen()
             break;
         case Qt.Key_R:
             mpv.reload()

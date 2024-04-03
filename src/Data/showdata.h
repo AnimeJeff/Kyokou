@@ -30,10 +30,10 @@ public:
     QString score = "";
     QString views = "";
     int lastWatchedIndex = -1;
-
+    int lastPlayTime = 0;
     friend class ShowManager;
 
-    void addEpisode(float number, std::string link, QString name);
+    void addEpisode(float number, const QString &link, const QString &name);
     QJsonObject toJson() const;
 
 public:
@@ -53,6 +53,11 @@ public:
         Completed
     };
 
+    struct LastWatchInfo {
+        int listType = -1;
+        int lastWatchedIndex = -1;
+        int lastPlayTime = 0;
+    };
     inline PlaylistItem *getPlaylist() const { return playlist; }
     inline ShowProvider *getProvider() const { return provider; }
     void setListType(int newListType) { listType = newListType; }

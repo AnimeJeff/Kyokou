@@ -43,10 +43,14 @@ public:
     ~ShowManager();
 
     ShowData &getShow() { return m_show; }
-    void setShow(const ShowData &show);
+    void setShow(const ShowData &show, ShowData::LastWatchInfo lastWatchInfo);
     void updateLastWatchedIndex(int index);
     int correctIndex(int index) const;
     int getContinueIndex() const;
+    int getLastPlayTime() const {
+        return m_show.lastPlayTime;
+    }
+
 
     inline PlaylistItem *getPlaylist() const { return m_show.playlist; }
     EpisodeListModel *episodeListModel() { return &m_episodeListModel; }

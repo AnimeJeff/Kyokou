@@ -87,13 +87,12 @@ void Gogoanime::loadDetails(ShowData &anime) const
         float number = -1;
         bool ok;
         float intTitle = title.toFloat (&ok);
-        if (ok)
-        {
+        if (ok){
             number = intTitle;
             title = "";
         }
         std::string link = it->attr ("href").value ();
-        anime.addEpisode(number, link, title);
+        anime.addEpisode(number, QString::fromStdString (link), title);
     }
 
     if (auto pNodes = doc.select ("//div[@class='description']/p"); !pNodes.empty ()) {
@@ -157,36 +156,33 @@ int Gogoanime::getTotalEpisodes(const std::string& link) const
 QList<VideoServer> Gogoanime::loadServers(const PlaylistItem *episode) const
 {
     QList<VideoServer> servers;
-    pugi::xpath_node_set serverNodes = NetworkClient::get(hostUrl + episode->link).document ().select("//div[@class='anime_muti_link']/ul/li/a");
+    pugi::xpath_node_set serverNodes = NetworkClient::get(hostUrl + episode->link.toStdString ()).document ().select("//div[@class='anime_muti_link']/ul/li/a");
     for (pugi::xpath_node_set::const_iterator it = serverNodes.begin (); it != serverNodes.end(); ++it)
     {
-        std::string link = it->attr("data-video").as_string ();
+        QString link = it->attr("data-video").as_string ();
         QString name = QString(it->node().child_value ()).trimmed ();
-        Functions::httpsIfy(link);
-        //            server.headers["referer"] = QS(hostUrl);
-        //            qDebug() << name << link;
-
-        servers.emplaceBack (name,link);
+        if (link.startsWith ("//")){
+            link = "https:" + link;
+        }
+        servers.emplaceBack (name, link);
     }
     return servers;
 }
 
-QList<Video> Gogoanime::extractSource(const VideoServer &server) const
-{
-
+QList<Video> Gogoanime::extractSource(const VideoServer &server) const {
     auto serverName = server.name.toLower ();
     try {
         if (serverName.contains ("vidstreaming") ||
             serverName.contains ("gogo"))
         {
             GogoCDN extractor;
-            auto source = extractor.extract(server.link);
+            auto source = extractor.extract(server.link.toStdString ());
             return { Video(source) };
         }
     }
     catch (QException &e)
     {
-        ErrorHandler::instance ().show ("Cannot find extract " + QString::fromStdString (server.link));
+        ErrorHandler::instance ().show ("Cannot find extract " + server.link);
     }
 
     return {};

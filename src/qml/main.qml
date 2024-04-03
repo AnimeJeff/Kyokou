@@ -33,9 +33,6 @@ Window {
 
 
     property alias resizeAnime: resizingAnimation
-
-    // property bool playerFillWindow: false
-
     property MpvObject mpv
 
 
@@ -121,15 +118,23 @@ Window {
         id:mpvPage
         visible: true
         anchors.fill: root.fullscreen || root.pipMode ? parent : stackView
-        Component.onCompleted: {
-            if (app.playList.launchPath.toString().trim() !== "") {
-                sideBar.gotoPage(3)
-                setTimeout(()=>mpv.open(app.playList.launchPath), 100)
-            } else {
-                app.latest(1)
-                visible = false
-            }
+    }
+    Component.onCompleted: {
+        setTimeout(() => {
+                       if (app.playList.play(0, -1)) {
+                           sideBar.gotoPage(3)
+                       } else {
+                           app.latest(1)
+                           mpvPage.visible = false
+                       }
+                   }, 100)
+    }
 
+    Connections {
+        target: app.playList
+        function onSourceFetched() {
+            mpv.subVisible = true
+            sideBar.gotoPage(3)
         }
     }
 

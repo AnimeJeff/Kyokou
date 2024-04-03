@@ -187,38 +187,26 @@ MpvObject::MpvObject(QQuickItem *parent) : QQuickFramebufferObject(parent) {
 }
 
 // Open file
-void MpvObject::open(const Video &video) {
+void MpvObject::open(const Video &video, int time) {
 
     //    m_mpv.set_option("referrer","");
     //    m_mpv.set_option("stream-lavf-o", "seekable=0");
     //    m_mpv.set_option("stream-lavf-o", "");
     //    m_mpv.set_option("force-seekable", false);
     //    m_mpv.set_option("http-proxy", "");
-    //    qDebug() << fileUrl.isLocalFile();
-    //    qDebug() << "localfile" << fileUrl.toLocalFile().toUtf8();
-    //    qDebug() << "string" << ;
-    //    QByteArray fileuri_str =
-    //    fileUrl.toString().toUtf8();//(fileUrl.isLocalFile() ?
-    //    fileUrl.toLocalFile() : fileUrl.toString()).toUtf8();
     m_state = STOPPED;
     emit mpvStateChanged ();
-    auto fileUrl = video.videoUrl.toString().toUtf8().constData();
-    if (!video.headers.empty ()) {
-        std::string headers;
-        for (const auto& pair : video.headers) {
-            std::string headerString = pair.first + ": " + pair.second;
-            headers +=  headerString;
-        }
-        qDebug() << headers.data ();
-        m_mpv.set_property_async ("http-header-fields", headers.data ());
-    } else {
-        m_mpv.set_property_async ("http-header-fields","");
-    }
 
-    const char *args[] = {"loadfile", fileUrl,
-                          nullptr};
+    if (std::string headers = video.headers(); !headers.empty()) {
+        m_mpv.set_property_async("http-header-fields", video.headers().data());
+    } else {
+        m_mpv.set_property_async("http-header-fields", "");
+    }
+    QByteArray fileuri_str = (video.videoUrl.isLocalFile() ? video.videoUrl.toLocalFile() : video.videoUrl.toString()).toUtf8();
+    const char *args[] = {"loadfile", fileuri_str.constData(), nullptr};
     m_currentVideo = video;
     m_mpv.command_async(args);
+    m_seekTime = time;
 }
 
 // Play, Pause, Stop & Get state
@@ -294,8 +282,8 @@ void MpvObject::addAudioTrack(const QUrl &url) {
 
 // Add subtitle
 void MpvObject::addSubtitle(const QUrl &url) {
-       if (m_state == STOPPED)
-           return;
+    if (m_state == STOPPED)
+        return;
     QByteArray uri_str =
         (url.isLocalFile() ? url.toLocalFile() : url.toString()).toUtf8();
     const char *args[] = {"sub-add", uri_str.constData(), "select", nullptr};
@@ -331,6 +319,10 @@ void MpvObject::onMpvEvent() {
         case MPV_EVENT_FILE_LOADED:
             m_state = VIDEO_PLAYING;
             SetThreadExecutionState(ES_CONTINUOUS | ES_DISPLAY_REQUIRED);
+            if (m_seekTime > 0) {
+                seek(m_seekTime, true);
+                m_seekTime = 0;
+            }
             emit mpvStateChanged();
             break;
 
@@ -368,7 +360,7 @@ void MpvObject::onMpvEvent() {
         case MPV_EVENT_LOG_MESSAGE: {
             mpv_event_log_message *msg =
                 static_cast<mpv_event_log_message *>(event->data);
-            fprintf(stderr, "[%s] %s", msg->prefix, msg->text);
+            fprintf(stderr, "[%s] %s", msg->prefix, msg->text); //TODO
             break;
         }
 

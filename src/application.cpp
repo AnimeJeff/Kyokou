@@ -8,7 +8,7 @@
 #include "Providers/allanime.h"
 #include <QtConcurrent>
 
-Application::Application(QString launchPath)
+Application::Application(const QString &launchPath) : m_playlist(launchPath, this)
 {
     NetworkClient::init ();
 
@@ -29,9 +29,6 @@ Application::Application(QString launchPath)
     }
     setCurrentProviderIndex(0);
 
-    if (!launchPath.isEmpty ())
-        m_playlist.setLaunchPath(launchPath);
-
     // Cancels the task when it takes too long
     m_timeoutTimer.setSingleShot (true);
     m_timeoutTimer.setInterval (5000);
@@ -46,13 +43,12 @@ Application::Application(QString launchPath)
         });
 
 
-
-    bool N_m3u8DLPathExists = QFile(QDir::cleanPath (QCoreApplication::applicationDirPath() + QDir::separator() + "N_m3u8DL-CLI_v3.0.2.exe")).exists ();
-    if (N_m3u8DLPathExists)
-    {
+    QString N_m3u8DLPath = QDir::cleanPath(QCoreApplication::applicationDirPath() + QDir::separator() + "N_m3u8DL-CLI_v3.0.2.exe");
+    if (QFileInfo::exists (N_m3u8DLPath)) {
         m_downloader = new DownloadModel;
     }
     connect(&m_playlist, &PlaylistModel::currentIndexChanged, this, &Application::updateLastWatchedIndex);
+
 }
 
 Application::~Application() {
@@ -85,18 +81,20 @@ void Application::loadShow(int index, bool fromWatchList) {
         QString providerName = showJson["provider"].toString ();
         if (!m_providersMap.contains(providerName)) return;
         auto provider = m_providersMap[providerName];
-        std::string link = showJson["link"].toString ().toStdString ();
+
         QString title = showJson["title"].toString ();
+        std::string link = showJson["link"].toString ().toStdString ();
         QString coverUrl = showJson["cover"].toString ();
         int lastWatchedIndex = showJson["lastWatchedIndex"].toInt ();
         int type = showJson["type"].toInt ();
         auto show = ShowData(title, link, coverUrl, provider, "", type, lastWatchedIndex);
-        m_showManager.setShow(show);
-        m_showManager.setListType (m_watchListModel.getCurrentListType());
+        auto lastPlayTime = showJson["lastPlayTime"].toInt (0);
+        int listType = m_watchListModel.getCurrentListType();
+        m_showManager.setShow(show, {listType, lastWatchedIndex, lastPlayTime});
     } else {
         auto show = m_searchResultsModel.at(index);
-        m_watchListModel.syncShow (show);
-        m_showManager.setShow(show);
+        auto lastWatchedInfo = m_watchListModel.getLastWatchInfo (QString::fromStdString (show.link));
+        m_showManager.setShow(show, lastWatchedInfo);
     }
 }
 
@@ -106,20 +104,18 @@ void Application::addCurrentShowToLibrary(int listType)
     m_showManager.setListType(listType);
 }
 
-void Application::removeCurrentShowFromLibrary()
-{
+void Application::removeCurrentShowFromLibrary() {
     m_watchListModel.remove (m_showManager.getShow ());
     m_showManager.setListType(-1);
 }
 
-void Application::playFromEpisodeList(int index)
-{
+void Application::playFromEpisodeList(int index) {
+    updateLastPlayTime();
     m_playlist.replaceCurrentPlaylist (m_showManager.getPlaylist ());
-    m_playlist.play (0, m_showManager.correctIndex(index));
+    m_playlist.play (-1, m_showManager.correctIndex(index));
 }
 
-void Application::continueWatching()
-{
+void Application::continueWatching() {
     int index = m_showManager.getContinueIndex();
     if (index < 0) {
         qDebug() << "Error: Invalid continue index";
@@ -128,26 +124,22 @@ void Application::continueWatching()
     playFromEpisodeList(index);
 }
 
-void Application::downloadCurrentShow(int startIndex, int count)
-{
+void Application::downloadCurrentShow(int startIndex, int count) {
     m_downloader->downloadShow (m_showManager.getShow (), m_showManager.correctIndex(startIndex), count); //TODO
 }
 
 void Application::updateLastWatchedIndex() {
     PlaylistItem *currentPlaylist = m_playlist.getCurrentPlaylist();
     auto showPlaylist = m_showManager.getPlaylist ();
-    if (!showPlaylist || !currentPlaylist) {//TODO local file
-        qDebug() << "error: playlist returned nullptr";
+    if (!showPlaylist || !currentPlaylist) {
         return;
+        //Program launched with a filepath so no showPlaylist
     }
 
     if (showPlaylist->link == currentPlaylist->link) {
         m_showManager.updateLastWatchedIndex (currentPlaylist->currentIndex);
     }
-
-    //todo change playlist link to qstring
-    m_watchListModel.updateLastWatchedIndex (QString::fromStdString (currentPlaylist->link), currentPlaylist->currentIndex);
-
+    m_watchListModel.updateLastWatchedIndex (currentPlaylist->link, currentPlaylist->currentIndex);
 }
 
 void Application::cancel()

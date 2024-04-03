@@ -32,7 +32,7 @@ private:
     DownloadModel *downloadModel() { return m_downloader; }
     WatchListModel m_watchListModel{this};
     WatchListModel *watchListModel() { return &m_watchListModel; }
-    PlaylistModel m_playlist{this};
+    PlaylistModel m_playlist;
     PlaylistModel *playlistModel() { return &m_playlist; }
     Cursor m_cursor {this};
     Cursor *cursor() { return &m_cursor; }
@@ -74,6 +74,7 @@ private:
     QFutureWatcher<void> m_watcher;
     QTimer m_timeoutTimer{this};
     QString m_cancelReason;
+
 public:
     Q_INVOKABLE void cycleProviders();
     Q_INVOKABLE void search(const QString& query, int page);
@@ -84,9 +85,28 @@ public:
     Q_INVOKABLE void addCurrentShowToLibrary(int listType);
     Q_INVOKABLE void removeCurrentShowFromLibrary();
     Q_INVOKABLE void playFromEpisodeList(int index);
+    Q_INVOKABLE void playFromFolder(const QUrl& pathUrl) {
+        auto playlist = PlaylistItem::fromUrl (pathUrl);
+        if (playlist) {
+            m_playlist.replaceCurrentPlaylist (playlist);
+            m_playlist.play();
+        }
+    }
     Q_INVOKABLE void continueWatching();
     Q_INVOKABLE void downloadCurrentShow(int startIndex, int count = 1);;
+    Q_INVOKABLE void updateLastPlayTime() {
+        // Update the last play time
+        if (auto lastPlaylist = m_playlist.getCurrentPlaylist(); lastPlaylist) {
+            qDebug() << "Updating last playlist" << lastPlaylist->link << MpvObject::instance ()->time ();
 
+            auto playlistType = lastPlaylist->at (lastPlaylist->currentIndex)->type;
+            if (playlistType == PlaylistItem::LOCAL)
+                lastPlaylist->updateHistoryFile (MpvObject::instance ()->time ());
+            else if (playlistType == PlaylistItem::ONLINE){
+                m_watchListModel.updateLastPlayTime (lastPlaylist->link, MpvObject::instance ()->time ());
+            }
+        }
+    }
 signals:
     void loadingChanged(void);
     void currentShowTypeIndexChanged(void);
@@ -97,7 +117,7 @@ private slots:
 public:
     Application(Application &&) = delete;
     Application &operator=(Application &&) = delete;
-    explicit Application(QString launchPath);
+    explicit Application(const QString &launchPath);
     ~Application();
 
 private:

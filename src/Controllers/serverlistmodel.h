@@ -100,7 +100,7 @@ public:
         auto videos = load(index);
         if (!videos.isEmpty ()) {
             qInfo() << "Log (ServerList): Fetched source" << videos.first ().videoUrl;
-            MpvObject::instance()->open (videos.first ());
+            MpvObject::instance()->open (videos.first (), MpvObject::instance()->time ());
         } else {
             m_currentIndex = previousIndex;
             emit currentIndexChanged ();
@@ -136,7 +136,7 @@ private:
             return server.name;
             break;
         case LinkRole:
-            return QString::fromStdString (server.link.substr (0,22)) + "...";
+            return server.link.left(30) + "...";
             break;
         default:
             break;

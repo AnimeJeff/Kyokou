@@ -10,7 +10,7 @@ class EpisodeListModel : public QAbstractListModel {
 
     int getLastWatchedIndex() const {
         if (!m_playlist || m_playlist->currentIndex == -1) return -1;
-        int lastWatchedIndex = m_isReversed ? m_playlist->count() - 1 -  m_playlist->currentIndex : m_playlist->currentIndex;
+        int lastWatchedIndex = m_isReversed ? m_playlist->size() - 1 -  m_playlist->currentIndex : m_playlist->currentIndex;
         return lastWatchedIndex;
     }
 
@@ -33,17 +33,18 @@ public:
         }
         if (playlist) playlist->useCount++; //playlist could be nullptr
         m_playlist = playlist;
+
         updateLastWatchedIndex ();
     }
     int getContinueIndex() const {
         if (!m_playlist) return -1;
-        return m_isReversed ? m_playlist->count() - 1 -  continueIndex : continueIndex;
+        return m_isReversed ? m_playlist->size() - 1 -  continueIndex : continueIndex;
     }
 
     void updateLastWatchedIndex() {
         if (m_playlist){
             // If the index in second to last of the latest episode then continue from latest episode
-            continueIndex = m_playlist->currentIndex == m_playlist->count () - 2 ? m_playlist->currentIndex + 1 : m_playlist->currentIndex;
+            continueIndex = m_playlist->currentIndex == m_playlist->size () - 2 ? m_playlist->currentIndex + 1 : m_playlist->currentIndex;
             if (continueIndex > -1) {
                 const PlaylistItem *episode = m_playlist->at(continueIndex);
                 m_continueEpisodeName = episode->name.isEmpty () ? QString::number (episode->number) : episode->number < 0 ? episode->name : QString::number (episode->number) + "\n" + episode->name;

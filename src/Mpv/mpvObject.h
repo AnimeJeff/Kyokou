@@ -76,11 +76,15 @@ public:
     qint64 m_OPEnd = 90;
     qint64 m_EDStart = 0;
     qint64 m_EDEnd = 90;
+    qint64 m_seekTime = 0;
     bool m_isResizing = false;
     Video m_currentVideo = Video(QUrl());
+    void setCurrentVideo(const Video& video) {
+        m_currentVideo = video;
+    }
 
 public slots:
-    void open(const Video &video);
+    void open(const Video &video, int time = 0);
 
 
     void play(void);
@@ -125,17 +129,17 @@ public slots:
         const char *args[] = {"keypress", cmd, nullptr};
         m_mpv.command_async(args);
     }
-    void pasteOpen() {
-        QString clipboardText = QGuiApplication::clipboard()->text();
-        qInfo() << "Log (mpv): Pasting" << clipboardText;
-        showText (QByteArray("Pasting ") + clipboardText.toUtf8 ());
-        if (clipboardText.endsWith(".vtt")) {
-            addSubtitle(clipboardText);
-            setSubVisible(true);
-        } else {
-            open(Video (clipboardText));
-        }
-    }
+    // void pasteOpen() {
+    //     QString clipboardText = QGuiApplication::clipboard()->text();
+    //     qInfo() << "Log (mpv): Pasting" << clipboardText;
+    //     showText (QByteArray("Pasting ") + clipboardText.toUtf8 ());
+    //     if (clipboardText.endsWith(".vtt")) {
+    //         addSubtitle(clipboardText);
+    //         setSubVisible(true);
+    //     } else {
+    //         open(Video (clipboardText));
+    //     }
+    // }
     void copyVideoLink() {
         QClipboard *clipboard = QGuiApplication::clipboard();
         clipboard->setText(m_currentVideo.videoUrl.toString ());

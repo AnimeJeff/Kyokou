@@ -7,11 +7,11 @@
 
 class ShowProvider;
 
-class PlaylistItem
-{
+class PlaylistItem {
 
 private:
     std::unique_ptr<QFile> m_historyFile = nullptr;
+    std::unique_ptr<QFileSystemWatcher> m_folderWatcher = nullptr;
     QTimer *m_fileCloseTimer = nullptr;
 
     PlaylistItem *m_parent = nullptr;
@@ -22,11 +22,11 @@ private:
     ShowProvider* provider;
 public:
     //List
-    PlaylistItem(const QString& name, ShowProvider* provider, std::string link, PlaylistItem* parent)
+    PlaylistItem(const QString& name, ShowProvider* provider, const QString &link, PlaylistItem* parent)
         : name(name), provider(provider), link(std::move(link)), m_parent(parent), type(LIST) {}
 
     //Item
-    PlaylistItem(float number, const std::string &link, const QString &name, PlaylistItem *parent, bool online = true);
+    PlaylistItem(float number, const QString &link, const QString &name, PlaylistItem *parent, bool online = true);
     ~PlaylistItem() {
         // qDebug() << "deleted" << (m_parent != nullptr ? m_parent->link : "") << fullName;
         clear();
@@ -38,9 +38,9 @@ public:
     inline QString getFullName() const { return fullName; }
 
     QUrl loadLocalSource(int index);
-    static PlaylistItem *fromLocalDir(const QString &localDir);
+    static PlaylistItem *fromUrl(const QUrl &pathUrl, PlaylistItem *parent = nullptr);
 
-    void emplaceBack(float number, const std::string &link, const QString &name, bool online = true);
+    void emplaceBack(float number, const QString &link, const QString &name, bool online = true);
     void clear();
 
     PlaylistItem *parent() const { return m_parent; }
@@ -61,24 +61,48 @@ public:
 
     QString name;
     float number = -1;
-    std::string link;
+    QString link;
     int currentIndex = -1;
+    int lastPlayTime = 0;
 
 public:
-    int count() const {
+    int size() const {
         if (!m_children || m_children->isEmpty ())
             return 0;
         return m_children->count();
     }
     QString getDisplayName(int index) const;
     bool isValidIndex(int index) const;
+    void updateHistoryFile(qint64 time = 0) {
+        static QMutex mutex;
+        mutex.lock ();
+        Q_ASSERT(m_historyFile);
+        if (m_historyFile->isOpen() || m_historyFile->open(QIODevice::WriteOnly)) {
+            // Q_ASSERT(m_fileCloseTimer);
+            // m_fileCloseTimer->start ();
+            m_historyFile->resize(0);
+            QTextStream stream(m_historyFile.get ());
+            QString lastWatchedFilePath = m_children->at(currentIndex)->link;
+            stream << lastWatchedFilePath.split("/").last();
+            if (time > 0) {
+                stream << " " << QString::number (time);
+            }
+            m_historyFile->close();
+        }
+        mutex.unlock ();
+    }
+    void setLastPlayAt(int index, int time) {
+        if (!isValidIndex (index)) return;
+        qDebug() << "setting playlist item " << index << time;
+        currentIndex = index;
+        m_children->at (index)->lastPlayTime = time;
+    }
 };
 
 struct VideoServer {
     QString name;
-    std::string link;
+    QString link;
     QMap<QString, QString> headers;
-    QString source;
     bool working = true;
     struct SkipData {
         unsigned int introBegin;
@@ -87,7 +111,7 @@ struct VideoServer {
         unsigned int outroEnd;
     };
     std::optional<SkipData> skipData;
-    VideoServer(const QString& name, const std::string& link):name(name),link(link){
+    VideoServer(const QString& name, const QString& link):name(name),link(link){
 
     }
 };

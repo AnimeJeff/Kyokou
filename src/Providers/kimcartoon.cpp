@@ -86,8 +86,8 @@ void Kimcartoon::loadDetails(ShowData &show) const {
     }
 
     pugi::xpath_node_set episodeNodes = doc.select("//table[@class='listing']//a");
-
-    for (pugi::xpath_node_set::const_iterator it = episodeNodes.begin(); it != episodeNodes.end(); ++it) {
+    for (int i = episodeNodes.size() - 1; i >= 0; --i) {
+        const pugi::xpath_node *it = &episodeNodes[i];
         QStringList fullEpisodeName;
         if (auto episodeNameString = QString(it->node().child_value()).replace (show.title, "").trimmed ();
             episodeNameString.startsWith ("Episode")){
@@ -107,25 +107,26 @@ void Kimcartoon::loadDetails(ShowData &show) const {
             title = fullEpisodeName.last ().replace ("\n", "").trimmed ();
         }
 
-        std::string link = it->attr("href").value();
+        QString link = it->attr("href").value();
         show.addEpisode(number, link, title);
     }
+
 }
 
 QVector<VideoServer>
 Kimcartoon::loadServers(const PlaylistItem *episode) const {
-    auto doc = NetworkClient::get(hostUrl + episode->link).document();
+    auto doc = NetworkClient::get(hostUrl + episode->link.toStdString ()).document();
     auto serverNodes = doc.select("//select[@id='selectServer']/option");
     QList<VideoServer> servers;
     for (pugi::xpath_node_set::const_iterator it = serverNodes.begin(); it != serverNodes.end(); ++it) {
         QString serverName = QString(it->node ().child_value ()).trimmed ();
-        std::string serverLink = it->attr ("value").as_string ();
+        QString serverLink = it->attr ("value").as_string ();
         servers.emplaceBack (serverName, serverLink);
     }
     return servers;
 }
 QList<Video> Kimcartoon::extractSource(const VideoServer &server) const {
-    auto doc = NetworkClient::get(hostUrl + server.link).document();
+    auto doc = NetworkClient::get(hostUrl + server.link.toStdString ()).document();
     auto iframe = doc.select ("//iframe[@id='my_video_1']");
     if (iframe.empty ()) return {};
     std::string serverUrl = iframe.first ().attr ("src").as_string ();
@@ -136,8 +137,7 @@ QList<Video> Kimcartoon::extractSource(const VideoServer &server) const {
         if (matches.size() > 1) {
             QString source = QString::fromStdString (matches[1].str ());
             Video video(source);
-            video.headers = { { "Referer" , "https://" + Functions::getHostFromUrl(serverUrl)} };
-            // qDebug () << QString::fromStdString ("https://" + Functions::getHostFromUrl(serverUrl));
+            video.addHeader ("Referer", "https://" + Functions::getHostFromUrl(serverUrl));
             return { video };
         }
     } else {

@@ -7,13 +7,14 @@ QList<ShowData> Nivod::filterSearch(int page, const QString &sortBy, int type,
 
     std::string channel = type == ShowData::DOCUMENTARY ?  "6" : std::to_string(type);
     std::map<std::string, std::string> data = {
-                                               {"sort_by", sortBy.toStdString()},
-                                               {"channel_id", channel},
-                                               {"show_type_id", "0"},
-                                               {"region_id", "0"},
-                                               {"lang_id", "0"},
-                                               {"year_range", " "},
-                                               {"start", std::to_string((page - 1) * 20)}};
+        {"sort_by", sortBy.toStdString()},
+        {"channel_id", channel},
+        {"show_type_id", "0"},
+        {"region_id", "0"},
+        {"lang_id", "0"},
+        {"year_range", " "},
+        {"start", std::to_string((page - 1) * 20)}
+    };
 
     QJsonArray responseJson = callAPI("https://api.nivodz.com/show/filter/WEB/3.2", data)["list"].toArray ();
     return parseShows(responseJson);
@@ -24,10 +25,11 @@ QList<ShowData> Nivod::search(QString query, int page, int type) {
     if (query.isEmpty())
         return QList<ShowData>();
     std::map<std::string, std::string> data = {
-                                               {"keyword", query.toStdString()},
-                                               {"start", std::to_string((page - 1) * 20)},
-                                               {"cat_id", "1"},
-                                               {"keyword_type", "0"}};
+        {"keyword", query.toStdString()},
+        {"start", std::to_string((page - 1) * 20)},
+        {"cat_id", "1"},
+        {"keyword_type", "0"}
+    };
     filterSearched = false;
     QJsonArray responseJson = callAPI("https://api.nivodz.com/show/search/WEB/3.2", data)["list"].toArray();
     return parseShows(responseJson);
@@ -76,7 +78,7 @@ QList<ShowData> Nivod::parseShows(const QJsonArray &showArrayJson)
 
 QJsonObject Nivod::getInfoJson(const std::string &link) const {
     return callAPI("https://api.nivodz.com/show/detail/WEB/3.3",
-                            {{"show_id_code", link}, {"episode_id", "0"}})["entity"].toObject ();
+                   {{"show_id_code", link}, {"episode_id", "0"}})["entity"].toObject ();
 }
 
 void Nivod::loadDetails(ShowData &show) const {
@@ -101,7 +103,7 @@ void Nivod::loadDetails(ShowData &show) const {
             number = intTitle;
             title = "";
         }
-        std::string link = show.link + "&" + episode["playIdCode"].toString ().toStdString ();
+        QString link = QString::fromStdString (show.link) + "&" + episode["playIdCode"].toString ();
         show.addEpisode(number, link, title);
     }
 }
@@ -109,9 +111,9 @@ void Nivod::loadDetails(ShowData &show) const {
 
 
 QList<Video> Nivod::extractSource(const VideoServer &server) const {
-    auto codes = Functions::split(server.link, '&');
-    std::map<std::string, std::string> data = {{"play_id_code", codes[1]},
-                                               {"show_id_code", codes[0]},
+    auto codes = server.link.split ('&');
+    std::map<std::string, std::string> data = {{"play_id_code", codes.last ().toStdString ()},
+                                               {"show_id_code", codes.first ().toStdString ()},
                                                {"oid", "1"},
                                                {"episode_id", "0"}};
     auto responseJson = callAPI("https://api.nivodz.com/show/play/info/WEB/3.3", data);

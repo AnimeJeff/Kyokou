@@ -12,8 +12,7 @@ DownloadModel::DownloadModel(QObject *parent): QAbstractListModel(parent)
     m_workDir = QDir::cleanPath("D:\\TV\\Downloads");
     constexpr int threadCount = 4 ;
     //        pool.setMaxThreadCount(threadCount);
-    for (int i = 0; i < threadCount; ++i)
-    {
+    for (int i = 0; i < threadCount; ++i) {
         auto watcher = new QFutureWatcher<bool>();
         watchers.push_back (watcher);
 
@@ -89,7 +88,7 @@ void DownloadModel::downloadShow(ShowData &show, int startIndex, int count)
     ++playlist->useCount; // prevents the playlist from being delete whilst
 
     int endIndex = startIndex + count;
-    if (endIndex > playlist->count ()) endIndex = playlist->count ();
+    if (endIndex > playlist->size ()) endIndex = playlist->size ();
 
     QString showName = QString(show.title).replace(":",".").replace(folderNameCleanerRegex,"_");   //todo check replace
     qDebug() << "Log (Downloader)" << showName << "from index" << startIndex << "to" << endIndex - 1;
@@ -110,6 +109,9 @@ void DownloadModel::downloadShow(ShowData &show, int startIndex, int count)
                         link = source.first ().videoUrl.toString ();
                         break;
                     }
+                }
+                if (link.isEmpty ()) {
+                    qDebug() << "Downloader no links found";
                 }
 
                 QString displayName = showName + " : " + episode->getFullName ();
