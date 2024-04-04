@@ -197,13 +197,13 @@ void MpvObject::open(const Video &video, int time) {
     m_state = STOPPED;
     emit mpvStateChanged ();
 
-    if (std::string headers = video.headers(); !headers.empty()) {
-        m_mpv.set_property_async("http-header-fields", video.headers().data());
+    if (std::string headers = video.getHeaders ().toStdString (); !headers.empty()) {
+        m_mpv.set_property_async("http-header-fields", headers.c_str ());
     } else {
         m_mpv.set_property_async("http-header-fields", "");
     }
-    QByteArray fileuri_str = (video.videoUrl.isLocalFile() ? video.videoUrl.toLocalFile() : video.videoUrl.toString()).toUtf8();
-    const char *args[] = {"loadfile", fileuri_str.constData(), nullptr};
+    QByteArray fileUrl = (video.videoUrl.isLocalFile() ? video.videoUrl.toLocalFile() : video.videoUrl.toString()).toUtf8();
+    const char *args[] = {"loadfile", fileUrl.constData(), nullptr};
     m_currentVideo = video;
     m_mpv.command_async(args);
     m_seekTime = time;

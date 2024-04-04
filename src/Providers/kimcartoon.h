@@ -10,12 +10,12 @@ public:
 
 public:
     QString name() const override { return "KIMCartoon"; }
-    std::string hostUrl = "https://kimcartoon.li/";
+    QString hostUrl = "https://kimcartoon.li/";
 
     QVector<ShowData> search(QString query, int page, int type) override;
     QVector<ShowData> popular(int page, int type) override;
     QVector<ShowData> latest(int page, int type) override;
-    QVector<ShowData> filterSearch(std::string url);
+    QVector<ShowData> filterSearch(const QString &url);
 
     void loadDetails(ShowData &show) const override;
     int getTotalEpisodes(const QString &link) const override { return 0; };

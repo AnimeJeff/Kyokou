@@ -7,7 +7,7 @@
 // public:
 //     Tangrenjie() = default;
 //     QString name() const override {return "唐人街影院";}
-//     std::string hostUrl = "https://www.tangrenjie.tv";
+//     QString hostUrl = "https://www.tangrenjie.tv";
 
 //     QList<int> getAvailableTypes() const override {
 //         return {ShowData::ANIME, ShowData::MOVIE, ShowData::TVSERIES, ShowData::VARIETY, ShowData::DOCUMENTARY};

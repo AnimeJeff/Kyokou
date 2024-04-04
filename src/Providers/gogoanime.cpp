@@ -7,17 +7,17 @@ QList<ShowData> Gogoanime::search(QString query, int page, int type)
     QList<ShowData> animes;
     if (query.isEmpty ())
         return animes;
-    std::string url = hostUrl + "/search.html?keyword=" + Functions::urlEncode (query.toStdString ())+ "&page="+ std::to_string (page);
-    auto animeNodes = NetworkClient::get(url).document().select("//ul[@class='items']/li");
+    QUrl url = hostUrl + "search.html";
+    auto animeNodes = NetworkClient::get(url, {}, { {"keyword", query}, {"page", QString::number (page)} })
+                          .document().select("//ul[@class='items']/li");
     if (animeNodes.empty ())
         return animes;
 
-    for (pugi::xpath_node_set::const_iterator it = animeNodes.begin(); it != animeNodes.end(); ++it)
-    {
-        auto anchor = it->selectFirst(".//p[@class='name']/a");
-        QString title = anchor.attr("title").as_string();
-        QString coverUrl = it->selectFirst(".//img").attr("src").as_string();
-        QString link = anchor.attr ("href").as_string ();
+    for (pugi::xpath_node_set::const_iterator it = animeNodes.begin(); it != animeNodes.end(); ++it) {
+        auto anchor = it->node().select_node(".//p[@class='name']/a");
+        QString title = anchor.node().attribute("title").as_string();
+        QString coverUrl = it->node().select_node(".//img").node ().attribute("src").as_string();
+        QString link = anchor.node().attribute ("href").as_string ();
         animes.emplaceBack(title, link, coverUrl, this);
     }
 
@@ -27,17 +27,16 @@ QList<ShowData> Gogoanime::search(QString query, int page, int type)
 QList<ShowData> Gogoanime::popular(int page, int type)
 {
     QList<ShowData> animes;
-    std::string url = "https://ajax.gogocdn.net/ajax/page-recent-release-ongoing.html?page=" + std::to_string (page);
+    QUrl url = "https://ajax.gogocdn.net/ajax/page-recent-release-ongoing.html?page=" + QString::number(page);
     auto animeNodes = NetworkClient::get (url).document ().select ("//div[@class='added_series_body popular']/ul/li");
-    for (pugi::xpath_node_set::const_iterator it = animeNodes.begin(); it != animeNodes.end(); ++it)
-    {
-        pugi::xpath_node anchor = it->selectFirst ("a");
-        QString link = anchor.attr("href").as_string ();
-        QString coverUrl = QString(anchor.selectFirst(".//div[@class='thumbnail-popular']").attr ("style").as_string ());
+    for (pugi::xpath_node_set::const_iterator it = animeNodes.begin(); it != animeNodes.end(); ++it) {
+        pugi::xpath_node anchor = it->node().select_node ("a");
+        QString link = anchor.node ().attribute("href").as_string ();
+        QString coverUrl = QString(anchor.node().select_node(".//div[@class='thumbnail-popular']").node ().attribute ("style").as_string ());
         coverUrl = coverUrl.split ("'").at (1);
-        QString title = anchor.attr ("title").as_string ();
+        QString title = anchor.node ().attribute ("title").as_string ();
         animes.emplaceBack (title, link, coverUrl, this);
-        animes.last ().latestTxt = it->selectText (".//p[last()]/a");
+        animes.last ().latestTxt = it->node().select_node(".//p[last()]/a").node ().child_value ();
     }
 
     return animes;
@@ -46,13 +45,13 @@ QList<ShowData> Gogoanime::popular(int page, int type)
 QList<ShowData> Gogoanime::latest(int page, int type)
 {
     QList<ShowData> animes;
-    std::string url = "https://ajax.gogocdn.net/ajax/page-recent-release.html?page=" + std::to_string (page) + "&type=1";
-    auto response = NetworkClient::get(url);
+    QUrl url("https://ajax.gogocdn.net/ajax/page-recent-release.html");
+    auto response = NetworkClient::get(url, {}, { {"page", QString::number(page)}, {"type", "1"} });
     pugi::xpath_node_set animeNodes = response.document().select("//ul[@class='items']/li");
     if (animeNodes.empty()) return animes;
 
     for (pugi::xpath_node_set::const_iterator it = animeNodes.begin(); it != animeNodes.end(); ++it) {
-        QString coverUrl = it->selectFirst(".//img").attr("src").as_string();
+        QString coverUrl = it->node().select_node(".//img").node ().attribute("src").as_string();
         static QRegularExpression re{R"(([\w-]*?)(?:-\d{10})?\.)"};
         auto lastSlashIndex =  coverUrl.lastIndexOf("/");
         auto id = re.match (coverUrl.mid(lastSlashIndex + 1));
@@ -60,9 +59,11 @@ QList<ShowData> Gogoanime::latest(int page, int type)
             qDebug() << "Unable to extract Id from" << coverUrl.mid(lastSlashIndex+1);
             continue;
         }
-        QString title = QString(it->selectFirst (".//p[@class='name']/a").node ().child_value ()).trimmed ().replace("\n", " ");
+
+        QString title = QString(it->node().select_node (".//p[@class='name']/a").node ().child_value ()).trimmed ().replace("\n", " ");
         QString link = "/category/" + id.captured (1);
-        animes.emplaceBack (title, link, coverUrl, this, it->selectText (".//p[@class='episode']"));
+        QString latestText = it->node ().select_node (".//p[@class='episode']").node ().child_value ();
+        animes.emplaceBack (title, link, coverUrl, this, latestText);
     }
 
 
@@ -72,18 +73,18 @@ QList<ShowData> Gogoanime::latest(int page, int type)
 void Gogoanime::loadDetails(ShowData &anime) const
 {
     CSoup doc = getInfoPage (anime.link);
-    int lastEpisode = std::stoi(doc.selectFirst ("//ul[@id='episode_page']/li[last()]/a").attr ("ep_end").as_string ());
-    std::string animeId = doc.selectFirst ("//input[@id='movie_id']").attr ("value").as_string ();
-    std::string alias = doc.selectFirst ("//input[@id='alias_anime']").attr ("value").as_string ();
+    int lastEpisode = std::stoi(doc.selectFirst ("//ul[@id='episode_page']/li[last()]/a").node ().attribute ("ep_end").as_string ());
+    QString animeId = doc.selectFirst ("//input[@id='movie_id']").node ().attribute ("value").as_string ();
+    QString alias = doc.selectFirst ("//input[@id='alias_anime']").node ().attribute ("value").as_string ();
     // std::string epStart = lastEpisode > 1000 ? std::to_string(lastEpisode - 99) : "0";
-    std::string epStart = "0";
-    std::string link = "https://ajax.gogocdn.net/ajax/load-list-episode?ep_start="
-                       + epStart + "&ep_end="  + std::to_string (lastEpisode)
-                       + "&id=" + animeId + "&default_ep=0" + "&alias=" + alias;
+    QString epStart = "0";
+    QUrl link = "https://ajax.gogocdn.net/ajax/load-list-episode?ep_start="
+                   + epStart + "&ep_end="  + QString::number(lastEpisode)
+                   + "&id=" + animeId + "&default_ep=0" + "&alias=" + alias;
 
     pugi::xpath_node_set episodeNodes = NetworkClient::get(link).document().select("//li/a");
     for (pugi::xpath_node_set::const_iterator it = episodeNodes.end() - 1; it != episodeNodes.begin() - 1; --it) {
-        QString title = QString::fromStdString (it->selectText (".//div")).replace("EP", "").trimmed ();
+        QString title = QString::fromStdString (it->node().select_node (".//div").node ().child_value ()).replace("EP", "").trimmed ();
         float number = -1;
         bool ok;
         float intTitle = title.toFloat (&ok);
@@ -91,7 +92,7 @@ void Gogoanime::loadDetails(ShowData &anime) const
             number = intTitle;
             title = "";
         }
-        std::string link = it->attr ("href").value ();
+        std::string link = it->node ().attribute ("href").value ();
         anime.addEpisode(number, QString::fromStdString (link), title);
     }
 
@@ -124,25 +125,25 @@ void Gogoanime::loadDetails(ShowData &anime) const
     pugi::xpath_node_set genreNodes = doc.select ("//span[contains(text(),'Genre')]/following-sibling::a");
     for (pugi::xpath_node_set::const_iterator it = genreNodes.begin(); it != genreNodes.end(); ++it)
     {
-        QString genre = QString(it->attr ("title").as_string ()).replace ("\n"," ");
+        QString genre = QString(it->node ().attribute ("title").as_string ()).replace ("\n"," ");
         anime.genres.push_back (genre);
     }
 }
 
 CSoup Gogoanime::getInfoPage(const QString& link) const
 {
-    auto response = NetworkClient::get(hostUrl + link.toStdString ());
+    auto response = NetworkClient::get(hostUrl + link);
     if (response.code == 404) {
-        QString errorMessage = "Invalid URL: '" + QString::fromStdString (hostUrl) + link + "'";
+        QString errorMessage = "Invalid URL: '" + hostUrl + link + "'";
         MyException(errorMessage).raise();
     }
     return response.document ();
 }
 
-std::string Gogoanime::getEpisodesLink(const CSoup &doc) const
+QString Gogoanime::getEpisodesLink(const CSoup &doc) const
 {
-    std::string lastEpisode = doc.selectFirst ("//ul[@id='episode_page']/li[last()]/a").attr ("ep_end").as_string ();
-    std::string animeId = doc.selectFirst ("//input[@id='movie_id']").attr ("value").as_string ();
+    QString lastEpisode = doc.selectFirst ("//ul[@id='episode_page']/li[last()]/a").node ().attribute ("ep_end").as_string ();
+    QString animeId = doc.selectFirst ("//input[@id='movie_id']").node ().attribute ("value").as_string ();
     return "https://ajax.gogocdn.net/ajax/load-list-episode?ep_start=0&ep_end=" + lastEpisode + "&id=" + animeId;
 }
 
@@ -155,10 +156,10 @@ int Gogoanime::getTotalEpisodes(const QString& link) const
 QList<VideoServer> Gogoanime::loadServers(const PlaylistItem *episode) const
 {
     QList<VideoServer> servers;
-    pugi::xpath_node_set serverNodes = NetworkClient::get(hostUrl + episode->link.toStdString ()).document ().select("//div[@class='anime_muti_link']/ul/li/a");
+    pugi::xpath_node_set serverNodes = NetworkClient::get(hostUrl + episode->link).document ().select("//div[@class='anime_muti_link']/ul/li/a");
     for (pugi::xpath_node_set::const_iterator it = serverNodes.begin (); it != serverNodes.end(); ++it)
     {
-        QString link = it->attr("data-video").as_string ();
+        QString link = it->node ().attribute("data-video").as_string ();
         QString name = QString(it->node().child_value ()).trimmed ();
         if (link.startsWith ("//")){
             link = "https:" + link;
@@ -175,7 +176,7 @@ QList<Video> Gogoanime::extractSource(const VideoServer &server) const {
             serverName.contains ("gogo"))
         {
             GogoCDN extractor;
-            auto source = extractor.extract(server.link.toStdString ());
+            auto source = extractor.extract(server.link);
             return { Video(source) };
         }
     }

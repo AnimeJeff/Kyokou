@@ -7,15 +7,15 @@ QVector<ShowData> Kimcartoon::search(QString query, int page, int type) {
     QVector<ShowData> shows;
     if (page > 1 || query.isEmpty())
         return shows;
-    auto url = "https://kimcartoon.li/Search/Cartoon";
-    auto showNodes = NetworkClient::post (url, {}, { {"keyword", query.toStdString ()}})
+    QUrl url("https://kimcartoon.li/Search/Cartoon");
+    auto showNodes = NetworkClient::post (url, {}, { {"keyword", query}})
                          .document ().select("//div[@class='list-cartoon']/div/a[1]");
 
     for (pugi::xpath_node_set::const_iterator it = showNodes.begin(); it != showNodes.end(); ++it) {
-        QString title = QString(it->selectText (".//span")).replace ('\n'," ").trimmed ();
-        QString coverUrl = it->selectFirst (".//img").attr ("src").as_string ();
-        if (coverUrl.startsWith ('/')) coverUrl = QString::fromStdString (hostUrl) + coverUrl;
-        QString link = it->attr ("href").as_string ();
+        QString title = QString(it->node().select_node (".//span").node ().child_value ()).replace ('\n'," ").trimmed ();
+        QString coverUrl = it->node().select_node (".//img").node ().attribute ("src").as_string ();
+        if (coverUrl.startsWith ('/')) coverUrl = hostUrl + coverUrl;
+        QString link = it->node ().attribute ("href").as_string ();
         shows.emplaceBack(title, link, coverUrl, this, "", ShowData::ANIME);
     }
 
@@ -23,19 +23,19 @@ QVector<ShowData> Kimcartoon::search(QString query, int page, int type) {
 }
 
 QVector<ShowData> Kimcartoon::popular(int page, int type) {
-    std::string url =
-        hostUrl + "CartoonList/MostPopular" + "?page=" + std::to_string(page);
+    QString url =
+        hostUrl + "CartoonList/MostPopular" + "?page=" + QString::number(page);
 
 
     return filterSearch(url);
 }
 
 QVector<ShowData> Kimcartoon::latest(int page, int type) {
-    std::string url = hostUrl + "CartoonList/LatestUpdate" + "?page=" + std::to_string(page);
+    QString url = hostUrl + "CartoonList/LatestUpdate" + "?page=" + QString::number(page);
     return filterSearch(url);
 }
 
-QVector<ShowData> Kimcartoon::filterSearch(std::string url) {
+QVector<ShowData> Kimcartoon::filterSearch(const QString &url) {
     QVector<ShowData> shows;
     auto showNodes = NetworkClient::get(url).document().select("//div[@class='list-cartoon']/div/a[1]");
     if (showNodes.empty()) {
@@ -43,10 +43,10 @@ QVector<ShowData> Kimcartoon::filterSearch(std::string url) {
     }
 
     for (pugi::xpath_node_set::const_iterator it = showNodes.begin(); it != showNodes.end(); ++it) {
-        QString title = QString(it->selectText (".//span")).replace ('\n'," ").trimmed ();
-        QString coverUrl = it->selectFirst("./img").attr("src").as_string();
-        if (coverUrl.startsWith ('/')) coverUrl = QString::fromStdString (hostUrl) + coverUrl;
-        QString link = it->attr("href").as_string();
+        QString title = QString(it->node().select_node (".//span").node ().child_value ()).replace ('\n'," ").trimmed ();
+        QString coverUrl = it->node().select_node("./img").node ().attribute("src").as_string();
+        if (coverUrl.startsWith ('/')) coverUrl = hostUrl + coverUrl;
+        QString link = it->node ().attribute("href").as_string();
         shows.emplaceBack(title, link, coverUrl, this);
     }
 
@@ -55,11 +55,11 @@ QVector<ShowData> Kimcartoon::filterSearch(std::string url) {
 }
 
 void Kimcartoon::loadDetails(ShowData &show) const {
-    auto doc = NetworkClient::get(hostUrl + show.link.toStdString ()).document();
+    auto doc = NetworkClient::get(hostUrl + show.link).document();
     auto infoDiv = doc.selectFirst("//div[@class='barContent']");
 
     if (pugi::xml_node descriptionParagraph
-        = infoDiv.selectFirst("//span[contains(text() ,'Summary')]/parent::p/following-sibling::p[1]").node ())
+        = infoDiv.node().select_node("//span[contains(text() ,'Summary')]/parent::p/following-sibling::p[1]").node ())
         show.description = QString(descriptionParagraph.child_value ()).replace ('\n'," ").replace ("&nbsp"," ").trimmed ();
 
 
@@ -70,12 +70,12 @@ void Kimcartoon::loadDetails(ShowData &show) const {
     }
 
     if (pugi::xml_node statusTextNode =
-        infoDiv.selectFirst (".//span[contains(text() ,'Status')]/following-sibling::text()[1]").node ();
+        infoDiv.node().select_node (".//span[contains(text() ,'Status')]/following-sibling::text()[1]").node ();
         statusTextNode.type() == pugi::node_pcdata)
         show.status = statusTextNode.value();
 
     if (pugi::xml_node viewsTextNode =
-        infoDiv.selectFirst (".//span[contains(text() ,'Views')]/following-sibling::text()[1]").node ();
+        infoDiv.node().select_node (".//span[contains(text() ,'Views')]/following-sibling::text()[1]").node ();
         viewsTextNode.type() == pugi::node_pcdata)
         show.views = viewsTextNode.value();
 
@@ -107,7 +107,7 @@ void Kimcartoon::loadDetails(ShowData &show) const {
             title = fullEpisodeName.last ().replace ("\n", "").trimmed ();
         }
 
-        QString link = it->attr("href").value();
+        QString link = it->node ().attribute("href").value();
         show.addEpisode(number, link, title);
     }
 
@@ -115,21 +115,21 @@ void Kimcartoon::loadDetails(ShowData &show) const {
 
 QVector<VideoServer>
 Kimcartoon::loadServers(const PlaylistItem *episode) const {
-    auto doc = NetworkClient::get(hostUrl + episode->link.toStdString ()).document();
+    auto doc = NetworkClient::get(hostUrl + episode->link).document();
     auto serverNodes = doc.select("//select[@id='selectServer']/option");
     QList<VideoServer> servers;
     for (pugi::xpath_node_set::const_iterator it = serverNodes.begin(); it != serverNodes.end(); ++it) {
         QString serverName = QString(it->node ().child_value ()).trimmed ();
-        QString serverLink = it->attr ("value").as_string ();
+        QString serverLink = it->node ().attribute ("value").as_string ();
         servers.emplaceBack (serverName, serverLink);
     }
     return servers;
 }
 QList<Video> Kimcartoon::extractSource(const VideoServer &server) const {
-    auto doc = NetworkClient::get(hostUrl + server.link.toStdString ()).document();
+    auto doc = NetworkClient::get(hostUrl + server.link).document();
     auto iframe = doc.select ("//iframe[@id='my_video_1']");
     if (iframe.empty ()) return {};
-    std::string serverUrl = iframe.first ().attr ("src").as_string ();
+    QString serverUrl = iframe.first ().node ().attribute ("src").as_string ();
     Functions::httpsIfy (serverUrl);
     auto response = NetworkClient::get(serverUrl, {{"sec-fetch-dest", "iframe"}}).body;
     std::smatch matches;

@@ -18,7 +18,6 @@ class ShowManager : public QObject
     Q_PROPERTY(QString genresString READ getGenresString NOTIFY showChanged);
 
     Q_PROPERTY(bool exists READ exists NOTIFY showChanged);
-    Q_PROPERTY(bool inWatchList READ inWatchList NOTIFY listTypeChanged); //todo
     Q_PROPERTY(int listType READ getListType NOTIFY listTypeChanged)
 
     QString getTitle() const {return m_show.title;}
@@ -34,26 +33,23 @@ class ShowManager : public QObject
     Q_PROPERTY(EpisodeListModel *episodeList READ episodeListModel CONSTANT)
 private:
     inline bool exists() const { return !m_show.link.isEmpty (); }
-private:
+
     ShowData m_show{"", "", "", nullptr};
     EpisodeListModel m_episodeListModel{this};
+    EpisodeListModel *episodeListModel() { return &m_episodeListModel; }
     QFutureWatcher<void> m_watcher;
 public:
     explicit ShowManager(QObject *parent = nullptr);
-    ~ShowManager();
+    ~ShowManager() = default;
 
     ShowData &getShow() { return m_show; }
     void setShow(const ShowData &show, ShowData::LastWatchInfo lastWatchInfo);
-    void updateLastWatchedIndex();
+    inline void updateLastWatchedIndex() { m_episodeListModel.updateLastWatchedIndex(); };
     int correctIndex(int index) const;
-    int getContinueIndex() const;
 
-
-
+    inline int getContinueIndex() const { return m_episodeListModel.getContinueIndex (); };
     inline PlaylistItem *getPlaylist() const { return m_show.playlist; }
-    EpisodeListModel *episodeListModel() { return &m_episodeListModel; }
 
-    inline bool inWatchList() const { return m_show.listType != -1; }
     inline int getListType() const { return m_show.listType; }
     void setListType(int listType);
 signals:

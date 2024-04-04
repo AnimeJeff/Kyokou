@@ -328,6 +328,7 @@ Window {
         {
             if (!pipMode)
             {
+                app.updateTimeStamp()
                 Qt.quit()
             }
         }

@@ -8,26 +8,6 @@ Rectangle {
     anchors.right: parent.right
     height: 35
 
-
-    AnimatedImage {
-        id:finn
-        anchors {
-            top:parent.top
-            bottom: parent.bottom
-            left:parent.right
-        }
-        visible:true
-        z:parent.z+1
-        source: "qrc:/resources/gifs/finn.gif"
-        width: height
-        playing: false
-        HoverHandler{
-            onHoveredChanged: parent.playing = hovered
-        }
-
-    }
-
-
     MouseArea {
         property var clickPos
         anchors.fill: parent
@@ -56,7 +36,7 @@ Rectangle {
         anchors.right: parent.right
         anchors.rightMargin: 8
         background: Rectangle { color:  "#fa564d"; radius: 7; anchors.fill: parent }
-        onClicked: root.close()
+        onClicked: {app.updateTimeStamp(); root.close()}
         focusPolicy: Qt.NoFocus
     }
 

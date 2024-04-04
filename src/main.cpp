@@ -17,7 +17,7 @@
 #include <QtPlugin>
 
 //qputenv("QT_DEBUG_PLUGINS", QByteArray("1"));
-int parseArgs(int argc, char *argv[]);
+
 void setOneInstance();void testNetwork();
 
 int main(int argc, char *argv[]){
@@ -36,7 +36,6 @@ int main(int argc, char *argv[]){
     app.setWindowIcon(QIcon(":/resources/images/icon.png"));
     qint32 fontId = QFontDatabase::addApplicationFont(":/resources/app-font.ttf");
     QStringList fontList = QFontDatabase::applicationFontFamilies(fontId);
-
     QString family = fontList.first();
     QGuiApplication::setFont(QFont(family, 16));
 

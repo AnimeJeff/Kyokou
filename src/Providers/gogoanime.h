@@ -9,7 +9,7 @@ class Gogoanime : public ShowProvider
 public:
     Gogoanime() = default;
     QString name() const override { return "Anitaku"; }
-    std::string hostUrl = "https://anitaku.to";
+    QString hostUrl = "https://anitaku.to/";
     QList<int> getAvailableTypes() const override {
         return {ShowData::ANIME};
     };
@@ -24,7 +24,7 @@ public:
     QList<Video> extractSource(const VideoServer& server) const override;
 private:
     CSoup getInfoPage(const QString& link) const;
-    std::string getEpisodesLink(const CSoup& doc) const;
+    QString getEpisodesLink(const CSoup& doc) const;
 };
 
 

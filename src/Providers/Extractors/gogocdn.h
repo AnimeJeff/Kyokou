@@ -5,10 +5,6 @@
 
 #include <QCryptographicHash>
 #include <QByteArray>
-#include <openssl/evp.h>
-#include <openssl/aes.h>
-#include <openssl/rand.h>
-#include <openssl/err.h>
 #include <iostream>
 #include <string>
 
@@ -45,32 +41,34 @@ private:
         };
 public:
     GogoCDN(){};
-    QString extract(std::string link)
+    QString extract(const QString &link)
     {
-        auto response = NetworkClient::get(link);
-        if (Functions::containsSubstring (link,"streaming.php"))
+        if (link.contains ("streaming.php"))
         {
-            std::string it = response.document().selectFirst("//script[@data-name='episode']").attr("data-value").as_string ();
+            auto response = NetworkClient::get(link);
+            std::string it = response.document().selectFirst("//script[@data-name='episode']").node ().attribute("data-value").as_string ();
             //qDebug() << "it: " << it.c_str ();
-            std::string decrypted = decrypt (it, keysAndIv.key, keysAndIv.iv);
+            auto decrypted = QString::fromStdString (decrypt(it, keysAndIv.key, keysAndIv.iv));
             //qDebug() << "decrypted: " << decrypted.c_str ();
-            decrypted.erase(std::remove(decrypted.begin(), decrypted.end(), '\t'), decrypted.end());  // Remove all occurrences of '\t'
-            std::string id = Functions::findBetween(decrypted, "", "&");
-            std::string end = Functions::substringAfter(decrypted, id);
+            decrypted.remove('\t');
+            auto id = Functions::findBetween(decrypted, "", "&");
+            auto end = Functions::substringAfter(decrypted, id);
 
-            std::string encryptedId = encrypt(id, keysAndIv.key, keysAndIv.iv);
+            auto encryptedId = QString::fromStdString (encrypt(id.toStdString (), keysAndIv.key, keysAndIv.iv));
             //qDebug() << "encryptedId: " << encryptedId.c_str ();
-            std::string encryptedUrl = "https://" + Functions::getHostFromUrl(link)+ "/encrypt-ajax.php?id=" + encryptedId + end + "&alias=" + id;
+            QString encryptedUrl = "https://" + Functions::getHostFromUrl(link)
+                                   + "/encrypt-ajax.php?id=" + encryptedId + end + "&alias=" + id;
             //qDebug() << "encryptedUrl: " << encryptedUrl.c_str ();
             std::string encrypted = NetworkClient::post(encryptedUrl, {{"X-Requested-With", "XMLHttpRequest"}}).body;
             //qDebug() << "encrypted: " << encrypted.c_str ();
-            std::string dataEncrypted = Functions::findBetween(encrypted, "{\"data\":\"", "\"}");
+            QString dataEncrypted = Functions::findBetween(QString::fromStdString (encrypted), "{\"data\":\"", "\"}");
             //qDebug() << "dataEncrypted: " << dataEncrypted.c_str ();
-            std::string jumbledJsonString = decrypt(dataEncrypted, keysAndIv.secondKey, keysAndIv.iv);
+            auto jumbledJsonString = QString::fromStdString (decrypt(dataEncrypted.toStdString (), keysAndIv.secondKey, keysAndIv.iv));
+            jumbledJsonString.replace("o\"<P{#meme=\"\"","{\"e\":[{\"file\":\"");
             //qDebug() << "jumbledJson: " << jumbledJson.c_str ();
-            Functions::replaceAll(jumbledJsonString,"o\"<P{#meme=\"\"","{\"e\":[{\"file\":\"");
 
-            QJsonObject sourceJson = QJsonDocument::fromJson(jumbledJsonString.c_str()).object();
+
+            QJsonObject sourceJson = QJsonDocument::fromJson(jumbledJsonString.toUtf8()).object ();
 
             auto source = sourceJson["source"].toArray ()[0].toObject ()["file"].toString ();
             auto source_bk = sourceJson["source_bk"].toArray ()[0].toObject ()["file"].toString ();
@@ -79,8 +77,7 @@ public:
         return "";
     }
 
-    static std::string encrypt(const std::string& str, const std::string& key, const std::string& iv)
-    {
+    std::string encrypt(const std::string& str, const std::string& key, const std::string& iv) {
         CryptoPP::AES::Encryption aesKey(reinterpret_cast<const unsigned char*>(key.data()), key.size());
         CryptoPP::CBC_Mode_ExternalCipher::Encryption cbcEncryptor(aesKey, reinterpret_cast<const unsigned char*>(iv.data()));
 
@@ -95,8 +92,7 @@ public:
         return ciphertext;
     }
 
-    static std::string decrypt(const std::string& ciphertext, const std::string& key, const std::string& iv)
-    {
+    std::string decrypt(const std::string& ciphertext, const std::string& key, const std::string& iv) {
         std::string plaintext;
         try {
             CryptoPP::CBC_Mode<CryptoPP::AES>::Decryption decryption(reinterpret_cast<const byte*>(key.data()), key.size(),

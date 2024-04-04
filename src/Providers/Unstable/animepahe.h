@@ -14,7 +14,7 @@
 //    QString name(){
 //        return "AnimePahe";
 //    };
-//    std::string hostUrl = "https://animepahe.ru";
+//    QString hostUrl = "https://animepahe.ru";
 
 //    QList<ShowData> search(QString query, int page, int type) override {
 //        std::string url = hostUrl + "/api?m=search&q=" + Functions::urlEncode(query.toStdString ()) ;

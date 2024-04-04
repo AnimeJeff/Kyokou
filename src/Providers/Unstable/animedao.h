@@ -16,7 +16,7 @@
 //    QString name() override {
 //        return "AnimeDao";
 //    };
-//    std::string hostUrl = "https://animedao.to";
+//    QString hostUrl = "https://animedao.to";
 
 //    QList<ShowData> search(QString query, int page, int type) override {
 //        std::string url = hostUrl + "/search/?search=" + query.toStdString ()+ "&page=" + std::to_string (page);
@@ -25,8 +25,8 @@
 //        for (pugi::xpath_node_set::const_iterator it = animeNodes.begin(); it != animeNodes.end(); ++it)
 //        {
 //            auto title = it->selectFirst(".//span[@class='animename']").node ().child_value ();
-//            auto coverUrl = hostUrl + it->selectFirst(".//div[@class='animeposter']/div/a").attr ("href").as_string ();
-//            auto link = it->selectFirst(".//div[@class='animeinfo']/a").attr ("href").as_string ();
+//            auto coverUrl = hostUrl + it->selectFirst(".//div[@class='animeposter']/div/a").node ().attribute ("href").as_string ();
+//            auto link = it->selectFirst(".//div[@class='animeinfo']/a").node ().attribute ("href").as_string ();
 //            animes.emplaceBack(ShowData(title,link,QString::fromStdString (coverUrl),Providers::ANIMEDAO));
 //        }
 //        return animes;

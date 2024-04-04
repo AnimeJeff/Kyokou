@@ -10,7 +10,7 @@
 //         };
 // public:
 //     QString name() const override { return "TestProvider"; }
-//     std::string hostUrl = "";
+//     QString hostUrl = "";
 
 //     QList<ShowData> search(QString query, int page, int type) override
 //     {

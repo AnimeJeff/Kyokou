@@ -23,6 +23,7 @@
 #include <filesystem>
 #include <QException>
 #include <regex>
+#include <QRegularExpression>
 #define QS(str) QString::fromStdString(str)
 //void print(const QString& str){
 //    qDebug()<<str;
@@ -32,8 +33,8 @@
 //}
 
 namespace Functions{
-inline void httpsIfy(std::string& text){
-    if (text.substr(0, 2) == "//"){
+inline void httpsIfy(QString& text){
+    if (text.startsWith ("//")){
         text = "https:" + text;
     }
 }
@@ -41,28 +42,11 @@ inline void httpsIfy(std::string& text){
 inline bool containsSubstring(const std::string& str, const std::string& substr){
     return str.find(substr) != std::string::npos;
 }
-inline std::string getHostFromUrl(const std::string& url){
-    std::regex regex("^(?:https?://)?(?:www\\.)?([^:/\\s]+)");
-    std::smatch match;
-    if (std::regex_search(url, match, regex)){
-        return match[1];
-    }
-    return "";
-}
+QString getHostFromUrl(const QString& url);
+QString findBetween(const QString &str, const QString &a, const QString &b);
+QString substringAfter(const QString &str, const QString &delimiter);
+QString substringBefore(const QString &str, const QString &delimiter);
 
-
-
-std::string urlDecode(const std::string &str);
-
-std::string urlEncode(const std::string &str);
-
-std::string findBetween(const std::string& str, const std::string& a, const std::string& b);
-
-std::string substringAfter(const std::string& str, const std::string& delimiter);
-
-std::string substringBefore(const std::string& str, const std::string& delimiter);
-
-void replaceAll(std::string &s, const std::string &search,const std::string &replace);
 
 std::string reverseString(const std::string& str);
 

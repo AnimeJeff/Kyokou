@@ -1,7 +1,5 @@
-#ifndef DOWNLOADMODEL_H
-#define DOWNLOADMODEL_H
+#pragma once
 
-#include "Providers/showprovider.h"
 #include <QAbstractListModel>
 #include <QDir>
 #include <QObject>
@@ -10,8 +8,9 @@
 #include <QString>
 #include <QCoreApplication>
 #include <QFutureWatcher>
-
 #include <QMap>
+
+class ShowData;
 
 class DownloadModel: public QAbstractListModel
 {
@@ -65,56 +64,15 @@ public:
     explicit DownloadModel(QObject *parent = nullptr);
     void removeTask(DownloadTask *task);
 
-    void setTask(QFutureWatcher<bool>* watcher);
+    void watchTask(QFutureWatcher<bool>* watcher);
 
     inline static QRegularExpression percentRegex = QRegularExpression(R"(\d+\.\d+(?=\%))");
 
 
-    Q_INVOKABLE void downloadLink(const QString &name, const QString &link) {
-        if (link.isEmpty ()) {
-            qDebug() << "Log (Downloader): Empty link!";
-            return;
-        }
-        if (name.isEmpty ()){
-            qDebug() << "Log (Downloader): No filename provided!";
-            return;
-        }
-        QString headers = "authority:\"AUTHORITY\"|origin:\"https://REFERER\"|referer:\"https://REFERER/\"|user-agent:\"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36\"sec-ch-ua:\"Not A;Brand\";v=\"99\", \"Chromium\";v=\"102\", \"Google Chrome\";v=\"102\"";
-        DownloadTask *task = new DownloadTask(name, m_workDir, link, headers, name , link);
-        addTask (task);
-        startTasks ();
-        emit layoutChanged ();
-    }
+    Q_INVOKABLE void downloadLink(const QString &name, const QString &link);
 
 
-    void download(QPromise<bool> &promise, const QStringList &command)
-    {
-        promise.setProgressRange (0, 100);
-        QProcess process;
-        process.setProgram (N_m3u8DLPath);
-        process.setArguments (command);
-        QRegularExpression re = DownloadModel::percentRegex;
-        process.start();
-        int percent;
-        while (process.state() == QProcess::Running
-               && process.waitForReadyRead()
-               && !promise.isCanceled ())
-        {
-            auto line = process.readAllStandardOutput().trimmed();
-            QRegularExpressionMatch match = re.match(line);
-            if (match.hasMatch())
-            {
-                percent = match.captured().toDouble();
-                promise.setProgressValueAndText (percent, line);
-            }
-            else if (line.contains("Invalid Uri"))
-            {
-                promise.addResult (false); //todo add reason
-                return;
-            }
-        }
-        promise.addResult (true);
-    }
+    void executeCommand(QPromise<bool> &promise, const QStringList &command);
 
     void downloadShow(ShowData &show, int startIndex, int count);
 
@@ -125,15 +83,7 @@ public:
         tasks.push_back (task);
     }
 
-    void startTasks()
-    {
-        QMutexLocker locker(&mutex);
-        for (auto* watcher:watchers)
-        {
-            if (tasksQueue.isEmpty ()) break;
-            else if (!watcherTaskTracker[watcher]) setTask (watcher); //if watcher not working on a task
-        }
-    }
+    void startTasks();
 
     void cancelAllTasks(){
         QMutexLocker locker(&mutex);
@@ -167,6 +117,7 @@ public:
 
     bool setWorkDir(const QString& path);
 
+
 public:
     int rowCount(const QModelIndex &parent) const { return tasks.count(); };
     QVariant data(const QModelIndex &index, int role) const;
@@ -176,4 +127,4 @@ signals:
 };
 
 
-#endif // DOWNLOADMODEL_H
+

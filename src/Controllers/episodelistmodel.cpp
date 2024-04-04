@@ -6,18 +6,19 @@ int EpisodeListModel::rowCount(const QModelIndex &parent) const
 {
     if (parent.isValid())
         return 0;
-
-    if (!m_playlist) return 0;
-    return m_playlist->size ();
+    auto playlist = m_rootItem->currentItem ();
+    if (!playlist) return 0;
+    return playlist->size ();
 }
 
 QVariant EpisodeListModel::data(const QModelIndex &index, int role) const
 {
     if (!index.isValid())
         return QVariant();
-    if (!m_playlist) return QVariant();
-    int i = m_isReversed ? m_playlist->size () - index.row() - 1 : index.row();
-    const PlaylistItem* episode = m_playlist->at(i);
+    auto playlist = m_rootItem->currentItem ();
+    if (!playlist) return QVariant();
+    int i = m_isReversed ? playlist->size () - index.row() - 1 : index.row();
+    const PlaylistItem* episode = playlist->at(i);
 
     switch (role)
     {

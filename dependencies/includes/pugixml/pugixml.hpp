@@ -1342,27 +1342,27 @@ namespace pugi
 	public:
 
         //Custom Functions
-        xml_attribute attr(const char* attribute) const{
-            return node().attribute(attribute);
-        }
-        xpath_node selectFirst(const char* XPath) const{
-            return node().select_node (XPath);
-        }
+        // xml_attribute attr(const char* attribute) const{
+        //     return node().attribute(attribute);
+        // }
+        // xpath_node selectFirst(const char* XPath) const{
+        //     return node().select_node (XPath);
+        // }
 
-        xpath_node_set select(const char* XPath) const;
+        // xpath_node_set select(const char* XPath) const;
 
-        const char* selectText(const char* XPath) const{
-            return selectFirst (XPath).node ().child_value ();
-        }
-        std::string toString(){
-            std::stringstream ss;
-            node().print(ss);
-            return ss.str ();
-        }
+        // const char* selectText(const char* XPath) const{
+        //     return selectFirst (XPath).node ().child_value ();
+        // }
+        // std::string toString(){
+        //     std::stringstream ss;
+        //     node().print(ss);
+        //     return ss.str ();
+        // }
 
-        template<typename T> T selectValue(const char* XPath){
-            return static_cast<T>(selectFirst (XPath).node ().child_value ());
-        }
+        // template<typename T> T selectValue(const char* XPath){
+        //     return static_cast<T>(selectFirst (XPath).node ().child_value ());
+        // }
 
 
         ///////////

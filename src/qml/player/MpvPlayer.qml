@@ -243,9 +243,6 @@ MpvObject {
                          }
                      }
 
-
-    Component.onDestruction: app.updateLastPlayTime()
-
     function handleCtrlModifiedKeyPress(key){
         switch(key) {
         case Qt.Key_1:

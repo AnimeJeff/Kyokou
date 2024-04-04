@@ -1,9 +1,8 @@
 #pragma once
 
 #include <QString>
-#include <QStringList>
 #include <QUrl>
-#include <string>
+#include <QHash>
 
 
 struct Video {
@@ -12,10 +11,12 @@ struct Video {
     QString resolution = "N/A";
     QList<QUrl> subtitles;
     QUrl audioUrl;
-    void addHeader(const std::string &key, const std::string &value);
-    std::string headers() const;
+    void addHeader(const QString &key, const QString &value);
+    // QString getMpvHeaders() const;
+    QString getHeaders(const QString &keyValueSeparator = ": ", const QString &entrySeparator = ",", bool quotedValue = false) const;;
+    // QString getDownloaderHeaders() const;;
 private:
-    std::unordered_map<std::string, std::string> m_headers;
+    QHash<QString, QString> m_headers {};
 
 
 };

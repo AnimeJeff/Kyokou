@@ -8,17 +8,11 @@ class EpisodeListModel : public QAbstractListModel {
     Q_PROPERTY(int continueIndex READ getContinueIndex NOTIFY continueIndexChanged)
     Q_PROPERTY(int lastWatchedIndex READ getLastWatchedIndex NOTIFY continueIndexChanged)
 
-    int getLastWatchedIndex() const {
-        if (!m_playlist || m_playlist->currentIndex == -1) return -1;
-        int lastWatchedIndex = m_isReversed
-                                   ? m_playlist->size() - 1 -  m_playlist->currentIndex
-                                   : m_playlist->currentIndex;
-        return lastWatchedIndex;
-    }
 
     bool m_isReversed = false;
     int continueIndex = -1;
-    PlaylistItem *m_playlist = nullptr;
+    std::unique_ptr<PlaylistItem> m_rootItem = std::make_unique<PlaylistItem>("root", nullptr, "/", nullptr);
+
     QString m_continueText = "";
     QString getContinueText() { return m_continueText; };
 
@@ -28,26 +22,28 @@ signals:
 
 public:
     void setPlaylist(PlaylistItem *playlist) {
-        // Delete the previous show playlist that is being held in info tab
-        // if useCount < 0, it means that it has already been deleted
-        if (m_playlist && --m_playlist->useCount == 0){
-            delete m_playlist;
+        if (!playlist) {
+            m_rootItem->clear ();
+        } else {
+            if (!m_rootItem->isEmpty ()) {
+                m_rootItem->replace (0, playlist);
+            } else {
+                m_rootItem->append(playlist);
+                m_rootItem->currentIndex = 0;
+            }
         }
-        if (playlist) playlist->useCount++; //playlist could be nullptr
-        m_playlist = playlist;
-
         updateLastWatchedIndex ();
     }
 
     void updateLastWatchedIndex() {
-        if (m_playlist){
+        if (auto playlist = m_rootItem->currentItem (); playlist){
             // If the index in second to last of the latest episode then continue from latest episode
-            continueIndex = m_playlist->currentIndex == m_playlist->size () - 2 ? m_playlist->currentIndex + 1 : m_playlist->currentIndex;
+            continueIndex = playlist->currentIndex == playlist->size () - 2 ? playlist->currentIndex + 1 : playlist->currentIndex;
 
             if (continueIndex < 0) continueIndex = 0;
 
-            const PlaylistItem *episode = m_playlist->at(continueIndex);
-            m_continueText = m_playlist->currentIndex == -1 ? "Play " : "Continue from ";
+            const PlaylistItem *episode = playlist->at(continueIndex);
+            m_continueText = playlist->currentIndex == -1 ? "Play " : "Continue from ";
             m_continueText += episode->name.isEmpty ()
                                   ? QString::number (episode->number)
                                   : episode->number < 0
@@ -63,10 +59,10 @@ public:
     }
 
     int getContinueIndex() const {
-        if (!m_playlist) return -1;
-        return m_isReversed ? m_playlist->size() - 1 -  continueIndex : continueIndex;
+        auto playlist = m_rootItem->currentItem ();
+        if (!playlist) return -1;
+        return m_isReversed ? playlist->size() - 1 -  continueIndex : continueIndex;
     }
-
 
     void setIsReversed(bool isReversed) {
         if (m_isReversed == isReversed)
@@ -77,11 +73,17 @@ public:
     }
     bool getIsReversed() const { return m_isReversed; }
     explicit EpisodeListModel(QObject *parent = nullptr) : QAbstractListModel(parent) {};
-    ~EpisodeListModel() {
-        if (m_playlist && --m_playlist->useCount == 0) {
-            delete m_playlist;
-        }
+    ~EpisodeListModel() = default;
+private:
+    int getLastWatchedIndex() const {
+        auto currentPlaylist = m_rootItem->currentItem ();
+        if (!m_rootItem->currentItem ()) return -1;
+        int lastWatchedIndex = m_isReversed
+                                   ? currentPlaylist->size() - 1 -  currentPlaylist->currentIndex
+                                   : currentPlaylist->currentIndex;
+        return lastWatchedIndex;
     }
+
     enum { TitleRole = Qt::UserRole, NumberRole, FullTitleRole };
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;

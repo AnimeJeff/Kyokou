@@ -29,9 +29,9 @@
 //     QList<ShowData> shows;
 //     for (pugi::xpath_node_set::const_iterator it = showNodes.begin (); it != showNodes.end(); ++it)
 //     {
-//         QString title = it->attr ("title").as_string ();
-//         std::string link = it->attr ("href").as_string ();
-//         QString coverUrl = it->attr("data-original").as_string ();
+//         QString title = it->node ().attribute ("title").as_string ();
+//         std::string link = it->node ().attribute ("href").as_string ();
+//         QString coverUrl = it->node ().attribute("data-original").as_string ();
 //         if (coverUrl.startsWith ("/")){
 //             coverUrl = QString::fromStdString (hostUrl) + coverUrl;
 //         }
@@ -93,7 +93,7 @@
 //             number = intTitle;
 //             title = "";
 //         }
-//         std::string link = element.attr ("href").as_string ();
+//         std::string link = element.node ().attribute ("href").as_string ();
 //         show.addEpisode (number,link,title);
 //     }
 // }

@@ -1,18 +1,28 @@
 #include "video.h"
+#include <QHashIterator>
 #include <sstream>
 
-void Video::addHeader(const std::string &key, const std::string &value) {
+void Video::addHeader(const QString &key, const QString &value) {
     m_headers[key] = value;
 }
 
-std::string Video::headers() const {
-    std::stringstream ss;
-    for (auto it = m_headers.begin(); it != m_headers.end(); ++it) {
-        if (it != m_headers.begin()) {
-            ss << ","; // Add comma separator except before the first element
-        }
-        ss << it->first << ": " << it->second; // Append "key: value" to the string stream
-    }
 
-    return ss.str();
+QString Video::getHeaders(const QString &keyValueSeparator, const QString &entrySeparator, bool quotedValue) const {
+    QString result;
+    if (m_headers.isEmpty ()) return result;
+    QHashIterator<QString, QString> it(m_headers);
+    bool first = true;
+    while (it.hasNext()) {
+        it.next();
+        if (!first) {
+            result += entrySeparator; // Add separator except before the first element
+        } else {
+            first = false;
+        }
+        auto value = quotedValue ? QString("\"%1\"").arg (it.value ()) : it.value ();
+        result += it.key() + keyValueSeparator + value; // Append "key: value"
+    }
+    return result;
 }
+
+

@@ -124,9 +124,9 @@
 //                ShowResponse anime;
 //                auto anchor = item.selectFirst(".//div[@class='ani poster tip']/a");
 //                auto img = anchor.selectFirst(".//img");
-//                anime.title = QString::fromStdString (img.attr ("alt").as_string ());
-//                anime.coverUrl = QString::fromStdString (img.attr ("src").as_string ());
-//                anime.link = QString::fromStdString (anchor.attr ("href").as_string ());
+//                anime.title = QString::fromStdString (img.node ().attribute ("alt").as_string ());
+//                anime.coverUrl = QString::fromStdString (img.node ().attribute ("src").as_string ());
+//                anime.link = QString::fromStdString (anchor.node ().attribute ("href").as_string ());
 //                anime.latestTxt = QString::fromStdString (item.selectText(".//left/span/span"));
 //                anime.provider = Providers::e_NineAnime;
 //                animes.push_back (anime);
@@ -156,11 +156,11 @@
 
 //    ShowResponse loadDetails(ShowResponse show) override {
 //        CSoup document = NetworkClient::get(hostUrl + show.link.toStdString ()).document();
-//        std::string dataId = document.selectFirst("//div[@id='watch-main']").attr("data-id").as_string ();
+//        std::string dataId = document.selectFirst("//div[@id='watch-main']").node ().attribute("data-id").as_string ();
 //        auto episodesUrl=hostUrl+ "/ajax/episode/list/" + dataId+"?vrf="+encodeVrf (dataId,keys);
 //        loadEpisodes(&show,episodesUrl);
 //        pugi::xpath_node element = document.selectFirst("//div[@class='info']");
-//        show.title = QString::fromStdString(element.selectFirst (".//h1[@class='title d-title']").attr ("data-jp").as_string ());
+//        show.title = QString::fromStdString(element.selectFirst (".//h1[@class='title d-title']").node ().attribute ("data-jp").as_string ());
 //        //        element.select ("//div[contains(text(), \"Genre\")]/span/a").forEach([&](xpath_node node){
 //        //            show->genres.push_back (node.node ().child_value ());
 //        //        });
@@ -186,9 +186,9 @@
 //        CSoup document{resultJson};
 //        document.select(R"(//a[@data-ids])").forEach([&](pugi::xpath_node element) {
 //            Episode episode;
-//            episode.number = element.attr("data-num").as_int();
+//            episode.number = element.node ().attribute("data-num").as_int();
 //            std::string ids = Functions::substringBefore(
-//                element.attr("data-ids").as_string(), ",");
+//                element.node ().attribute("data-ids").as_string(), ",");
 //            QString _name = QString::fromStdString(element.selectText(".//span"));
 //            QString namePrefix =
 //                QString("Episode %1").arg(episode.number);
@@ -230,9 +230,9 @@
 //            ShowResponse anime;
 //            pugi::xpath_node anchor = node.selectFirst (".//a[@class='name d-title']");
 //            anime.title= QString::fromStdString (anchor.node ().child_value ());
-//            anime.coverUrl=QString::fromStdString( node.selectFirst (".//img").attr ("src").as_string ());
+//            anime.coverUrl=QString::fromStdString( node.selectFirst (".//img").node ().attribute ("src").as_string ());
 
-//            anime.link=QString::fromStdString( anchor.attr ("href").as_string ());
+//            anime.link=QString::fromStdString( anchor.node ().attribute ("href").as_string ());
 //            anime.latestTxt=QString::fromStdString (node.selectText(".//span[@class='ep-status total']/span"));
 //            animes.push_back (anime);
 //        });
@@ -252,8 +252,8 @@
 //        QList<VideoServer> servers;
 //        document.select("//ul/li").forEach ([&](pugi::xpath_node element){
 //            VideoServer server;
-//            std::string serverID = element.attr("data-sv-id").as_string ();
-//            //            auto linkID = element.attr("data-link-id").as_string ();
+//            std::string serverID = element.node ().attribute("data-sv-id").as_string ();
+//            //            auto linkID = element.node ().attribute("data-link-id").as_string ();
 //            //            server.link = linkID;
 //            server.link = episode->link;
 //            if (serverID.compare("41") == 0){

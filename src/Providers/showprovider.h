@@ -18,7 +18,7 @@ class ShowProvider : public QObject {
 public:
     ShowProvider(QObject *parent = nullptr) : QObject(parent){};
     virtual QString name() const = 0;
-    std::string hostUrl = "";
+    QString hostUrl = "";
     virtual QList<int> getAvailableTypes() const = 0;
 
     virtual QList<ShowData> search(QString query, int page, int type) = 0;

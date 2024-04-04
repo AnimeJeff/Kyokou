@@ -14,11 +14,6 @@ class PlaylistModel : public QAbstractItemModel {
     Q_PROPERTY(ServerListModel *serverList READ getServerList CONSTANT)
     Q_PROPERTY(bool loading READ isLoading NOTIFY loadingChanged)
 
-    QString getCurrentItemName() const {
-        auto currentPlaylist = m_rootPlaylist->currentItem ();
-        if (!currentPlaylist) return "";
-        return currentPlaylist->getDisplayNameAt (currentPlaylist->currentIndex);
-    }
 
 private:
     bool loading = false;
@@ -31,9 +26,14 @@ private:
     QFileSystemWatcher m_folderWatcher;
     QFutureWatcher<QList<Video>> m_watcher;
     ServerListModel m_serverList;
-    std::unique_ptr<PlaylistItem> m_rootPlaylist = std::make_unique<PlaylistItem>("root", nullptr, "", nullptr);
+    std::unique_ptr<PlaylistItem> m_rootPlaylist = std::make_unique<PlaylistItem>("root", nullptr, "/", nullptr);
 
-   ServerListModel *getServerList() { return &m_serverList; }
+    ServerListModel *getServerList() { return &m_serverList; }
+    QString getCurrentItemName() const {
+        auto currentPlaylist = m_rootPlaylist->currentItem ();
+        if (!currentPlaylist) return "";
+        return currentPlaylist->getDisplayNameAt (currentPlaylist->currentIndex);
+    }
 
     QList<Video> loadOnlineSource(int playlistIndex, int itemIndex);
 
@@ -71,7 +71,6 @@ public:
 
     ~PlaylistModel() = default;
 
-
     Q_INVOKABLE void load(QModelIndex index) {
         auto childItem = static_cast<PlaylistItem *>(index.internalPointer());
         auto parentItem = childItem->parent();
@@ -101,6 +100,7 @@ public:
     // prevents the same playlist being added
     QSet<QString> playlistSet;
     Q_INVOKABLE bool play(int playlistIndex = -1, int itemIndex = -1);
+
     //  Traversing the playlist
     Q_INVOKABLE void loadOffset(int offset);
     Q_INVOKABLE void playNextItem() { loadOffset(1); }
@@ -112,13 +112,32 @@ private slots:
     void onLocalDirectoryChanged(const QString &path) {
         // TODO
         qInfo() << "Log (Playlist): Path" << path << "changed";
-
+        int index = m_rootPlaylist->indexOf (path);
+        qDebug() << index;
+        if (index > -1) {
+            beginResetModel();
+            QString prevlink = index == m_rootPlaylist->currentIndex ? m_rootPlaylist->currentItem ()->currentItem ()->link : "";
+            if (!m_rootPlaylist->at (index)->reloadFromFolder ()) {
+                // Folder is empty, deleted, can't open history file etc.
+                m_rootPlaylist->removeAt (index);
+                m_rootPlaylist->currentIndex = m_rootPlaylist->isEmpty () ? -1 : 0;
+                qWarning() << "Failed to reload folder" << m_rootPlaylist->at (index)->link;
+            }
+            endResetModel();
+            emit currentIndexChanged ();
+            QString newLink = index == m_rootPlaylist->currentIndex ? m_rootPlaylist->currentItem ()->currentItem ()->link : "";
+            if (prevlink != newLink) {
+                play ();
+            }
+        }
     }
 public:
-    void appendPlaylist(const QUrl &path);
     void appendPlaylist(PlaylistItem *playlist);
     void replaceCurrentPlaylist(PlaylistItem *playlist);
-    PlaylistItem *getCurrentPlaylist() const { return m_rootPlaylist->currentItem (); }
+    PlaylistItem *getCurrentPlaylist() const {
+        // qDebug() << "size" << m_rootPlaylist->size () << "index" << m_rootPlaylist->currentIndex;
+        return m_rootPlaylist->currentItem ();
+    }
 
 public:
     Q_SIGNAL void loadingChanged(void);

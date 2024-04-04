@@ -48,14 +48,14 @@ public:
     struct LastWatchInfo {
         int listType = -1;
         int lastWatchedIndex = -1;
-        int lastPlayTime = 0;
+        int timeStamp = 0;
     };
     inline PlaylistItem *getPlaylist() const { return playlist; }
     inline ShowProvider *getProvider() const { return provider; }
 
 
     friend class ShowManager;
-    void setListType(int newListType) { listType = newListType; } //todo
+    void setListType(int newListType) { listType = newListType; }
 
     void addEpisode(float number, const QString &link, const QString &name);
     QJsonObject toJson() const;

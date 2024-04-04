@@ -7,6 +7,7 @@
 #include <QDebug>
 #include <QJsonDocument>
 #include <QMutex>
+#include <QUrlQuery>
 
 
 class NetworkClient
@@ -90,16 +91,17 @@ public:
 public:
     struct Response{
         long code;
-        std::string url;
+        QUrl url;
         std::string redirectUrl;
-        //        std::map<std::string, std::string> headers;
+        //        QMap<QString, QString> headers;
         std::string headers;
         std::string body;
-        std::map<std::string, std::string> cookies;
+        QMap<QString, QString> cookies;
         CSoup document(){
             return CSoup(body);
         }
-        QJsonObject JSONOBJECT(){
+
+        QJsonObject toJson(){
             QJsonParseError error;
             QJsonDocument jsonData = QJsonDocument::fromJson(body.c_str (), &error);
             if (error.error != QJsonParseError::NoError) {
@@ -118,54 +120,48 @@ public:
         }
     };
 
-    static Response get(const std::string &url, const std::map<std::string, std::string>& headers={}, const std::map<std::string, std::string>& params = {})
+    static Response get(QUrl url, const  QMap<QString, QString>& headers={}, const QMap<QString, QString>& params = {})
     {
-        std::stringstream ss;
-        std::string queryParams;
+        if (!params.isEmpty ()) {
+            QUrlQuery query;
 
-        // Build the query parameters
-        if (!params.empty()){
-            ss << "?";
-            for (auto const& [key, value] : params){
-                ss << key << "=" << value << "&";
+            for (auto it = params.constBegin(); it != params.constEnd(); ++it) {
+                query.addQueryItem(it.key(), it.value());
             }
-            queryParams = ss.str();
-            // remove the last '&'
-            queryParams.pop_back();
+
+            url.setQuery(query);
         }
 
-        // Set the URL
-        std::string fullUrl = url + queryParams;
-        return request(GET, fullUrl.c_str (), headers);
+        return request(GET, url, headers);
     }
 
-    static Response post(const std::string& url, const std::map<std::string, std::string>& headers={}, const std::map<std::string, std::string>& data={}){
+    static Response post(const QUrl& url, const QMap<QString, QString>& headers={}, const QMap<QString, QString>& data={}){
         // Set the post data
-        std::string postData;
-        for (auto const& x : data){
-            postData += std::string(x.first) + "=" + std::string(x.second) + "&";
+        QString postData;
+        for (auto it = data.constBegin(); it != data.constEnd(); ++it) {
+            postData += it.key() + "=" + it.value() + "&";
         }
-        return request(POST, url.c_str (), headers, postData.c_str());
+        return request(POST, url, headers, postData);
     }
 
-    static Response request(int type, const char* url, const std::map<std::string, std::string>& headersMap={}, const char* data = nullptr){
+    static Response request(int type, const QUrl& url, const QMap<QString, QString>& headersMap={}, const QString &data = ""){
         CURL* curl = getCurl();
         Response response;
-
-        curl_easy_setopt(curl, CURLOPT_URL, url);
+        std::string urlData = url.toString().toStdString();
+        curl_easy_setopt(curl, CURLOPT_URL, urlData.c_str ());
 
         struct curl_slist* headers = nullptr;
 
-        for (const auto& header : headersMap) {
-            std::string headerStr = header.first + ": " + header.second;
-            // qDebug() << headerStr;
-            headers = curl_slist_append(headers, headerStr.c_str());
+        for (auto it = headersMap.constBegin(); it != headersMap.constEnd(); ++it) {
+            auto entry = QString(it.key() + ": " + it.value()).toStdString ();
+            headers = curl_slist_append(headers, entry.c_str ());
         }
 
-        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        std::string dataString = data.toStdString ();
         if (type == POST) {
-            curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
+            curl_easy_setopt(curl, CURLOPT_POSTFIELDS, dataString.c_str ());
             curl_easy_setopt(curl, CURLOPT_POST, 1L);
         } else if (type == GET) {
             curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);

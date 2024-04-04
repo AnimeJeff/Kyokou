@@ -35,11 +35,11 @@
 //        NetworkClient::get(url).document ().select ("//div[@class='module-list']/div[@class='module-items']/div").forEach ([&](pugi::xpath_node node){
 //            ShowResponse show;
 //            auto anchor = node.selectFirst (".//div[@class='module-item-pic']/a");
-//            show.title = anchor.attr ("title").as_string ();
-//            show.coverUrl = node.selectFirst (".//div[@class='module-item-pic']/img").attr ("data-src").as_string ();
+//            show.title = anchor.node ().attribute ("title").as_string ();
+//            show.coverUrl = node.selectFirst (".//div[@class='module-item-pic']/img").node ().attribute ("data-src").as_string ();
 //            show.releaseDate = node.selectFirst (".//div[@class='module-item-caption']/span").toString ().c_str ();
 //            show.latestTxt = node.selectFirst (".//div[@class='module-item-pic']/a").toString ().c_str ();
-//            show.link = QString::fromStdString (hostUrl) + anchor.attr ("href").as_string ();
+//            show.link = QString::fromStdString (hostUrl) + anchor.node ().attribute ("href").as_string ();
 //            show.provider = Providers::e_HuaLe;
 //            shows.push_back(std::move(show));
 //        });
@@ -75,9 +75,9 @@
 //        show.description = infoItem.selectFirst (".//div/span").node ().child_value ();
 //        doc.select ("//div[@class='scroll-content']/a").forEach ([&](pugi::xpath_node element){
 //            Episode episode;
-//            episode.title = element.attr ("title").as_string ();
+//            episode.title = element.node ().attribute ("title").as_string ();
 //            episode.title = episode.title.remove (0,2+show.title.length ());
-//            episode.link = hostUrl+element.attr ("href").as_string ();
+//            episode.link = hostUrl+element.node ().attribute ("href").as_string ();
 //            episode.number = count++;
 //            show.episodes.append (std::move(episode));
 //        });

@@ -7,28 +7,28 @@
 class AllAnime : public ShowProvider
 {
 private:
-    std::map<std::string, std::string> headers = {
-                                                  {"authority", "api.allanime.day"},
-                                                  {"accept-language", "en-GB,en;q=0.9,zh-CN;q=0.8,zh;q=0.7"},
-                                                  {"origin", "https://allmanga.to"},
-                                                  {"referer", "https://allmanga.to/"},
-                                                  };
+    QMap<QString, QString> headers = {
+                                      {"authority", "api.allanime.day"},
+                                      {"accept-language", "en-GB,en;q=0.9,zh-CN;q=0.8,zh;q=0.7"},
+                                      {"origin", "https://allmanga.to"},
+                                      {"referer", "https://allmanga.to/"},
+                                      };
 public:
     AllAnime() = default;
     QString name() const override { return "AllAnime"; }
-    std::string hostUrl = "https://allmanga.to/";
+    QString hostUrl = "https://allmanga.to/";
     QList<int> getAvailableTypes() const override {
         return {ShowData::ANIME};
     };
     
     QList<ShowData> search(QString query, int page, int type = 0) override {
-        std::string urlString = "https://api.allanime.day/api?variables={\"search\":{\"query\":\""
-                                + QUrl::toPercentEncoding(query).toStdString () + "\"},\"limit\":26,\"page\":"
-                                + std::to_string (page)
-                                + ",\"translationType\":\"sub\",\"countryOrigin\":\"ALL\"}&extensions={\"persistedQuery\":{\"version\":1,\"sha256Hash\":\"06327bc10dd682e1ee7e07b6db9c16e9ad2fd56c1b769e47513128cd5c9fc77a\"}}";
+        QUrl url = "https://api.allanime.day/api?variables={\"search\":{\"query\":\""
+                            + QUrl::toPercentEncoding(query) + "\"},\"limit\":26,\"page\":"
+                            + QString::number(page)
+                            + ",\"translationType\":\"sub\",\"countryOrigin\":\"ALL\"}&extensions={\"persistedQuery\":{\"version\":1,\"sha256Hash\":\"06327bc10dd682e1ee7e07b6db9c16e9ad2fd56c1b769e47513128cd5c9fc77a\"}}";
         QList<ShowData> animes;
-        QJsonArray jsonResponse = NetworkClient::get(urlString, headers)
-                                      .JSONOBJECT()["data"]
+        QJsonArray jsonResponse = NetworkClient::get(url, headers)
+                                      .toJson()["data"]
                                       .toObject()["shows"]
                                       .toObject()["edges"]
                                       .toArray();
@@ -53,12 +53,12 @@ public:
 
     QList<ShowData> popular(int page, int type = 0) override {
         //size = 25
-        std::string url = "https://api.allanime.day/api?variables={%22type%22:%22anime%22,%22size%22:25,%22dateRange%22:7,%22page%22:"
-                          + std::to_string(page)
+        QUrl url = "https://api.allanime.day/api?variables={%22type%22:%22anime%22,%22size%22:25,%22dateRange%22:7,%22page%22:"
+                          + QString::number(page)
                           + ",%22allowAdult%22:true,%22allowUnknown%22:false}&extensions={%22persistedQuery%22:{%22version%22:1,%22sha256Hash%22:%221fc9651b0d4c3b9dfd2fa6e1d50b8f4d11ce37f988c23b8ee20f82159f7c1147%22}}";
         QList<ShowData> animes;
 
-        QJsonObject jsonResponse = NetworkClient::get(url, headers).JSONOBJECT();
+        QJsonObject jsonResponse = NetworkClient::get(url, headers).toJson();
         QJsonArray recommendations = jsonResponse["data"].toObject()["queryPopular"].toObject()["recommendations"].toArray();
 
         for (const QJsonValue &value : recommendations) {
@@ -81,11 +81,13 @@ public:
 
     };
     QList<ShowData> latest(int page, int type = 0) override{
-        std::string urlString = "https://api.allanime.day/api?variables={%22search%22:{%22sortBy%22:%22Recent%22},%22limit%22:26,%22page%22:"+ std::to_string (page) +",%22translationType%22:%22sub%22,%22countryOrigin%22:%22JP%22}&extensions={%22persistedQuery%22:{%22version%22:1,%22sha256Hash%22:%2206327bc10dd682e1ee7e07b6db9c16e9ad2fd56c1b769e47513128cd5c9fc77a%22}}";
+        QUrl url = "https://api.allanime.day/api?variables={%22search%22:{%22sortBy%22:%22Recent%22},%22limit%22:26,%22page%22:"
+                   + QString::number(page)
+                   +",%22translationType%22:%22sub%22,%22countryOrigin%22:%22JP%22}&extensions={%22persistedQuery%22:{%22version%22:1,%22sha256Hash%22:%2206327bc10dd682e1ee7e07b6db9c16e9ad2fd56c1b769e47513128cd5c9fc77a%22}}";
         QList<ShowData> animes;
         // qDebug () << QString::fromStdString (NetworkClient::get (url, headers).body);
-        QJsonArray jsonResponse = NetworkClient::get(urlString, headers)
-                                      .JSONOBJECT()["data"]
+        QJsonArray jsonResponse = NetworkClient::get(url, headers)
+                                      .toJson()["data"]
                                       .toObject()["shows"]
                                       .toObject()["edges"]
                                       .toArray();
@@ -109,10 +111,10 @@ public:
     };
 
     void loadDetails(ShowData& anime) const override {
-        std::string url = "https://api.allanime.day/api?variables={%22_id%22:%22"
-                          + anime.link.toStdString ()
+        QUrl url = "https://api.allanime.day/api?variables={%22_id%22:%22"
+                          + anime.link
                           +"%22}&extensions={%22persistedQuery%22:{%22version%22:1,%22sha256Hash%22:%229d7439c90f203e534ca778c4901f9aa2d3ad42c06243ab2c5e6b79612af32028%22}}";
-        auto jsonResponse = NetworkClient::get(url, headers).JSONOBJECT()["data"].toObject ()["show"].toObject ();
+        auto jsonResponse = NetworkClient::get(url, headers).toJson()["data"].toObject ()["show"].toObject ();
         anime.description =  jsonResponse["description"].toString ();
         anime.status = jsonResponse["status"].toString ();;
         anime.views =  jsonResponse["pageStatus"].toObject ()["views"].toString ();;
@@ -156,6 +158,7 @@ public:
             QString episodeString = episodesArray.at(i).toString();
             QString episodeUrl = QString("https://api.allanime.day/api?variables={\"showId\":\"%1\",\"translationType\":\"sub\",\"episodeString\":\"%2\"}&extensions={\"persistedQuery\":{\"version\":1,\"sha256Hash\":\"5f1a64b73793cc2234a389cf3a8f93ad82de7043017dd551f38f65b89daa65e0\"}}")
                                      .arg(anime.link, episodeString);
+            qDebug() << episodeString;
             anime.addEpisode(episodeString.toFloat(), episodeUrl, "");
         }
 
@@ -166,7 +169,7 @@ public:
         return 0;
     };
     QList<VideoServer> loadServers(const PlaylistItem* episode) const override {
-        QJsonObject jsonResponse = NetworkClient::get(episode->link.toStdString (), headers).JSONOBJECT();
+        QJsonObject jsonResponse = NetworkClient::get(episode->link, headers).toJson();
         QList<VideoServer> servers;
 
         QJsonArray sourceUrls = jsonResponse["data"].toObject()["episode"].toObject()["sourceUrls"].toArray();
@@ -182,14 +185,14 @@ public:
     }
 
     QList<Video> extractSource(const VideoServer& server) const override {
-        QString endPoint = NetworkClient::get(hostUrl + "getVersion").JSONOBJECT()["episodeIframeHead"].toString();
+        QString endPoint = NetworkClient::get(hostUrl + "getVersion").toJson()["episodeIframeHead"].toString();
         auto decryptedLink = decryptSource(server.link);
         //qInfo().noquote() << "Log (AllAnime): Decrypted link" << decryptedLink;
         // QString source;
 
         if (decryptedLink.startsWith ("/apivtwo/")) {
             decryptedLink.insert (14,".json");
-            QJsonObject jsonResponse = NetworkClient::get((endPoint + decryptedLink).toStdString (), headers).JSONOBJECT();
+            QJsonObject jsonResponse = NetworkClient::get(endPoint + decryptedLink, headers).toJson();
             QJsonArray links = jsonResponse["links"].toArray();
 
             // qInfo() .noquote()<< decryptedLink;

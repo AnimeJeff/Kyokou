@@ -28,9 +28,6 @@ qt_add_executable(kyokou
     ${PROJECT_SOURCE_DIR}/dependencies/includes/pugixml/pugixml.cpp
     ${APP_ICON_RESOURCE_WINDOWS}
     kyokou.qrc
-    src/Data/showdata.cpp
-    src/Data/video.h src/Data/video.cpp
-    src/Components/logger.h src/Components/logger.cpp
 )
 
 # Include directories
@@ -39,14 +36,12 @@ target_include_directories(kyokou PRIVATE
     ${PROJECT_SOURCE_DIR}/src
     ${TIDY_INCLUDE_DIRS}
     ${CURL_INCLUDE_DIRS}
-    ${OPENSSL_INCLUDE_DIR}
 )
 
 # Find and link dependencies
 find_package(TIDY REQUIRED)
 find_package(CURL REQUIRED)
 find_package(CryptoPP REQUIRED)
-find_package(OpenSSL REQUIRED)
 
 target_link_libraries(kyokou PRIVATE
     Qt6::Quick
@@ -58,7 +53,6 @@ target_link_libraries(kyokou PRIVATE
     ${TIDY_LIBRARIES}
     ${CURL_LIBRARIES}
     cryptopp-static
-    ${OPENSSL_LIBRARIES}
 )
 
 # Debug and Release specific settings

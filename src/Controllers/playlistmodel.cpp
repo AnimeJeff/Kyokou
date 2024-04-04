@@ -35,12 +35,6 @@ void PlaylistModel::appendPlaylist(PlaylistItem *playlist) {
     emit showNameChanged();
 }
 
-void PlaylistModel::appendPlaylist(const QUrl &path) {
-    auto playlist = PlaylistItem::fromUrl(path.toString());
-    if (playlist)
-        appendPlaylist(playlist);
-}
-
 void PlaylistModel::replaceCurrentPlaylist(PlaylistItem *playlist) {
     if (!playlist) return;
     if (playlistSet.contains(playlist->link)) {
@@ -66,6 +60,7 @@ void PlaylistModel::replaceCurrentPlaylist(PlaylistItem *playlist) {
     } else {
         // Playlist is empty
         appendPlaylist (playlist);
+        m_rootPlaylist->currentIndex = 0;
     }
 
 
@@ -79,34 +74,31 @@ bool PlaylistModel::play(int playlistIndex, int itemIndex) {
 
     if (!m_rootPlaylist->isValidIndex (playlistIndex))
         return false;
-
-    m_rootPlaylist->currentIndex = playlistIndex;
-    auto playlist = m_rootPlaylist->currentItem ();
-
-    setLoading(true);
-
+    auto playlist = m_rootPlaylist->at (playlistIndex);
 
     // Set to current playlist item index if -1
-    itemIndex = itemIndex == -1 ? playlist->currentIndex : itemIndex;
-    if (!playlist->isValidIndex (itemIndex))
-        return false;
-    playlist->currentIndex = itemIndex;
-    emit currentIndexChanged();
+    if (playlist) {
+        itemIndex = itemIndex == -1 ? playlist->currentIndex : itemIndex;
+        if (!playlist->isValidIndex (itemIndex))
+            return false;
+    } else return false;
 
-    int seekTime = playlist->at(itemIndex)->lastPlayTime;
-    qDebug() << "seek time" << itemIndex << seekTime;
+    setLoading(true);
+    if (auto lastPlaylist = m_rootPlaylist->currentItem (); lastPlaylist) {
+        lastPlaylist->setLastPlayAt (lastPlaylist->currentIndex, MpvObject::instance ()->time ());
+    }
+    m_rootPlaylist->currentIndex = playlistIndex;
+
+    int seekTime = playlist->at(itemIndex)->timeStamp;
+    qDebug() << "Seeking to" << seekTime;
     switch (playlist->at(itemIndex)->type) {
     case PlaylistItem::ONLINE: {
-        m_watcher.setFuture(QtConcurrent::run([itemIndex, this]() {
-            return loadOnlineSource(m_rootPlaylist->currentIndex, itemIndex);
-        }));
+        m_watcher.setFuture(QtConcurrent::run(&PlaylistModel::loadOnlineSource, this, playlistIndex, itemIndex));
+
         break;
     }
     case PlaylistItem::LOCAL: {
-        m_watcher.setFuture(QtConcurrent::run([playlist, itemIndex]() {
-            auto source = QList<Video>{Video(playlist->loadLocalSource(itemIndex))};
-            return source;
-        }));
+        m_watcher.setFuture(QtConcurrent::run(&PlaylistItem::loadLocalSource, playlist, itemIndex));
         break;
     }
     case PlaylistItem::LIST: {
@@ -124,10 +116,10 @@ bool PlaylistModel::play(int playlistIndex, int itemIndex) {
                 MpvObject::instance()->open(videos.first(), seekTime);
                 emit sourceFetched();
                 // Update current item index if videos are returned
-
+                playlist->currentIndex = itemIndex;
+                emit currentIndexChanged();
             } else {
-                ErrorHandler::instance().show(
-                    "Failed to get a playable source for this episode");
+                ErrorHandler::instance().show("Failed to get a playable source for this episode");
             }
             setLoading(false);
 

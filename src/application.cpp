@@ -40,7 +40,7 @@ Application::Application(const QString &launchPath) : m_playlist(launchPath, thi
 
     connect (&m_showManager, &ShowManager::showChanged, this, [this](){
         setLoading (false);
-        });
+    });
 
 
     QString N_m3u8DLPath = QDir::cleanPath(QCoreApplication::applicationDirPath() + QDir::separator() + "N_m3u8DL-CLI_v3.0.2.exe");
@@ -79,7 +79,10 @@ void Application::loadShow(int index, bool fromWatchList) {
         auto showJson = m_watchListModel.loadShow(index);
         if (showJson.isEmpty ()) return;
         QString providerName = showJson["provider"].toString ();
-        if (!m_providersMap.contains(providerName)) return;
+        if (!m_providersMap.contains(providerName)) {
+            qWarning() << providerName << "does not exist";
+            return;
+        }
         auto provider = m_providersMap[providerName];
 
         QString title = showJson["title"].toString ();
@@ -88,9 +91,9 @@ void Application::loadShow(int index, bool fromWatchList) {
         int lastWatchedIndex = showJson["lastWatchedIndex"].toInt ();
         int type = showJson["type"].toInt ();
         auto show = ShowData(title, link, coverUrl, provider, "", type);
-        auto lastPlayTime = showJson["lastPlayTime"].toInt (0);
+        auto timeStamp = showJson["timeStamp"].toInt (0);
         int listType = m_watchListModel.getCurrentListType();
-        m_showManager.setShow(show, {listType, lastWatchedIndex, lastPlayTime});
+        m_showManager.setShow(show, {listType, lastWatchedIndex, timeStamp});
     } else {
         auto show = m_searchResultsModel.at(index);
         auto lastWatchedInfo = m_watchListModel.getLastWatchInfo (show.link);
@@ -110,7 +113,7 @@ void Application::removeCurrentShowFromLibrary() {
 }
 
 void Application::playFromEpisodeList(int index) {
-    updateLastPlayTime();
+    updateTimeStamp();
     m_playlist.replaceCurrentPlaylist (m_showManager.getPlaylist ());
     m_playlist.play (-1, m_showManager.correctIndex(index));
 }
@@ -123,6 +126,20 @@ void Application::continueWatching() {
 
 void Application::downloadCurrentShow(int startIndex, int count) {
     m_downloader->downloadShow (m_showManager.getShow (), m_showManager.correctIndex(startIndex), count); //TODO
+}
+
+void Application::updateTimeStamp() {
+    // Update the last play time
+    auto lastPlaylist = m_playlist.getCurrentPlaylist();
+    if (!lastPlaylist) return;
+    auto time = MpvObject::instance ()->time ();
+    qDebug() << "Updating time stamp for" << lastPlaylist->link << "to" << time;
+
+    if (lastPlaylist->isLoadedFromFolder ())
+        lastPlaylist->updateHistoryFile (time);
+    else {
+        m_watchListModel.updateTimeStamp (lastPlaylist->link, time);
+    }
 }
 
 void Application::updateLastWatchedIndex() {

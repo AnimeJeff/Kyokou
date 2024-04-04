@@ -41,7 +41,6 @@ void WatchListModel::loadWatchList(QString filePath) {
     }
 }
 
-
 void WatchListModel::fetchUnwatchedEpisodes(int listType) {
     return;
     // int count = 0;
@@ -60,8 +59,6 @@ void WatchListModel::fetchUnwatchedEpisodes(int listType) {
     // emit layoutChanged();
 }
 
-
-
 QJsonObject WatchListModel::loadShow(int index) {
     // Validate the current list type and index
     const QJsonArray& currentList = m_watchListJson.at(m_currentListType).toArray();
@@ -74,7 +71,28 @@ QJsonObject WatchListModel::loadShow(int index) {
     return show;
 }
 
+void WatchListModel::updateProperty(const QString &showLink, QString propertyName, QVariant propertyValue, PropertyType propertyType){
+    if (!m_showHashmap.contains(showLink)) return;
 
+    QPair<int, int> listTypeAndIndex = m_showHashmap.value(showLink);
+    int listType = listTypeAndIndex.first;
+    int index = listTypeAndIndex.second;
+
+    QJsonArray list = m_watchListJson[listType].toArray();
+    QJsonObject show = list[index].toObject();
+
+    if (propertyType == INT) {
+        show.operator[](propertyName) = propertyValue.toInt ();
+    } else {
+        show.operator[](propertyName)= propertyValue.toString ();
+    }
+
+
+    list[index] = show; // Update the show in the list
+    m_watchListJson[listType] = list; // Update the list in the model
+
+    save(); // Save changes
+}
 
 void WatchListModel::add(ShowData& show, int listType)
 {
@@ -102,6 +120,90 @@ void WatchListModel::add(ShowData& show, int listType)
         show.setListType (listType);
     }
     save();
+}
+
+void WatchListModel::remove(ShowData &show)
+{
+    // QString showLink = QString::fromStdString(show.link);
+    // Check if the show exists in the hashmap
+    if (!m_showHashmap.contains(show.link)) return;
+
+    // Extract list type and index from the hashmap
+    QPair<int, int> listTypeAndIndex = m_showHashmap.value(show.link);
+    int listType = listTypeAndIndex.first;
+    int index = listTypeAndIndex.second;
+
+    removeAt (index, listType);
+    show.setListType (-1);
+}
+
+void WatchListModel::removeAt(int index, int listType) {
+    if (listType < 0 || listType > 4) listType = m_currentListType;
+    QJsonArray list = m_watchListJson[listType].toArray();
+    if (index < 0 || index >= list.size ()) return;
+
+    auto showLink = list[index].toObject ()["link"].toString ();
+
+    // Remove the show from the list
+    list.removeAt(index);
+    m_watchListJson[listType] = list; // Update the list in the JSON structure
+
+    // Remove the show from the hashmap
+    m_showHashmap.remove(showLink);
+
+    for (int i = index; i < list.size(); ++i) {
+        QJsonObject show = list[i].toObject();
+        QString showLink = show["link"].toString();
+        m_showHashmap[showLink].second = i; // Update index
+    }
+
+    // If the current list type is being displayed, update the model accordingly
+    if (m_currentListType == listType) {
+        beginRemoveRows(QModelIndex(), index, index);
+        endRemoveRows();
+    }
+
+    save(); // Save the changes to the JSON file
+}
+
+void WatchListModel::cycleDisplayingListType() {
+    setDisplayingListType ((m_currentListType + 1) % 5);
+}
+
+void WatchListModel::move(int from, int to)
+{
+    QJsonArray currentList = m_watchListJson.at(m_currentListType).toArray();
+    // Validate the 'from' and 'to' positions
+    if (from < 0 || from >= currentList.size() || to < 0 || to >= currentList.size() || from == to) return;
+
+    // Perform the move in the JSON array
+    QJsonObject movingShow = currentList.takeAt (from).toObject();
+    currentList.insert(to, movingShow);
+    m_watchListJson[m_currentListType] = currentList; // Update the JSON structure
+
+    for (int i = qMin(from, to); i <= qMax(from, to); ++i) {
+        QJsonObject show = currentList.at(i).toObject();
+        QString showLink = show["link"].toString();
+        m_showHashmap[showLink].second = i; // Update index
+    }
+
+    beginMoveRows(QModelIndex(), from, from, QModelIndex(), to > from ? to + 1 : to);
+    endMoveRows();
+    save(); // Save changes
+}
+
+void WatchListModel::save()
+{
+    QMutexLocker locker(&mutex);
+
+    QFile file(watchListFilePath);
+    if (!file.open(QIODevice::WriteOnly)) {
+        qWarning() << "Could not open file for writing:" << watchListFilePath;
+        return;
+    }
+    QJsonDocument doc(m_watchListJson); // Wrap the QJsonArray in a QJsonDocument
+    file.write(doc.toJson(QJsonDocument::Indented)); // Write JSON data in a readable format
+    file.close();
 }
 
 void WatchListModel::changeShowListType(ShowData &show, int newListType)
@@ -153,71 +255,13 @@ void WatchListModel::changeListTypeAt(int index, int newListType, int oldListTyp
         endInsertRows();
     }
     save(); // Save changes
-
-
-    // auto oldList = m_watchListJson[oldListType].toArray ();
-    // auto newList = m_watchListJson[newListType].toArray ();
-    // auto showObject = oldList[index].toObject ();
-    // oldList.removeAt (index);
-    // m_watchListJson[oldListType] = oldList;
-
-
-
-    // newList.append (/)
 }
 
-void WatchListModel::remove(ShowData &show)
-{
-    // QString showLink = QString::fromStdString(show.link);
-    // Check if the show exists in the hashmap
-    if (!m_showHashmap.contains(show.link)) return;
-
-    // Extract list type and index from the hashmap
-    QPair<int, int> listTypeAndIndex = m_showHashmap.value(show.link);
-    int listType = listTypeAndIndex.first;
-    int index = listTypeAndIndex.second;
-
-    removeAt (index, listType);
-    show.setListType (-1);
-}
-
-void WatchListModel::move(int from, int to)
-{
-    QJsonArray currentList = m_watchListJson.at(m_currentListType).toArray();
-    // Validate the 'from' and 'to' positions
-    if (from < 0 || from >= currentList.size() || to < 0 || to >= currentList.size() || from == to) return;
-
-    // Perform the move in the JSON array
-    QJsonObject movingShow = currentList.takeAt (from).toObject();
-    currentList.insert(to, movingShow);
-    m_watchListJson[m_currentListType] = currentList; // Update the JSON structure
-
-    for (int i = qMin(from, to); i <= qMax(from, to); ++i) {
-        QJsonObject show = currentList.at(i).toObject();
-        QString showLink = show["link"].toString();
-        m_showHashmap[showLink].second = i; // Update index
-    }
-
-    beginMoveRows(QModelIndex(), from, from, QModelIndex(), to > from ? to + 1 : to);
-    endMoveRows();
-
-    // emit layoutChanged ();
-    save(); // Save changes
-}
-
-
-void WatchListModel::save()
-{
-    QMutexLocker locker(&mutex);
-
-    QFile file(watchListFilePath);
-    if (!file.open(QIODevice::WriteOnly)) {
-        qWarning() << "Could not open file for writing:" << watchListFilePath;
-        return;
-    }
-    QJsonDocument doc(m_watchListJson); // Wrap the QJsonArray in a QJsonDocument
-    file.write(doc.toJson(QJsonDocument::Indented)); // Write JSON data in a readable format
-    file.close();
+QVariant WatchListModel::getChangeableListTypes() {
+    QList<int> types = { WATCHING, PLANNED, ON_HOLD, DROPPED, COMPLETED };
+    // QList<QString> types = { "Watching", "Planned", "On Hold", "Dropped", "Completed" };
+    types.remove (m_currentListType);
+    return QVariant::fromValue (types);
 }
 
 int WatchListModel::rowCount(const QModelIndex &parent) const

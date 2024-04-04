@@ -27,7 +27,6 @@ ShowManager::ShowManager(QObject *parent) : QObject{parent} {
 
 }
 
-ShowManager::~ShowManager() {}
 
 void ShowManager::setShow(const ShowData &show, ShowData::LastWatchInfo lastWatchInfo) {
     if (m_watcher.isRunning())
@@ -49,8 +48,8 @@ void ShowManager::setShow(const ShowData &show, ShowData::LastWatchInfo lastWatc
             m_show.provider->loadDetails(m_show);
             if (m_show.playlist) {
                 qDebug() << "Setting last watch info for" << m_show.title
-                         << lastWatchInfo.lastWatchedIndex << lastWatchInfo.lastPlayTime;
-                m_show.playlist->setLastPlayAt(lastWatchInfo.lastWatchedIndex, lastWatchInfo.lastPlayTime);
+                         << lastWatchInfo.lastWatchedIndex << lastWatchInfo.timeStamp;
+                m_show.playlist->setLastPlayAt(lastWatchInfo.lastWatchedIndex, lastWatchInfo.timeStamp);
             }
 
 
@@ -62,26 +61,12 @@ void ShowManager::setShow(const ShowData &show, ShowData::LastWatchInfo lastWatc
     }));
 }
 
-void ShowManager::updateLastWatchedIndex() {
-    Q_ASSERT(m_show.playlist);
-    // if (index == m_show.playlist.lastWatchedIndex) return;
-
-    // m_show.playlist->setLastPlayAt (index, 0);
-    // m_show.lastWatchedIndex = index;
-    // m_show.playlist->setLastPlayAt (index, 0);
-    m_episodeListModel.updateLastWatchedIndex();
-}
-
 int ShowManager::correctIndex(int index) const {
     int correctedIndex = m_episodeListModel.getIsReversed () ? m_show.playlist->size () - index - 1: index;
     Q_ASSERT(correctedIndex > -1 && correctedIndex < m_show.playlist->size ());
     return correctedIndex;
 }
 
-int ShowManager::getContinueIndex() const {
-    int index = m_episodeListModel.getContinueIndex ();
-    return index;
-}
 
 void ShowManager::setListType(int listType) {
     m_show.listType = listType;

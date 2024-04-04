@@ -101,7 +101,7 @@ Item {
 
         currentIndex: app.currentShow.listType + 1
         Component.onCompleted: {
-            if (app.currentShow.inWatchList)
+            if (app.currentShow.listType !== -1)
                 listTypeModel.set(0, {text: "Remove from Library"})
             else
                 listTypeModel.set(0, {text: "Add to Library"})
