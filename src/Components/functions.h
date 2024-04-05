@@ -1,36 +1,17 @@
 #ifndef FUNCTIONS_H
 #define FUNCTIONS_H
 
-#include <algorithm>
-#include <array>
 #include <string>
-#include <sstream>
-#include <iostream>
-#include <iomanip>
-#include <stdexcept>
-#include <locale>
 #include <QString>
 #include <QDebug>
 #include <cryptopp/base64.h>
 #include <cryptopp/des.h>
 #include <cryptopp/modes.h>
 #include <cryptopp/filters.h>
-#define CRYPTOPP_ENABLE_NAMESPACE_WEAK 1
-#include <cryptopp/md5.h>
+
 #include <cryptopp/hex.h>
-// #include <CLI11/CLI11.hpp>
-#include <iostream>
-#include <filesystem>
 #include <QException>
-#include <regex>
 #include <QRegularExpression>
-#define QS(str) QString::fromStdString(str)
-//void print(const QString& str){
-//    qDebug()<<str;
-//}
-//void print(const std::string& str){
-//    print(QString::fromStdString (str));
-//}
 
 namespace Functions{
 inline void httpsIfy(QString& text){

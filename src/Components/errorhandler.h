@@ -1,6 +1,4 @@
-
-#ifndef ERRORHANDLER_H
-#define ERRORHANDLER_H
+#pragma once
 #include <QString>
 #include <QObject>
 class ErrorHandler : public QObject
@@ -18,14 +16,10 @@ signals:
     void showWarning(QString message);
 
 private:
-    ErrorHandler(){
-
-    }
+    ErrorHandler() = default;
     ErrorHandler(const ErrorHandler&) = delete; // Disable copy constructor.
     ErrorHandler& operator=(const ErrorHandler&) = delete; // Disable copy assignment.
     ~ErrorHandler(){} // Private destructor to prevent external deletion.
 
 
 };
-
-#endif // ERRORHANDLER_H

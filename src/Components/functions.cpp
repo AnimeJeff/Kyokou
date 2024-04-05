@@ -1,5 +1,4 @@
- #include "functions.h"
-#include "qcryptographichash.h"
+#include "functions.h"
 
 
 QString Functions::findBetween(const QString &str, const QString &a, const QString &b) {

@@ -19,37 +19,36 @@ ShowManager::ShowManager(QObject *parent) : QObject{parent} {
     });
 }
 
-void ShowManager::loadShow(ShowData show, ShowData::LastWatchInfo lastWatchInfo) {
-    // auto prevShow = m_show;
-    m_show = show;
-    m_show.listType = lastWatchInfo.listType;
-    if (!m_show.provider) {
+void ShowManager::loadShow(const ShowData &show, const ShowData::LastWatchInfo &lastWatchInfo) {
+    if (!show.provider) {
         throw MyException(QString("Error: Unable to find a provider for %1").arg(m_show.title));
         return;
     }
-
-    qInfo() << "Log (ShowManager)： Loading details for" << m_show.title
-            << "with" << m_show.provider->name()
-            << "using the link:" << m_show.link;
+    auto tempShow = ShowData(show);
+    qInfo() << "Log (ShowManager)： Loading details for" << show.title
+            << "with" << show.provider->name()
+            << "using the link:" << show.link;
     try {
-        m_show.provider->loadDetails(m_show);
+        show.provider->loadDetails(tempShow);
     } catch(...) {
         qDebug() << "Failed to load show";
+        return;
     }
-
+    // Only set the show as the current show if it succeeds loading
+    m_show = std::move(tempShow);
+    m_show.listType = lastWatchInfo.listType;
     if (m_show.playlist) {
-        qDebug() << "Setting last watch info for" << m_show.title
+        qDebug() << "Setting last watch info for" << show.title
                  << lastWatchInfo.lastWatchedIndex << lastWatchInfo.timeStamp;
         m_show.playlist->setLastPlayAt(lastWatchInfo.lastWatchedIndex, lastWatchInfo.timeStamp);
     }
-
     m_episodeListModel.setPlaylist(m_show.playlist);
     m_episodeListModel.setIsReversed(true);
 
 }
 
 
-void ShowManager::setShow(const ShowData &show, ShowData::LastWatchInfo lastWatchInfo) {
+void ShowManager::setShow(const ShowData &show, const ShowData::LastWatchInfo &lastWatchInfo) {
     if (m_watcher.isRunning())
         return;
     if (m_show.link == show.link) {
@@ -58,10 +57,7 @@ void ShowManager::setShow(const ShowData &show, ShowData::LastWatchInfo lastWatc
     }
     m_isLoading = true;
     emit isLoadingChanged ();
-    m_watcher.setFuture(QtConcurrent::run(&ShowManager::loadShow, this, show, lastWatchInfo));
-
-
-
+    m_watcher.setFuture(QtConcurrent::run(&ShowManager::loadShow, this, ShowData(show), lastWatchInfo));
 }
 
 int ShowManager::correctIndex(int index) const {

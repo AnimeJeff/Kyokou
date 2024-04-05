@@ -3,6 +3,7 @@ import QtQuick.Controls 2.15
 Popup {
     id: overlay
     dim: true
+    anchors.centerIn: parent
     visible: loading
     closePolicy: Popup.NoAutoClose
     signal cancelled()

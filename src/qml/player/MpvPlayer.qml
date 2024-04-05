@@ -5,7 +5,7 @@ import QtQuick.Dialogs
 import QtQuick.Layouts 1.15
 
 MpvObject {
-    id:mpv
+    id: mpv
     volume: volumeSlider.value
     property var lastPos
 

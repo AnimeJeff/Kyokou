@@ -199,7 +199,6 @@ public:
             // qDebug ().noquote() << endPoint.toStdString () + decryptedLink;
             //qDebug() .noquote() << "response json \n" << QJsonDocument(jsonResponse).toJson ();
 
-
             for (const QJsonValue& value : links) {
                 QJsonObject linkObject = value.toObject();
                 if (!linkObject["dash"].toBool ())

@@ -12,21 +12,28 @@ struct ShowData
     ShowData(const QString& title, const QString& link, const QString& coverUrl,
              ShowProvider* provider, const QString& latestTxt = "", int type = 0)
         : title(title), link(link), coverUrl(coverUrl), provider(provider), latestTxt(latestTxt), type(type) {};
+    ShowData (const ShowData& other);
 
+    ShowData(ShowData &&other);
+    ShowData& operator=(const ShowData&& other) = delete;
 
-    QString title = "";
-    QString link = "";
-    QString coverUrl = "";
-    QString latestTxt = "";
+    ShowData& operator=(ShowData&& other);
+    ShowData& operator=(const ShowData& other);
+
+    ~ShowData();;
+    QString title;
+    QString link;
+    QString coverUrl;
+    QString latestTxt;
     ShowProvider* provider;
-    int type = 0;
-    QString description = "";
-    QString releaseDate = "";
-    QString status = "";
+    QString description;
+    QString releaseDate;
+    QString status;
     QList<QString> genres;
-    QString updateTime = "";
-    QString score = "";
-    QString views = "";
+    QString updateTime;
+    QString score;
+    QString views;
+    int type = 0;
 
 public:
 
@@ -63,7 +70,8 @@ public:
 private:
     int listType = -1;
     PlaylistItem* playlist = nullptr;
-
+private:
+    void copyFrom(const ShowData& other);
 };
 
 

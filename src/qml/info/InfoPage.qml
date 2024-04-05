@@ -9,9 +9,9 @@ Item {
         id:loadingScreen
         z:10
         anchors.centerIn: parent
-        loading: app.playlist.isLoading && infoPage.visible
+        loading: infoPage.visible && app.playlist.isLoading
     }
-    focus: false
+    focus: true
     property real aspectRatio: root.width/root.height
     property real labelFontSize: 24 * root.fontSizeMultiplier
     property var currentShow: app.currentShow
@@ -41,11 +41,11 @@ Item {
                 Layout.alignment: Qt.AlignTop
                 Layout.fillHeight: true
                 Layout.fillWidth: true
-                text: list.count + " Episodes"
+                text: episodeList.count + " Episodes"
                 font.bold: true
                 color: "white"
                 font.pixelSize: 25
-                visible: list.count > 0
+                visible: episodeList.count > 0
             }
             ImageButton {
                 Layout.fillHeight: true
@@ -187,6 +187,9 @@ Item {
                         switch (event.key){
                             case Qt.Key_Space:
                             app.continueWatching();
+                            break
+                            case Qt.Key_Escape:
+                            infoPage.forceActiveFocus()
                             break
                         }
                     }

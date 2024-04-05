@@ -78,7 +78,7 @@ public:
         initialised = true;
     }
 
-    static void shutdown(){
+    static void cleanUp(){
         if (!initialised) return;
         for (auto& curl: curls){
             curl_easy_cleanup(curl);

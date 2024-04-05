@@ -43,13 +43,13 @@ private:
 
     bool m_isLoading = false;
     bool isLoading() const { return m_isLoading; }
-    void loadShow(ShowData show, ShowData::LastWatchInfo lastWatchInfo);;
+    void loadShow(const ShowData &show, const ShowData::LastWatchInfo &lastWatchInfo);;
 public:
     explicit ShowManager(QObject *parent = nullptr);
     ~ShowManager() = default;
 
     ShowData &getShow() { return m_show; }
-    void setShow(const ShowData &show, ShowData::LastWatchInfo lastWatchInfo);
+    void setShow(const ShowData &show, const ShowData::LastWatchInfo &lastWatchInfo);
     inline void updateLastWatchedIndex() { m_episodeListModel.updateLastWatchedIndex(); };
     int correctIndex(int index) const;
 

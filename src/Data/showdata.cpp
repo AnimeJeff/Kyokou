@@ -2,9 +2,72 @@
 #include "Data/playlistitem.h"
 #include "Providers/showprovider.h"
 
+
+void ShowData::copyFrom(const ShowData &other) {
+    title = other.title;
+    link = other.link;
+    coverUrl = other.coverUrl;
+    latestTxt = other.latestTxt;
+    provider = other.provider;
+    description = other.description;
+    releaseDate = other.releaseDate;
+    status = other.status;
+    genres = other.genres;
+    updateTime = other.updateTime;
+    score = other.score;
+    views = other.views;
+    type = other.type;
+    listType = other.listType;
+}
+
+ShowData::ShowData(const ShowData &other) {
+    if (this != &other){
+        copyFrom (other);
+        playlist = other.playlist;
+        if (playlist)
+            playlist->use ();
+    }
+}
+
+ShowData &ShowData::operator=(const ShowData &other) {
+    if (this != &other){
+        copyFrom (other);
+        playlist = other.playlist;
+        if (playlist)
+            playlist->use ();
+    }
+    return *this;
+}
+
+ShowData::ShowData(ShowData &&other) {
+    // qDebug() << "move constructor called";
+    if (this != &other){
+        copyFrom (other);
+        playlist = other.playlist;
+        other.playlist = nullptr;
+    }
+}
+
+ShowData &ShowData::operator=(ShowData &&other) {
+    // qDebug() << "move assignment called";
+    if (this != &other){
+        copyFrom (other);
+        playlist = other.playlist;
+        other.playlist = nullptr;
+    }
+    return *this;
+}
+
+ShowData::~ShowData() {
+    if (playlist) {
+        playlist->disuse();
+    }
+}
+
 void ShowData::addEpisode(float number, const QString &link, const QString &name) {
     if (!playlist) {
-        playlist = new PlaylistItem(title, provider, this->link, nullptr);
+        playlist = new PlaylistItem(title, provider, this->link);
+        playlist->use ();
     }
     playlist->emplaceBack (number, link, name, false);
 }
@@ -60,3 +123,5 @@ QString ShowData::toString() const {
 
     return stringList.join ("");
 }
+
+

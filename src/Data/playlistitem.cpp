@@ -132,14 +132,13 @@ PlaylistItem *PlaylistItem::fromUrl(const QUrl &pathUrl, PlaylistItem *parent) {
 
     if (!pathUrl.isLocalFile ()) {
         auto pathString = pathUrl.toString ();
-        PlaylistItem *playlist = new PlaylistItem("Pasted Link", nullptr, pathString, parent);
-        if (parent) parent->append (playlist);
+        PlaylistItem *playlist = new PlaylistItem("Pasted Link", nullptr, pathString);
         playlist->emplaceBack (-1, pathString, pathString, true);
         playlist->currentIndex = 0;
         return playlist;
     }
 
-    PlaylistItem *playlist = new PlaylistItem("", nullptr, "", parent);
+    PlaylistItem *playlist = new PlaylistItem("", nullptr, "");
     playlist->m_isLoadedFromFolder = true;
     playlist->m_children = std::make_unique<QList<PlaylistItem*>>();
     if (!playlist->loadFromFolder (pathUrl)) {
@@ -154,8 +153,6 @@ void PlaylistItem::emplaceBack(float number, const QString &link, const QString 
     if (!m_children) m_children = std::make_unique<QList<PlaylistItem*>>();
     m_children->emplaceBack(new PlaylistItem(number, link, name, this, isLocal));
 }
-
-
 
 void PlaylistItem::clear() {
     if (m_children) {
@@ -178,17 +175,17 @@ void PlaylistItem::removeAt(int index) {
     }
 }
 
-void PlaylistItem::replace(int index, PlaylistItem *value) {
+bool PlaylistItem::replace(int index, PlaylistItem *value) {
     auto toRemove = at(index);
-    if (toRemove) {
-        toRemove->m_parent = nullptr;
-        if (--toRemove->useCount == 0) {
-            delete toRemove;
-        }
-        m_children->replace (index, value);
-        value->m_parent = this;
-        value->useCount++;
+    if (!toRemove) return false;
+    toRemove->m_parent = nullptr;
+    if (--toRemove->useCount == 0) {
+        delete toRemove;
     }
+    m_children->replace (index, value);
+    value->m_parent = this;
+    value->useCount++;
+    return true;
 }
 
 int PlaylistItem::indexOf(const QString &link) {

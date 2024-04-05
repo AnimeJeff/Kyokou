@@ -51,7 +51,6 @@ Item {
             right: parent.right
         }
         height: parent.height * 0.1
-
     }
 
 
@@ -78,6 +77,7 @@ Item {
             hoverEnabled: true
             live: true
             z:backgroundRect.z + 1
+            enabled: !mpv.isLoading
             anchors {
                 top:parent.top
                 left: parent.left

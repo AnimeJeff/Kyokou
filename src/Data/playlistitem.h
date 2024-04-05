@@ -13,8 +13,12 @@ class Video;
 class PlaylistItem {
 public:
     //List
-    PlaylistItem(const QString& name, ShowProvider* provider, const QString &link, PlaylistItem* parent)
-        : name(name), m_provider(provider), link(link), m_parent(parent), type(LIST) {}
+    PlaylistItem(const QString& name, ShowProvider* provider, const QString &link)
+        : name(name), m_provider(provider), link(link), type(LIST) {
+
+    }
+
+    static PlaylistItem *fromUrl(const QUrl &pathUrl, PlaylistItem *parent = nullptr);
 
     //Item
     PlaylistItem(float number, const QString &link, const QString &name, PlaylistItem *parent, bool isLocal = false);
@@ -23,29 +27,24 @@ public:
         clear();
     }
 
-    static PlaylistItem *fromUrl(const QUrl &pathUrl, PlaylistItem *parent = nullptr);
-
     inline bool reloadFromFolder() { return loadFromFolder (QUrl()); }
-    // QList<Video> loadLocalSource(int index);
 
     inline PlaylistItem *parent() const { return m_parent; }
     inline PlaylistItem *at(int i) const { return !isValidIndex(i) ? nullptr : m_children->at(i); }
     inline int row() { return m_parent ? m_parent->m_children->indexOf(const_cast<PlaylistItem *>(this)) : 0; }
     inline PlaylistItem *first() const { return at(0); }
-    inline PlaylistItem *currentItem() const { return at(currentIndex); }
+    inline PlaylistItem *getCurrentItem() const { return at(currentIndex); }
     inline int indexOf(PlaylistItem *child) { return m_children->indexOf (child); }
     int indexOf(const QString &link);
     inline bool isEmpty() const { return !m_children || m_children->size() == 0; }
     inline int size() const { return m_children ? m_children->size() : 0; }
     bool isValidIndex(int index) const;
 
-
     void append(PlaylistItem *value);
     void emplaceBack(float number, const QString &link, const QString &name, bool isLocal = false);
     void clear();
     void removeAt(int index);
-    void replace(int index, PlaylistItem *value);
-    inline bool hasSameLink(PlaylistItem *playlist) { return playlist ? link == playlist->link : false; }
+    bool replace(int index, PlaylistItem *value);
     QString getDisplayNameAt(int index) const;
     void updateHistoryFile(qint64 time = 0);
     void setLastPlayAt(int index, int time);
@@ -65,7 +64,7 @@ public:
     void use(){
         ++useCount;
     }
-    void unuse() {
+    void disuse() {
         --useCount;
         if (useCount == 0) {
             qDebug() << "Log (Downloader): Playlist deleted by downloader" ;

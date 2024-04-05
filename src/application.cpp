@@ -50,7 +50,7 @@ Application::Application(const QString &launchPath) : m_playlist(launchPath, thi
 }
 
 Application::~Application() {
-    NetworkClient::shutdown ();
+    NetworkClient::cleanUp ();
     qDeleteAll (m_providers);
     if (m_downloader)
         delete m_downloader;
@@ -145,7 +145,7 @@ void Application::updateLastWatchedIndex() {
     auto showPlaylist = m_showManager.getPlaylist ();
     if (!showPlaylist || !currentPlaylist) return;
 
-    if (currentPlaylist->hasSameLink(showPlaylist))
+    if (showPlaylist->link == currentPlaylist->link)
         m_showManager.updateLastWatchedIndex ();
 
     m_libraryModel.updateLastWatchedIndex (currentPlaylist->link, currentPlaylist->currentIndex);

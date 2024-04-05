@@ -1,5 +1,6 @@
 #pragma once
 #include "Providers/showprovider.h"
+#include <regex>
 
 class Kimcartoon : public ShowProvider {
 public:

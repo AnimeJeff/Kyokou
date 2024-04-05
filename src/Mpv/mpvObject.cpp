@@ -203,13 +203,20 @@ void MpvObject::open(const Video &video, int time) {
     m_seekTime = time;
 
     QByteArray fileUrl = (video.videoUrl.isLocalFile() ? video.videoUrl.toLocalFile() : video.videoUrl.toString()).toUtf8();
+    if (video.subtitles.isEmpty ()) {
+        m_mpv.set_property_async ("sid", "no");
+        setSubVisible(false);
+    }
+
     // qDebug() << "mpv" << fileUrl;?
     const char *args[] = {"loadfile", fileUrl.constData (), nullptr};
     m_mpv.command_async(args);
 
+
     if (video.videoUrl != m_currentVideo.videoUrl){
         m_currentVideo = video;
     }
+
 
 }
 

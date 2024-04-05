@@ -10,18 +10,17 @@ Item{
     property alias playListSideBar: playlistBar
     LoadingScreen {
         id:loadingScreen
-        anchors.centerIn: parent
         z: parent.z + 1
-        loading: mpvPage.visible && mpv.isLoading
+        loading: mpvPage.visible && (app.playlist.isLoading || mpv.isLoading)
         cancellable: false
         timeoutEnabled:false
     }
+
 
     Connections {
         target: mpvPlayer
         function onIsLoadingChanged() {
             if (!mpvPlayer.isLoading) {
-                mpv.subVisible = true
                 sideBar.gotoPage(3)
             }
         }
