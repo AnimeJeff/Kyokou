@@ -2,6 +2,7 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import "../components"
 Rectangle{
+    id: libraryPage
     property var swipeView
     color: "black"
 
@@ -9,13 +10,13 @@ Rectangle{
         id:loadingScreen
         anchors.centerIn: parent
         z: parent.z + 1
-        loading: app.loading
+        loading: app.currentShow.isLoading && libraryPage.visible
     }
     Keys.onPressed: (event) => {
                         if (event.key === Qt.Key_Tab) {
                             event.accepted = true
-                            app.watchList.cycleDisplayingListType() ;
-                            listTypeComboBox.currentIndex = app.watchList.listType
+                            app.library.cycleDisplayingListType() ;
+                            listTypeComboBox.currentIndex = app.library.listType
                         }
                     }
 
@@ -37,12 +38,12 @@ Rectangle{
             ListElement { text: "Completed" }
         }
         text: "text"
-        currentIndex: app.watchList.listType
-        onActivated: (index) => {app.watchList.listType = index}
+        currentIndex: app.library.listType
+        onActivated: (index) => {app.library.listType = index}
 
     }
 
-    WatchListContainer {
+    LibraryGridView {
         anchors{
             left: parent.left
             top: listTypeComboBox.bottom

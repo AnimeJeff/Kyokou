@@ -9,20 +9,17 @@ import "components"
 Rectangle {
 
     id: sideBar
+    gradient: Gradient {
+        GradientStop { position: 0.0; color: "#B7BADB" }
+        GradientStop { position: 0.5; color: "#96C8ED" }
+        GradientStop { position: 1.0; color: "#F3B1BF" }
+    }
 
     width: 50
     height: parent.height
 
-    color: "black"
-    //    color: "white"
-    // Pane for elevation shadow
-    Pane {
-        anchors.fill: parent
-        Material.background: parent.color
-        Material.elevation: 1
-    }
+
     property int currentPage: 0
-    // Positionate all buttons
     Connections{
         target: app.currentShow
         function onShowChanged(){
@@ -32,9 +29,9 @@ Rectangle {
 
 
     property var pages: {
-        0: "explorer/SearchPage.qml",
+        0: "explorer/ExplorerPage.qml",
         1: "info/InfoPage.qml",
-        2: "watchlist/WatchListPage.qml",
+        2: "library/LibraryPage.qml",
         3: "player/MpvPage.qml",
         4: "download/DownloadPage.qml",
         5: "settings.qml"
@@ -51,7 +48,6 @@ Rectangle {
                 mpv.forceActiveFocus()
                 mpvPage.visible = true
                 stackView.visible = false
-
             } else {
                 stackView.visible = true
                 mpvPage.visible = false
@@ -66,7 +62,6 @@ Rectangle {
         spacing: 5
         ImageButton {
             source: selected ? "qrc:/resources/images/search_selected.png" :"qrc:/resources/images/search.png"
-            // hoverImage: selected ? "qrc:/resources/images/search_selected.png" :"qrc:/resources/images/search.png"
             Layout.preferredWidth: sideBar.width
             Layout.preferredHeight: sideBar.width
             onClicked: {
@@ -89,7 +84,6 @@ Rectangle {
         ImageButton {
             id:libraryPageButton
             source: selected ? "qrc:/resources/images/library_selected.png" :"qrc:/resources/images/library.png"
-            // hoverImage: selected ? "qrc:/resources/images/library_selected.png" :"qrc:/resources/images/library.png"
             Layout.preferredWidth: sideBar.width
             Layout.preferredHeight: sideBar.width
 
@@ -116,12 +110,12 @@ Rectangle {
             selected: currentPage === 4
         }
 
-        AnimatedImage {
-            source: "qrc:/resources/gifs/basketball.gif"
-            Layout.preferredWidth: sideBar.width
-            Layout.preferredHeight: sideBar.width
-            // MouseArea {cursorShape: Qt.PointingHandCursor}
-        }
+        // AnimatedImage {
+        //     source: "qrc:/resources/gifs/basketball.gif"
+        //     Layout.preferredWidth: sideBar.width
+        //     Layout.preferredHeight: sideBar.width
+        //     // MouseArea {cursorShape: Qt.PointingHandCursor}
+        // }
         Rectangle {
             property string orientation: "vertical"
             color: "transparent"
@@ -129,56 +123,5 @@ Rectangle {
             Layout.fillWidth: orientation == "horizontal"
             Layout.fillHeight: orientation == "vertical"
         }
-
-
-
-
-
-        // Item {
-        //     Layout.preferredWidth: sideBar.width
-        //     Layout.preferredHeight: sideBar.width
-
-        //     Image {
-        //         id: settingsImage
-        //         source: "qrc:/resources/images/settings.png"
-        //         anchors.fill: parent
-        //         visible: true // Hide this and use the layer as the visible entity
-        //         layer.enabled: true
-        //         layer.effect: BrightnessContrast {
-        //             brightness: 1.0 // Adjust these values as needed
-        //             contrast: 0.5
-        //         }
-        //     }
-
-        //     // Use a MouseArea for interaction, if needed
-        //     MouseArea {
-        //         anchors.fill: parent
-        //         onClicked: {
-        //             onClicked: gotoPage(5)
-        //             //     // selected: currentPage === 4
-        //             // Your click handling logic here
-        //         }
-        //     }
-        // }
-
-        // BrightnessContrast {
-        //     anchors.fill: lol
-        //     source: lol
-        //     brightness: 1.0
-        //     contrast: 1.0
-        // }
-
-        // Image {
-        //     id:lol
-        //     // image: selected ? "qrc:/resources/images/settings_selected.png" :"qrc:/resources/images/settings.png"
-        //     // hoverImage: selected ? "qrc:/resources/images/settings_selected.png" :"qrc:/resources/images/settings.png"
-
-        //     Layout.preferredWidth: sideBar.width
-        //     Layout.preferredHeight: sideBar.width
-
-        //     // onClicked: gotoPage(5)
-        //     // selected: currentPage === 4
-        //     source: "qrc:/resources/images/settings.png"
-        // }
     }
 }

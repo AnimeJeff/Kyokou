@@ -26,7 +26,7 @@ Popup {
     ListView{
         id:serversListView
         clip: true
-        model: app.playList.serverList
+        model: app.playlist.serverList
         boundsBehavior: Flickable.StopAtBounds
         anchors {
             top:serversText.bottom
@@ -38,7 +38,7 @@ Popup {
         delegate: Rectangle {
             width: serversListView.width
             height: 20 * root.fontSizeMultiplier * 3
-            color: app.playList.serverList.currentIndex === index ? "purple" : "black"
+            color: app.playlist.serverList.currentIndex === index ? "purple" : "black"
             border.width: 2
             border.color: "white"
             Text {
@@ -61,7 +61,7 @@ Popup {
             }
             MouseArea {
                 anchors.fill: parent
-                onClicked: app.playList.serverList.currentIndex = index
+                onClicked: app.playlist.serverList.currentIndex = index
             }
 
         }

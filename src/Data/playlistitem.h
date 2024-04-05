@@ -14,10 +14,10 @@ class PlaylistItem {
 public:
     //List
     PlaylistItem(const QString& name, ShowProvider* provider, const QString &link, PlaylistItem* parent)
-        : name(name), m_provider(provider), link(std::move(link)), m_parent(parent), type(LIST) {}
+        : name(name), m_provider(provider), link(link), m_parent(parent), type(LIST) {}
 
     //Item
-    PlaylistItem(float number, const QString &link, const QString &name, PlaylistItem *parent, bool online = true);
+    PlaylistItem(float number, const QString &link, const QString &name, PlaylistItem *parent, bool isLocal = false);
     ~PlaylistItem() {
         // qDebug() << "deleted" << (m_parent != nullptr ? m_parent->link : "") << fullName;
         clear();
@@ -26,7 +26,7 @@ public:
     static PlaylistItem *fromUrl(const QUrl &pathUrl, PlaylistItem *parent = nullptr);
 
     inline bool reloadFromFolder() { return loadFromFolder (QUrl()); }
-    QList<Video> loadLocalSource(int index);
+    // QList<Video> loadLocalSource(int index);
 
     inline PlaylistItem *parent() const { return m_parent; }
     inline PlaylistItem *at(int i) const { return !isValidIndex(i) ? nullptr : m_children->at(i); }
@@ -41,7 +41,7 @@ public:
 
 
     void append(PlaylistItem *value);
-    void emplaceBack(float number, const QString &link, const QString &name, bool online = true);
+    void emplaceBack(float number, const QString &link, const QString &name, bool isLocal = false);
     void clear();
     void removeAt(int index);
     void replace(int index, PlaylistItem *value);

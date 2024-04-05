@@ -38,6 +38,7 @@ bool PlaylistItem::loadFromFolder(const QUrl &pathUrl) {
             m_historyFile->close ();
         }
     } else {
+        if (link.isEmpty ()) return false;
         playlistDir = QDir(link);
         if (!playlistDir.exists ()) {
             qDebug() << "Log (PlaylistItem): Path" << link << "doesn't exist";
@@ -84,14 +85,12 @@ bool PlaylistItem::loadFromFolder(const QUrl &pathUrl) {
         QRegularExpressionMatch match = fileNameRegex.match(fileNames[i]);
         QString title = match.hasMatch() ? match.captured("title").trimmed() : "";
         int itemNumber = match.hasMatch() ? !match.captured("number").isEmpty() ? match.captured("number").toInt() : i : i;
-        auto childItem = new PlaylistItem(itemNumber, playlistDir.absoluteFilePath(fileNames[i]), title, this, true);
-        childItem->useCount++;
+        emplaceBack (itemNumber,  playlistDir.absoluteFilePath(fileNames[i]), title, true);
         if (fileNames[i] == currentFilename) {
             // Set current index and time
             // qDebug() << fileNames[i];
-            currentItemPtr = childItem;
+            currentItemPtr = m_children->last ();
         }
-        m_children->push_back(childItem);
     }
 
     // sort the episodes in order
@@ -125,31 +124,24 @@ PlaylistItem::PlaylistItem(float number, const QString &link, const QString &nam
     } else {
         fullName = name.isEmpty () ? "[Unnamed Episode]" : name;
     }
+    if (parent) useCount++;
 
 }
 
 PlaylistItem *PlaylistItem::fromUrl(const QUrl &pathUrl, PlaylistItem *parent) {
 
     if (!pathUrl.isLocalFile ()) {
-        PlaylistItem *playlist = new PlaylistItem("Pasted Link", nullptr, "", parent);
-        if (parent) parent->append (playlist);
         auto pathString = pathUrl.toString ();
+        PlaylistItem *playlist = new PlaylistItem("Pasted Link", nullptr, pathString, parent);
+        if (parent) parent->append (playlist);
         playlist->emplaceBack (-1, pathString, pathString, true);
         playlist->currentIndex = 0;
         return playlist;
     }
 
-    // QFileInfo path = QFileInfo(pathUrl.toLocalFile ());
-    // if (!path.exists ()) {
-    //     qDebug() << "Log (PlaylistItem): Path" << path << "doesn't exist";
-    //     return nullptr;
-    // }
-    // QDir playlistDir = path.isDir () ? QDir(pathUrl.toLocalFile ()) : path.dir ();
-
     PlaylistItem *playlist = new PlaylistItem("", nullptr, "", parent);
     playlist->m_isLoadedFromFolder = true;
     playlist->m_children = std::make_unique<QList<PlaylistItem*>>();
-
     if (!playlist->loadFromFolder (pathUrl)) {
         delete playlist;
         return nullptr;
@@ -161,19 +153,9 @@ PlaylistItem *PlaylistItem::fromUrl(const QUrl &pathUrl, PlaylistItem *parent) {
 void PlaylistItem::emplaceBack(float number, const QString &link, const QString &name, bool isLocal) {
     if (!m_children) m_children = std::make_unique<QList<PlaylistItem*>>();
     m_children->emplaceBack(new PlaylistItem(number, link, name, this, isLocal));
-    m_children->last ()->useCount++;
 }
 
-QList<Video> PlaylistItem::loadLocalSource(int index) {
-    if (!isValidIndex (index)) return {};
-    auto playlistItem = m_children->at(currentIndex);
-    if (playlistItem->type != LOCAL) return {};
-    if (index != currentIndex){
-        currentIndex = index;
-        updateHistoryFile (0);
-    }
-    return QList<Video>{ Video(QUrl::fromLocalFile(playlistItem->link)) };
-}
+
 
 void PlaylistItem::clear() {
     if (m_children) {

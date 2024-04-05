@@ -4,9 +4,10 @@ Popup {
     id: overlay
     dim: true
     visible: loading
-
+    closePolicy: Popup.NoAutoClose
     signal cancelled()
     signal timedOut()
+    property bool cancellable: true
     property bool loading:false
     property bool timeoutEnabled:true
     property int timeoutInterval:5000
@@ -14,11 +15,10 @@ Popup {
         color: "black"
     }
     onLoadingChanged: {
-        if (loading && timeoutEnabled)
-        {
+        if (!timeoutEnabled) return
+        if (loading) {
             loadingTimer.start()
-        }
-        else{
+        } else{
             loadingTimer.stop()
         }
     }
@@ -28,8 +28,10 @@ Popup {
         hoverEnabled: true
         preventStealing: true
         onClicked: {
-            cancelled()
-            overlay.close()
+            if (cancellable) {
+                cancelled()
+                overlay.close()
+            }
         }
     }
 

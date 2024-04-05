@@ -1,5 +1,6 @@
 #pragma once
 #include <QDebug>
+#include "Providers/Extractors/gogocdn.h"
 #include "showprovider.h"
 #include <QJsonArray>
 #include <Data/video.h>
@@ -158,7 +159,6 @@ public:
             QString episodeString = episodesArray.at(i).toString();
             QString episodeUrl = QString("https://api.allanime.day/api?variables={\"showId\":\"%1\",\"translationType\":\"sub\",\"episodeString\":\"%2\"}&extensions={\"persistedQuery\":{\"version\":1,\"sha256Hash\":\"5f1a64b73793cc2234a389cf3a8f93ad82de7043017dd551f38f65b89daa65e0\"}}")
                                      .arg(anime.link, episodeString);
-            qDebug() << episodeString;
             anime.addEpisode(episodeString.toFloat(), episodeUrl, "");
         }
 
@@ -209,6 +209,9 @@ public:
                 }
 
             }
+        } else if (decryptedLink.contains ("streaming.php")) {
+            GogoCDN gogo;
+            return { Video(gogo.extract (decryptedLink)) };
         }
 
         return {};

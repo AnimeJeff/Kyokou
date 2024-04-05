@@ -2,7 +2,13 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Shapes 1.15
 Rectangle {
-    color: "#E6404040"
+    color: "#9BC7EE"
+    gradient: Gradient {
+            GradientStop { position: 0.0; color: "#F3B1BF" }
+            GradientStop { position: 0.5; color: "#96C8ED" }
+            GradientStop { position: 1.0; color: "#B7BADB" }
+        }
+
     anchors.top: parent.top
     anchors.left: parent.left
     anchors.right: parent.right

@@ -23,13 +23,11 @@ public:
 private:
     QJsonObject getInfoJson(const QString& link) const;
     QList<ShowData> parseShows(const QJsonArray& showList);
-    QList<ShowData> filterSearch(int page, const QString& sortBy,int type, const QString& regionId = "0", const QString& langId="0", const QString& yearRange = " ");
-
-    QJsonObject callAPI(const QString& url, const QMap<QString, QString>& data) const;
-    QString createSign(const QMap<QString, QString>& bodyMap, const QString& secretKey = "2x_Give_it_a_shot") const;
-
+    QList<ShowData> filterSearch(int page, const QString& sortBy, int type, const QString& regionId = "0",
+                                 const QString& langId = "0", const QString& yearRange = " ");
+    QJsonObject invokeAPI(const QString& url, const QMap<QString, QString>& data) const;
     std::string decryptedByDES(const std::string &input) const;
-    // QMap<QString, QString> objKeySort(const QMap<QString, QString>& inputMap) const;
+
 private:
     const QString _HOST_CONFIG_KEY = "2x_Give_it_a_shot";
     const QString _bp_app_version = "1.0";
@@ -52,24 +50,6 @@ private:
             {"platform", _bp_platform},
             {"versioncode", _bp_versioncode}
         };
-    bool filterSearched = false;
-    QString MD5(const QString &str) const {
-        // Convert the input string to UTF-8 encoding and calculate its MD5 hash
-        QByteArray byteArray = str.toUtf8();
-        QByteArray hash = QCryptographicHash::hash(byteArray, QCryptographicHash::Md5);
-
-        // Convert the binary hash to a hexadecimal string
-        QString output = hash.toHex();
-
-        return output;
-    }
-    // const QMap<QString, QString> mudvodHeaders = {{"referer", "https://www.nivod4.tv"}};
-    //    const QMap<int, std::string> channelId = {
-    //        {ShowType::Movie, "1"},
-    //        {ShowType::TvSeries, "2"},
-    //        {ShowType::Reality, "3"},
-    //        {ShowType::Anime, "4"},
-    //        {ShowType::Documentary, "6"}
-    //    };
+    QString MD5(const QString &str) const;
 };
 

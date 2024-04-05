@@ -20,7 +20,7 @@ GridView {
     //https://doc.qt.io/qt-6/qtquick-tutorials-dynamicview-dynamicview3-example.html
     model: DelegateModel {
         id: visualModel
-        model:app.watchList
+        model:app.library
         delegate: Item {
             required property string title
             required property string cover
@@ -109,7 +109,7 @@ GridView {
                         //held = false
                         content.z = gridView.z
                         // console.log("moved",content.view.dragFromIndex, content.view.dragToIndex, content.view.isDragging)
-                        app.watchList.move(content.view.dragFromIndex, content.view.dragToIndex)
+                        app.library.move(content.view.dragFromIndex, content.view.dragToIndex)
                         visualModel.items.move(content.view.dragToIndex, content.view.dragToIndex)
                         content.view.dragFromIndex = -1
                     }
@@ -146,7 +146,7 @@ GridView {
         MenuItem {
             text: "Remove from library"
             onTriggered:  {
-                app.watchList.removeAt(contextMenu.showIndex, -1)
+                app.library.removeAt(contextMenu.showIndex, -1)
             }
         }
 
@@ -154,18 +154,18 @@ GridView {
             id: changeListTypeMenu
             title: "Change list type"
             Connections{
-                target: app.watchList
+                target: app.library
                 function onLayoutChanged(){
-                    instantiator.model = app.watchList.getChangeableListTypes()
+                    instantiator.model = app.library.getChangeableListTypes()
                 }
             }
 
             Instantiator {
                 id:instantiator
-                model: app.watchList.changeableListTypes
+                model: app.library.changeableListTypes
                 delegate: MenuItem {
-                    text: app.watchList.displayableListType(modelData)
-                    onTriggered: app.watchList.changeListTypeAt(contextMenu.showIndex, modelData, -1)
+                    text: app.library.displayableListType(modelData)
+                    onTriggered: app.library.changeListTypeAt(contextMenu.showIndex, modelData, -1)
                 }
                 onObjectAdded: (index, object) => changeListTypeMenu.insertItem(index, object)
                 onObjectRemoved: (index, object) => changeListTypeMenu.removeItem(object)

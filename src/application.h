@@ -2,11 +2,10 @@
 #include <QAbstractListModel>
 #include <QObject>
 #include <Components/cursor.h>
-#include "Controllers/searchresultsmodel.h"
-#include "Controllers/downloadmodel.h"
-
-#include "Controllers/playlistmodel.h"
-#include "Controllers/watchlistmodel.h"
+#include "Models/searchresultsmodel.h"
+#include "Models/downloadmodel.h"
+#include "Models/playlistmodel.h"
+#include "Models/librarymodel.h"
 #include "showmanager.h"
 
 #include "Providers/showprovider.h"
@@ -15,14 +14,14 @@ class Application: public QAbstractListModel
 {
     Q_OBJECT
     Q_PROPERTY(ShowManager *currentShow READ getCurrentShow CONSTANT)
-    Q_PROPERTY(bool loading READ isLoading NOTIFY loadingChanged)
+    Q_PROPERTY(bool isLoading READ isLoading NOTIFY isLoadingChanged)
     Q_PROPERTY(int currentProviderIndex READ getCurrentProviderIndex WRITE setCurrentProviderIndex NOTIFY currentProviderIndexChanged)
     Q_PROPERTY(int currentSearchTypeIndex READ getCurrentShowTypeIndex WRITE setCurrentShowTypeIndex NOTIFY currentShowTypeIndexChanged)
     Q_PROPERTY(QVariant availableShowTypes READ getAvailableShowTypes NOTIFY currentProviderIndexChanged)
 
     Q_PROPERTY(Cursor *cursor READ cursor CONSTANT)
-    Q_PROPERTY(PlaylistModel *playList READ playlistModel CONSTANT)
-    Q_PROPERTY(WatchListModel *watchList READ watchListModel CONSTANT)
+    Q_PROPERTY(PlaylistModel *playlist READ playlistModel CONSTANT)
+    Q_PROPERTY(LibraryModel *library READ libraryModel CONSTANT)
     Q_PROPERTY(DownloadModel *downloader READ downloadModel CONSTANT)
     Q_PROPERTY(SearchResultsModel *explorer READ searchResultsModel CONSTANT)
 private:
@@ -30,8 +29,8 @@ private:
     SearchResultsModel m_searchResultsModel{this};
     DownloadModel *m_downloader = nullptr;
     DownloadModel *downloadModel() { return m_downloader; }
-    WatchListModel m_watchListModel{this};
-    WatchListModel *watchListModel() { return &m_watchListModel; }
+    LibraryModel m_libraryModel{this};
+    LibraryModel *libraryModel() { return &m_libraryModel; }
     PlaylistModel m_playlist;
     PlaylistModel *playlistModel() { return &m_playlist; }
     Cursor m_cursor {this};
@@ -52,11 +51,11 @@ private:
     int getCurrentShowTypeIndex() const { return m_currentShowTypeIndex; }
     int m_currentShowTypeIndex = 0;
 
-    bool m_loading = false;
-    bool isLoading() { return m_loading; }
-    void setLoading(bool loading) {
-        m_loading = loading;
-        emit loadingChanged();
+    bool m_isLoading = false;
+    bool isLoading() { return m_isLoading; }
+    void setIsLoading(bool loading) {
+        m_isLoading = loading;
+        emit isLoadingChanged();
     }
     QList<int> m_availableTypes;
     QVariant getAvailableShowTypes() {
@@ -89,14 +88,14 @@ public:
         auto playlist = PlaylistItem::fromUrl (pathUrl);
         if (playlist) {
             m_playlist.replaceCurrentPlaylist (playlist);
-            m_playlist.play();
+            m_playlist.tryPlay();
         }
     }
     Q_INVOKABLE void continueWatching();
     Q_INVOKABLE void downloadCurrentShow(int startIndex, int count = 1);;
     Q_INVOKABLE void updateTimeStamp();
 signals:
-    void loadingChanged(void);
+    void isLoadingChanged(void);
     void currentShowTypeIndexChanged(void);
     void currentProviderIndexChanged(void);
 private slots:

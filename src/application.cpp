@@ -38,9 +38,7 @@ Application::Application(const QString &launchPath) : m_playlist(launchPath, thi
     });
 
 
-    connect (&m_showManager, &ShowManager::showChanged, this, [this](){
-        setLoading (false);
-    });
+
 
 
     QString N_m3u8DLPath = QDir::cleanPath(QCoreApplication::applicationDirPath() + QDir::separator() + "N_m3u8DL-CLI_v3.0.2.exe");
@@ -74,9 +72,9 @@ void Application::popular(int page) {
 }
 
 void Application::loadShow(int index, bool fromWatchList) {
-    setLoading (true);
+    setIsLoading (true);
     if (fromWatchList) {
-        auto showJson = m_watchListModel.loadShow(index);
+        auto showJson = m_libraryModel.loadShow(index);
         if (showJson.isEmpty ()) return;
         QString providerName = showJson["provider"].toString ();
         if (!m_providersMap.contains(providerName)) {
@@ -92,30 +90,30 @@ void Application::loadShow(int index, bool fromWatchList) {
         int type = showJson["type"].toInt ();
         auto show = ShowData(title, link, coverUrl, provider, "", type);
         auto timeStamp = showJson["timeStamp"].toInt (0);
-        int listType = m_watchListModel.getCurrentListType();
+        int listType = m_libraryModel.getCurrentListType();
         m_showManager.setShow(show, {listType, lastWatchedIndex, timeStamp});
     } else {
         auto show = m_searchResultsModel.at(index);
-        auto lastWatchedInfo = m_watchListModel.getLastWatchInfo (show.link);
+        auto lastWatchedInfo = m_libraryModel.getLastWatchInfo (show.link);
         m_showManager.setShow(show, lastWatchedInfo);
     }
 }
 
 void Application::addCurrentShowToLibrary(int listType)
 {
-    m_watchListModel.add (m_showManager.getShow (), listType); //either changes the list type or adds to library
+    m_libraryModel.add (m_showManager.getShow (), listType); //either changes the list type or adds to library
     m_showManager.setListType(listType);
 }
 
 void Application::removeCurrentShowFromLibrary() {
-    m_watchListModel.remove (m_showManager.getShow ());
+    m_libraryModel.remove (m_showManager.getShow ());
     m_showManager.setListType(-1);
 }
 
 void Application::playFromEpisodeList(int index) {
     updateTimeStamp();
     m_playlist.replaceCurrentPlaylist (m_showManager.getPlaylist ());
-    m_playlist.play (-1, m_showManager.correctIndex(index));
+    m_playlist.tryPlay(-1, m_showManager.correctIndex(index));
 }
 
 void Application::continueWatching() {
@@ -138,7 +136,7 @@ void Application::updateTimeStamp() {
     if (lastPlaylist->isLoadedFromFolder ())
         lastPlaylist->updateHistoryFile (time);
     else {
-        m_watchListModel.updateTimeStamp (lastPlaylist->link, time);
+        m_libraryModel.updateTimeStamp (lastPlaylist->link, time);
     }
 }
 
@@ -150,7 +148,7 @@ void Application::updateLastWatchedIndex() {
     if (currentPlaylist->hasSameLink(showPlaylist))
         m_showManager.updateLastWatchedIndex ();
 
-    m_watchListModel.updateLastWatchedIndex (currentPlaylist->link, currentPlaylist->currentIndex);
+    m_libraryModel.updateLastWatchedIndex (currentPlaylist->link, currentPlaylist->currentIndex);
 }
 
 void Application::cancel()
@@ -158,7 +156,7 @@ void Application::cancel()
     if (m_watcher.isRunning ())
     {
         m_watcher.cancel ();
-        setLoading (false);
+        setIsLoading (false);
     }
 }
 

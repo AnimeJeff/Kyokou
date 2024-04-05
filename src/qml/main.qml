@@ -7,7 +7,7 @@ import QtQuick.Controls.Material 2.15
 import "./explorer"
 import "./info"
 import "./player"
-import "./watchlist"
+import "./library"
 import "./download"
 import "./components"
 import "."
@@ -31,20 +31,19 @@ Window {
     property double lastX
     property double lastY
 
-
     property alias resizeAnime: resizingAnimation
     property MpvObject mpv
 
 
 
-    Shortcut {
-        id: test
-        sequence: "B"
-        onActivated:
-        {
+    // Shortcut {
+    //     id: test
+    //     sequence: "B"
+    //     onActivated:
+    //     {
 
-        }
-    }
+    //     }
+    // }
 
     TitleBar {
         z:root.z
@@ -74,7 +73,7 @@ Window {
             right: parent.right
             bottom: parent.bottom
         }
-        initialItem: "qrc:/src/qml/explorer/SearchPage.qml"
+        initialItem: "qrc:/src/qml/explorer/ExplorerPage.qml"
         background: Rectangle{
             color: "black"
         }
@@ -121,7 +120,7 @@ Window {
     }
     Component.onCompleted: {
         setTimeout(() => {
-                       if (app.playList.play(0, -1)) {
+                       if (app.playlist.tryPlay(0, -1)) {
                            sideBar.gotoPage(3)
                        } else {
                            app.latest(1)
@@ -130,13 +129,7 @@ Window {
                    }, 100)
     }
 
-    Connections {
-        target: app.playList
-        function onSourceFetched() {
-            mpv.subVisible = true
-            sideBar.gotoPage(3)
-        }
-    }
+
 
     Dialog {
         id: notifier

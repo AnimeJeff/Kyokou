@@ -23,10 +23,7 @@ QVector<ShowData> Kimcartoon::search(QString query, int page, int type) {
 }
 
 QVector<ShowData> Kimcartoon::popular(int page, int type) {
-    QString url =
-        hostUrl + "CartoonList/MostPopular" + "?page=" + QString::number(page);
-
-
+    QString url = hostUrl + "CartoonList/MostPopular" + "?page=" + QString::number(page);
     return filterSearch(url);
 }
 

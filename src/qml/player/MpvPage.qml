@@ -3,12 +3,29 @@ import QtQuick.Controls
 import MpvPlayer 1.0
 import QtQuick.Dialogs
 import QtQuick.Layouts 1.15
+import "../components"
 Item{
     id:mpvPage
 
     property alias playListSideBar: playlistBar
+    LoadingScreen {
+        id:loadingScreen
+        anchors.centerIn: parent
+        z: parent.z + 1
+        loading: mpvPage.visible && mpv.isLoading
+        cancellable: false
+        timeoutEnabled:false
+    }
 
-
+    Connections {
+        target: mpvPlayer
+        function onIsLoadingChanged() {
+            if (!mpvPlayer.isLoading) {
+                mpv.subVisible = true
+                sideBar.gotoPage(3)
+            }
+        }
+    }
     MpvPlayer {
         id:mpvPlayer
         focus: true

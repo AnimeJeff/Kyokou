@@ -15,7 +15,7 @@ QList<ShowData> Nivod::filterSearch(int page, const QString &sortBy, int type,
                                    {"start", QString::number((page - 1) * 20)}};
 
     QJsonArray responseJson =
-        callAPI("https://api.nivodz.com/show/filter/WEB/3.2", data)["list"]
+        invokeAPI("https://api.nivodz.com/show/filter/WEB/3.2", data)["list"]
             .toArray();
     return parseShows(responseJson);
 }
@@ -27,9 +27,8 @@ QList<ShowData> Nivod::search(QString query, int page, int type) {
                                    {"start", QString::number((page - 1) * 20)},
                                    {"cat_id", "1"},
                                    {"keyword_type", "0"}};
-    filterSearched = false;
     QJsonArray responseJson =
-        callAPI("https://api.nivodz.com/show/search/WEB/3.2", data)["list"]
+        invokeAPI("https://api.nivodz.com/show/search/WEB/3.2", data)["list"]
             .toArray();
     return parseShows(responseJson);
 }
@@ -73,7 +72,7 @@ QList<ShowData> Nivod::parseShows(const QJsonArray &showArrayJson) {
 }
 
 QJsonObject Nivod::getInfoJson(const QString &link) const {
-    return callAPI("https://api.nivodz.com/show/detail/WEB/3.3",
+    return invokeAPI("https://api.nivodz.com/show/detail/WEB/3.3",
                    {{"show_id_code", link}, {"episode_id", "0"}})["entity"]
         .toObject();
 }
@@ -112,7 +111,7 @@ QList<Video> Nivod::extractSource(const VideoServer &server) const {
                                    {"oid", "1"},
                                    {"episode_id", "0"}};
     auto responseJson =
-        callAPI("https://api.nivodz.com/show/play/info/WEB/3.3", data);
+        invokeAPI("https://api.nivodz.com/show/play/info/WEB/3.3", data);
     auto source = responseJson["entity"]
                       .toObject()["plays"]
                       .toArray()[0]
@@ -126,21 +125,33 @@ QList<Video> Nivod::extractSource(const VideoServer &server) const {
     return {Video(source)};
 }
 
-QJsonObject Nivod::callAPI(const QString &url,
-                           const QMap<QString, QString> &data) const {
-    QString sign = createSign(data);
+QJsonObject Nivod::invokeAPI(const QString &url, const QMap<QString, QString> &data) const {
+
+    QString signQuery = _QUERY_PREFIX;
+    QString secretKey = "2x_Give_it_a_shot";
+    QMapIterator<QString, QString> queryIterator(queryMap);
+    while (queryIterator.hasNext()) {
+        queryIterator.next();
+        signQuery += queryIterator.key() + "=" + queryIterator.value() + "&";
+    }
+    signQuery += _BODY_PREFIX;
+    QMapIterator<QString, QString> bodyIterator(data);
+    while (bodyIterator.hasNext()) {
+        bodyIterator.next();
+        signQuery += bodyIterator.key() + "=" + bodyIterator.value() + "&";
+    }
+
+    QString input = signQuery + _SECRET_PREFIX + secretKey;
+    QString sign = MD5(input);
 
     QUrl postUrl = url + "?_ts=" + _mts +
                    "&app_version=1.0&platform=3&market_id=web_nivod&"
                    "device_code=web&versioncode=1&oid=" +
                    _oid + "&sign=" + sign;
 
-    std::string response =
-        NetworkClient::post(postUrl, {{"referer", "https://www.nivod4.tv"}}, data)
-            .body;
+    std::string response = NetworkClient::post(postUrl, {{"referer", "https://www.nivod4.tv"}}, data).body;
     QJsonParseError error;
-    QJsonDocument jsonData =
-        QJsonDocument::fromJson(decryptedByDES(response).c_str(), &error);
+    QJsonDocument jsonData = QJsonDocument::fromJson(decryptedByDES(response).c_str(), &error);
     if (error.error != QJsonParseError::NoError) {
         qWarning() << "JSON parsing error:" << error.errorString();
         return QJsonObject{};
@@ -148,27 +159,7 @@ QJsonObject Nivod::callAPI(const QString &url,
     return jsonData.object();
 }
 
-QString Nivod::createSign(const QMap<QString, QString> &bodyMap, const QString &secretKey) const {
-    QString signQuery = _QUERY_PREFIX;
-    QMapIterator<QString, QString> queryIterator(queryMap);
-    while (queryIterator.hasNext()) {
-        queryIterator.next();
-        signQuery += queryIterator.key() + "=" + queryIterator.value() + "&";
-    }
 
-    signQuery += _BODY_PREFIX;
-    QMapIterator<QString, QString> bodyIterator(bodyMap);
-    while (bodyIterator.hasNext()) {
-        bodyIterator.next();
-        signQuery += bodyIterator.key() + "=" + bodyIterator.value() + "&";
-    }
-
-    QString input = signQuery + _SECRET_PREFIX + secretKey;
-    // qDebug() << input; // Uncomment to debug the input string
-    return MD5(input); // Ensure this method is adapted to Qt
-}
-
-// qDebug() << QString::fromStdString (decrypted);
 std::string Nivod::decryptedByDES(const std::string &input) const {
      std::string key = "diao.com";
      std::vector<byte> keyBytes(key.begin(), key.end());
@@ -200,18 +191,13 @@ std::string Nivod::decryptedByDES(const std::string &input) const {
     return decrypted;
 }
 
-// QMap<QString, QString> Nivod::objKeySort(const QMap<QString, QString>
-// &inputMap) const {
+QString Nivod::MD5(const QString &str) const {
+    // Convert the input string to UTF-8 encoding and calculate its MD5 hash
+    QByteArray byteArray = str.toUtf8();
+    QByteArray hash = QCryptographicHash::hash(byteArray, QCryptographicHash::Md5);
 
-//     if (inputMap.isEmpty())
-//         return inputMap;
+    // Convert the binary hash to a hexadecimal string
+    QString output = hash.toHex();
 
-//     QMap<QString, QString> sortedMap;
-//     for (const auto &key : inputMap.keys()) {
-//         const QString &value = inputMap.value(key);
-//         if (key.isEmpty() || value.isEmpty() || key == "sign")
-//             continue;
-//         sortedMap.insert(key, value);
-//     }
-//     return sortedMap;
-// }
+    return output;
+}

@@ -112,7 +112,7 @@ MpvObject::MpvObject(QQuickItem *parent) : QQuickFramebufferObject(parent) {
     QSettings settings;
 
     // set mpv options
-    m_mpv.set_option("ytdl", false);     // We handle video url parsing
+    // m_mpv.set_option("ytdl", false);     // We handle video url parsing
     m_mpv.set_option("pause", false);    // Always play when a new file is opened
     m_mpv.set_option("softvol", true);   // mpv handles the volume
     m_mpv.set_option("vo", "libmpv");    // Force to use libmpv
@@ -129,7 +129,7 @@ MpvObject::MpvObject(QQuickItem *parent) : QQuickFramebufferObject(parent) {
     m_mpv.set_option("cache-unlink-files", "whendone");
     m_mpv.set_option("config", "yes");
     m_mpv.set_option ("msg-level", "all=error");
-
+    // m_mpv.set_option ("script-opts", "")
 
     m_mpv.observe_property("duration");
     m_mpv.observe_property("playback-time");
@@ -189,11 +189,9 @@ MpvObject::MpvObject(QQuickItem *parent) : QQuickFramebufferObject(parent) {
 // Open file
 void MpvObject::open(const Video &video, int time) {
 
-    //    m_mpv.set_option("referrer","");
-    //    m_mpv.set_option("stream-lavf-o", "seekable=0");
-    //    m_mpv.set_option("stream-lavf-o", "");
-    //    m_mpv.set_option("force-seekable", false);
-    //    m_mpv.set_option("http-proxy", "");
+    m_isLoading = true;
+    emit isLoadingChanged();
+
     m_state = STOPPED;
     emit mpvStateChanged ();
 
@@ -202,11 +200,17 @@ void MpvObject::open(const Video &video, int time) {
     } else {
         m_mpv.set_property_async("http-header-fields", "");
     }
-    QByteArray fileUrl = (video.videoUrl.isLocalFile() ? video.videoUrl.toLocalFile() : video.videoUrl.toString()).toUtf8();
-    const char *args[] = {"loadfile", fileUrl.constData(), nullptr};
-    m_currentVideo = video;
-    m_mpv.command_async(args);
     m_seekTime = time;
+
+    QByteArray fileUrl = (video.videoUrl.isLocalFile() ? video.videoUrl.toLocalFile() : video.videoUrl.toString()).toUtf8();
+    // qDebug() << "mpv" << fileUrl;?
+    const char *args[] = {"loadfile", fileUrl.constData (), nullptr};
+    m_mpv.command_async(args);
+
+    if (video.videoUrl != m_currentVideo.videoUrl){
+        m_currentVideo = video;
+    }
+
 }
 
 // Play, Pause, Stop & Get state
@@ -226,6 +230,15 @@ void MpvObject::stop() {
     if (m_state != STOPPED) {
         const char *args[] = {"stop", nullptr};
         m_mpv.command_async(args);
+    }
+}
+
+void MpvObject::mute() {
+    if (m_volume > 0) {
+        m_lastVolume = m_volume;
+        setVolume(0);
+    } else {
+        setVolume(m_lastVolume);
     }
 }
 
@@ -323,6 +336,8 @@ void MpvObject::onMpvEvent() {
                 seek(m_seekTime, true);
                 m_seekTime = 0;
             }
+            m_isLoading = false;
+            emit isLoadingChanged();
             emit mpvStateChanged();
             break;
 
@@ -330,6 +345,10 @@ void MpvObject::onMpvEvent() {
             mpv_event_end_file *ef = static_cast<mpv_event_end_file *>(event->data);
             handleMpvError(ef->error);
             m_endFileReason = static_cast<mpv_end_file_reason>(ef->reason);
+            if (m_isLoading){
+                m_isLoading = false;
+                emit isLoadingChanged();
+            }
             break;
         }
 

@@ -9,7 +9,7 @@ Item {
         id:loadingScreen
         z:10
         anchors.centerIn: parent
-        loading: app.playList.loading
+        loading: app.playlist.isLoading && infoPage.visible
     }
     focus: false
     property real aspectRatio: root.width/root.height
@@ -29,17 +29,54 @@ Item {
         height: parent.height * 0.4
     }
 
-    EpisodeList {
+
+    Rectangle{
+        id:episodeListHeader
+        height: 30
+        color: "grey"
+        RowLayout {
+            anchors.fill: parent
+            Text {
+                id: countLabel
+                Layout.alignment: Qt.AlignTop
+                Layout.fillHeight: true
+                Layout.fillWidth: true
+                text: list.count + " Episodes"
+                font.bold: true
+                color: "white"
+                font.pixelSize: 25
+                visible: list.count > 0
+            }
+            ImageButton {
+                Layout.fillHeight: true
+                Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                Layout.preferredWidth: height
+                Layout.rightMargin: 10
+                id:reverseButton
+                source: "qrc:/resources/images/sorting-arrows.png"
+
+                onClicked: {
+                    app.currentShow.episodeList.reversed = !app.currentShow.episodeList.reversed
+                }
+            }
+        }
+        anchors{
+            right:parent.right
+            top:parent.top
+        }
+        width: parent.width * 0.3
+    }
+
+    EpisodeListView {
         id: episodeList
         Layout.fillHeight: true
         Layout.fillWidth: true
         anchors{
             right:parent.right
-            top:parent.top
+            top:episodeListHeader.bottom
             bottom: parent.bottom
         }
-        width: parent.width * 0.3
-
+        width: episodeListHeader.width
     }
 
     Text {

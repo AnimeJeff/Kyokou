@@ -10,7 +10,7 @@ MpvObject {
     property var lastPos
 
     property bool autoHideBars: true
-    onPlayNext: app.playList.playNextItem()
+    onPlayNext: app.playlist.playNextItem()
     Component.onCompleted: {
         root.mpv = mpv
     }
@@ -140,8 +140,8 @@ MpvObject {
 
         onPlayPauseButtonClicked: mpv.togglePlayPause()
         onSeekRequested: (time)=>{mpv.seek(time)};
-        onSidebarButtonClicked: playlistBar.toggle() //todo
-        onFolderButtonClicked: folderDialog.open()
+        onSidebarButtonClicked: playlistBar.toggle()
+        onFolderButtonClicked: {root.fullscreen = false; folderDialog.open()}
         onSettingsButtonClicked: {
             if(settingsPopup.opened) {
                 settingsPopup.close()
@@ -270,10 +270,10 @@ MpvObject {
             mpv.seek(mpv.time + 90)
             break;
         case Qt.Key_S:
-            app.playList.playPrecedingItem()
+            app.playlist.playPrecedingItem()
             break;
         case Qt.Key_D:
-            app.playList.playNextItem()
+            app.playlist.playNextItem()
             break;
         case Qt.Key_V:
             app.playlist.pasteOpen()
@@ -324,10 +324,10 @@ MpvObject {
                 mpv.togglePlayPause()
                 break;
             case Qt.Key_PageUp:
-                app.playList.playNextItem();
+                app.playlist.playNextItem();
                 break;
             case Qt.Key_Home:
-                app.playList.playPrecedingItem();
+                app.playlist.playPrecedingItem();
                 break;
             case Qt.Key_PageDown:
                 mpv.seek(mpv.time + 90);
@@ -374,7 +374,7 @@ MpvObject {
                 break;
             case Qt.Key_Tab:
             case Qt.Key_Asterisk:
-                mpv.showText(app.playList.currentItemName);
+                mpv.showText(app.playlist.currentItemName);
                 break;
             case Qt.Key_Slash:
                 mpv.peak()
