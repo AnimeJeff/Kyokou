@@ -14,9 +14,8 @@ class Application: public QAbstractListModel
 {
     Q_OBJECT
     Q_PROPERTY(ShowManager *currentShow READ getCurrentShow CONSTANT)
-    Q_PROPERTY(bool isLoading READ isLoading NOTIFY isLoadingChanged)
     Q_PROPERTY(int currentProviderIndex READ getCurrentProviderIndex WRITE setCurrentProviderIndex NOTIFY currentProviderIndexChanged)
-    Q_PROPERTY(int currentSearchTypeIndex READ getCurrentShowTypeIndex WRITE setCurrentShowTypeIndex NOTIFY currentShowTypeIndexChanged)
+    Q_PROPERTY(int currentShowTypeIndex READ getCurrentShowTypeIndex WRITE setCurrentShowTypeIndex NOTIFY currentShowTypeIndexChanged)
     Q_PROPERTY(QVariant availableShowTypes READ getAvailableShowTypes NOTIFY currentProviderIndexChanged)
 
     Q_PROPERTY(Cursor *cursor READ cursor CONSTANT)
@@ -51,12 +50,7 @@ private:
     int getCurrentShowTypeIndex() const { return m_currentShowTypeIndex; }
     int m_currentShowTypeIndex = 0;
 
-    bool m_isLoading = false;
-    bool isLoading() { return m_isLoading; }
-    void setIsLoading(bool loading) {
-        m_isLoading = loading;
-        emit isLoadingChanged();
-    }
+
     QList<int> m_availableTypes;
     QVariant getAvailableShowTypes() {
         QStringList stringTypes = {"Movie", "Tv Series", "Variety", "Anime", "Documentary", "None"};
@@ -70,27 +64,16 @@ private:
     Application(const Application &) = delete;
     Application &operator=(const Application &) = delete;
 
-    QFutureWatcher<void> m_watcher;
-    QTimer m_timeoutTimer{this};
-    QString m_cancelReason;
-
 public:
     Q_INVOKABLE void cycleProviders();
     Q_INVOKABLE void search(const QString& query, int page);
     Q_INVOKABLE void latest(int page);
     Q_INVOKABLE void popular(int page);
     Q_INVOKABLE void loadShow(int index, bool fromWatchList);
-    Q_INVOKABLE void cancel();
     Q_INVOKABLE void addCurrentShowToLibrary(int listType);
     Q_INVOKABLE void removeCurrentShowFromLibrary();
     Q_INVOKABLE void playFromEpisodeList(int index);
-    Q_INVOKABLE void playFromFolder(const QUrl& pathUrl) {
-        auto playlist = PlaylistItem::fromUrl (pathUrl);
-        if (playlist) {
-            m_playlist.replaceCurrentPlaylist (playlist);
-            m_playlist.tryPlay();
-        }
-    }
+
     Q_INVOKABLE void continueWatching();
     Q_INVOKABLE void downloadCurrentShow(int startIndex, int count = 1);;
     Q_INVOKABLE void updateTimeStamp();

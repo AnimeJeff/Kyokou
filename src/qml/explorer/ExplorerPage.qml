@@ -13,69 +13,10 @@ Item {
             topMargin: 5
         }
         focus: true
-        height: 40
+        height: parent.height * 0.06
     }
 
-    LoadingScreen {
-        id:loadingScreen
-        anchors.centerIn: parent
-        loading: (app.explorer.isLoading || app.currentShow.isLoading) && explorerPage.visible
-        onCancelled: {
-            app.explorer.cancel()
-            app.cancel()
-        }
-        onTimedOut: {
-            notifier.headerText = "Error"
-            notifier.text = "Operation took too long"
-            notifier.open()
-        }
-    }
-
-    Dialog {
-        id: notifier
-        modal: true
-        width: parent.width / 3
-        height: parent.height / 4
-        anchors.centerIn: parent
-        focus: false
-        property alias headerText:headerText.text
-        property alias text:notifierMessage.text
-
-        contentItem: Rectangle {
-            color: "#f2f2f2"
-            border.color: "#c2c2c2"
-            border.width: 1
-            radius: 10
-            anchors.centerIn: parent
-            Text {
-                id:headerText
-                text: "Error"
-                font.pointSize: 16
-                font.bold: true
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.top: parent.top
-                anchors.topMargin: 20
-            }
-            Text {
-                id: notifierMessage
-                text: "An error has occurred."
-                font.pointSize: 14
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.verticalCenter: parent.verticalCenter
-            }
-            Button {
-                text: "OK"
-                anchors.bottom: parent.bottom
-                anchors.bottomMargin: 10
-                anchors.horizontalCenter: parent.horizontalCenter
-                onClicked: notifier.close()
-            }
-        }
-    }
-
-
-
-    SearchResultsGridView {
+    MediaGridView {
         id:showGridView
         model: app.explorer
         focus: false
@@ -85,12 +26,56 @@ Item {
             right: parent.right
             bottom: parent.bottom
         }
+        delegate: ShowItem {
+            title: model.title
+            cover:model.cover
+            width: showGridView.cellWidth
+            height: showGridView.cellHeight
+            MouseArea{
+                anchors.fill: parent
+                hoverEnabled: true
+                acceptedButtons: Qt.LeftButton
+                cursorShape: Qt.PointingHandCursor
+                onClicked: app.loadShow(index, false)
+            }
+        }
 
+        onContentYChanged: {
+            root.searchResultsViewlastScrollY = contentY
+        }
         Component.onCompleted: {
             contentY = root.searchResultsViewlastScrollY
             forceActiveFocus()
         }
+
+        add: Transition {
+            NumberAnimation { property: "opacity"; from: 0; to: 1.0; duration: 400 }
+            NumberAnimation { property: "scale"; from: 0; to: 1.0; duration: 400 }
+        }
+
+        displaced: Transition {
+            NumberAnimation { properties: "x,y"; duration: 400; easing.type: Easing.OutBounce }
+
+            // ensure opacity and scale values return to 1.0
+            NumberAnimation { property: "opacity"; to: 1.0 }
+            NumberAnimation { property: "scale"; to: 1.0 }
+        }
     }
+    LoadingScreen {
+        id:loadingScreen
+        anchors.centerIn: parent
+        loading: (app.explorer.isLoading || app.currentShow.isLoading) && explorerPage.visible
+        onCancelled: {
+            app.explorer.cancelLoading()
+            app.currentShow.cancelLoading()
+        }
+        onTimedOut: {
+            app.explorer.cancelLoading()
+            app.currentShow.cancelLoading()
+        }
+    }
+
+
 
     Keys.enabled: true
     Keys.onPressed: event => handleKeyPress(event)
@@ -105,6 +90,7 @@ Item {
                     explorerPage.forceActiveFocus()
                 break;
             case Qt.Key_Tab:
+                searchBar.providersBox.popup.close()
                 app.cycleProviders()
                 event.accepted = true
                 break;

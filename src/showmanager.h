@@ -58,6 +58,10 @@ public:
 
     inline int getListType() const { return m_show.listType; }
     void setListType(int listType);
+    Q_INVOKABLE void cancelLoading() {
+        if (m_watcher.isRunning ())
+            m_watcher.cancel ();
+    }
 signals:
     void showChanged();
     void listTypeChanged();

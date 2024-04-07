@@ -16,13 +16,16 @@ Item {
     }
 
     ColumnLayout {
-        anchors.fill: parent
+        anchors {
+            fill: parent
+            margins: 10
+        }
         spacing: 10
         RowLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
             spacing: 5
-            Layout.preferredHeight: 1
+            Layout.preferredHeight: 2
             CustomTextField {
                 id: workDirTextField
                 text: app.downloader.workDir
@@ -39,7 +42,8 @@ Item {
                 Layout.row: 0
                 Layout.column: 0
                 Layout.fillWidth: true
-                Layout.preferredWidth: 8 // Use weight to allocate 80% of the space
+                Layout.preferredWidth: 8
+                Layout.fillHeight: true
             }
             CustomButton {
                 Layout.row: 0
@@ -47,19 +51,21 @@ Item {
                 text: "Browse"
                 onClicked: folderDialog.open()
                 Layout.fillWidth: true
-                Layout.preferredWidth: 1 // Use weight to allocate 80% of the space
+                Layout.preferredWidth: 1
+                Layout.fillHeight: true
             }
             CustomButton {
                 text: "Open"
                 onClicked: Qt.openUrlExternally("file:///" + workDirTextField.text)
                 Layout.fillWidth: true
                 Layout.preferredWidth: 1
+                Layout.fillHeight: true
             }
         }
 
         RowLayout {
             Layout.fillWidth: true
-            Layout.preferredHeight: 1
+            Layout.preferredHeight: 2
             Layout.fillHeight: true
             spacing: 5
             CustomTextField {
@@ -73,6 +79,7 @@ Item {
                 Layout.column: 0
                 Layout.fillWidth: true
                 Layout.preferredWidth: 3
+                Layout.fillHeight: true
             }
 
             CustomTextField {
@@ -87,6 +94,7 @@ Item {
                 Layout.column: 1
                 Layout.fillWidth: true
                 Layout.preferredWidth: 7
+                Layout.fillHeight: true
             }
 
             CustomButton{
@@ -96,6 +104,7 @@ Item {
                 onClicked: {app.downloader.downloadLink(downloadNameField.text, downloadUrlField.text)}
                 Layout.fillWidth: true
                 Layout.preferredWidth: 1
+                Layout.fillHeight: true
             }
         }
 
@@ -103,7 +112,7 @@ Item {
             id:listView
             Layout.fillWidth: true
             Layout.fillHeight: true
-            Layout.preferredHeight: 8
+            Layout.preferredHeight: 7
             clip: true
             model:app.downloader
             boundsMovement: Flickable.StopAtBounds
@@ -160,7 +169,8 @@ Item {
                             cursorShape: Qt.PointingHandCursor
                             hoverEnabled: true
                             onClicked: {
-                                app.downloader.openFolder(path);
+                                Qt.openUrlExternally("file:///" + path)
+                                // app.downloader.openFolder(path);
                             }
                         }
                     }

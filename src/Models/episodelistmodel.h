@@ -11,7 +11,7 @@ class EpisodeListModel : public QAbstractListModel {
 
     bool m_isReversed = false;
     int continueIndex = -1;
-    std::unique_ptr<PlaylistItem> m_rootItem = std::make_unique<PlaylistItem>("root", nullptr, "/");
+    PlaylistItem *m_rootItem = new PlaylistItem("root", nullptr, "/");
 
     QString m_continueText = "";
     QString getContinueText() { return m_continueText; };
@@ -76,8 +76,8 @@ public:
     ~EpisodeListModel() = default;
 private:
     int getLastWatchedIndex() const {
-        auto currentPlaylist = m_rootItem->getCurrentItem ();
-        if (!m_rootItem->getCurrentItem ()) return -1;
+        auto currentPlaylist = m_rootItem->getCurrentItem();
+        if (!m_rootItem->getCurrentItem()) return -1;
         int lastWatchedIndex = m_isReversed
                                    ? currentPlaylist->size() - 1 -  currentPlaylist->currentIndex
                                    : currentPlaylist->currentIndex;

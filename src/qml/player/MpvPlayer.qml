@@ -142,24 +142,8 @@ MpvObject {
         onSeekRequested: (time)=>{mpv.seek(time)};
         onSidebarButtonClicked: playlistBar.toggle()
         onFolderButtonClicked: {root.fullscreen = false; folderDialog.open()}
-        onSettingsButtonClicked: {
-            if(settingsPopup.opened) {
-                settingsPopup.close()
-                mpv.forceActiveFocus()
-            } else {
-                settingsPopup.open()
-                settingsPopup.forceActiveFocus()
-            }
-        }
-        onServersButtonClicked: {
-            if(settingsPopup.opened) {
-                serverListPopup.close()
-                mpv.forceActiveFocus()
-            } else {
-                serverListPopup.open()
-                serverListPopup.forceActiveFocus()
-            }
-        }
+        onSettingsButtonClicked: settingsPopup.toggle()
+        onServersButtonClicked: serverListPopup.toggle()
         onVolumeButtonClicked: {
             volumePopup.x = mpv.mapFromItem(volumeButton, 0, 0).x;
             volumePopup.y = mpv.mapFromItem(volumeButton, 0, 0).y - volumePopup.height;
@@ -191,6 +175,14 @@ MpvObject {
         width: parent.width / 3
         height: parent.height / 3.5
         visible: false
+        onClosed: mpvPage.forceActiveFocus()
+        function toggle() {
+            if(settingsPopup.opened) {
+                settingsPopup.close()
+            } else {
+                settingsPopup.open()
+            }
+        }
     }
 
     ServerListPopup {
@@ -199,6 +191,14 @@ MpvObject {
         width: parent.width / 2.7
         height: parent.height / 2.5
         visible: false
+        onClosed: mpvPage.forceActiveFocus()
+        function toggle() {
+            if(serverListPopup.opened) {
+                serverListPopup.close()
+            } else {
+                serverListPopup.open()
+            }
+        }
     }
 
     Menu {
@@ -227,164 +227,33 @@ MpvObject {
                 folderDialog.open()
             }
         }
+        MenuItem {
+            text: "Open File"
+            onTriggered:  {
+                fileDialog.open()
+            }
+        }
     }
 
     FolderDialog {
         id:folderDialog
         currentFolder: "file:///D:/TV/"
-        onAccepted: app.playFromFolder(folderDialog.selectedFolder)
-    }
-    Keys.enabled: true
-    Keys.onPressed: event => handleKeyPress(event)
-    Keys.onReleased: event => {
-                         switch(event.key) {
-                             case Qt.Key_Shift:
-                             mpv.setSpeed(mpv.speed / 2)
-                         }
-                     }
-
-    function handleCtrlModifiedKeyPress(key){
-        switch(key) {
-        case Qt.Key_1:
-            mpv.loadAnime4K(1)
-            break;
-        case Qt.Key_2:
-            mpv.loadAnime4K(2)
-            break;
-        case Qt.Key_3:
-            mpv.loadAnime4K(3)
-            break;
-        case Qt.Key_4:
-            mpv.loadAnime4K(4)
-            break;
-        case Qt.Key_5:
-            mpv.loadAnime4K(5)
-            break;
-        case Qt.Key_0:
-            mpv.loadAnime4K(0)
-            break;
-        case Qt.Key_Z:
-            mpv.seek(mpv.time - 90)
-            break;
-        case Qt.Key_X:
-            mpv.seek(mpv.time + 90)
-            break;
-        case Qt.Key_S:
-            app.playlist.playPrecedingItem()
-            break;
-        case Qt.Key_D:
-            app.playlist.playNextItem()
-            break;
-        case Qt.Key_V:
-            app.playlist.pasteOpen()
-            break;
-        case Qt.Key_R:
-            mpv.reload()
-            break;
-        case Qt.Key_C:
-            mpv.copyVideoLink()
-            break;
+        onAccepted: {
+            app.playlist.openUrl(folderDialog.selectedFolder, true)
+            mpvPage.forceActiveFocus()
         }
     }
-
-    function handleKeyPress(event){
-        if (event.modifiers & Qt.ControlModifier){
-            if (event.key === Qt.Key_W) return
-            handleCtrlModifiedKeyPress(event.key)
-        }else{
-            switch (event.key){
-            case Qt.Key_Escape:
-                if (resizeAnime.running) return
-                if (root.pipMode) {
-                    root.pipMode = false
-                    return
-                }
-                root.fullscreen = false
-                break;
-            case Qt.Key_P:
-                playlistBar.toggle();
-                break;
-            case Qt.Key_W:
-                playlistBar.visible = !playlistBar.visible;
-                break;
-            case Qt.Key_Up:
-                mpv.volume += 5;
-                break;
-            case Qt.Key_Down:
-                mpv.volume -= 5;
-                break;
-            case Qt.Key_Q:
-                mpv.volume += 5;
-                break;
-            case Qt.Key_A:
-                mpv.volume -= 5;
-                break;
-            case Qt.Key_Space:
-            case Qt.Key_Clear:
-                mpv.togglePlayPause()
-                break;
-            case Qt.Key_PageUp:
-                app.playlist.playNextItem();
-                break;
-            case Qt.Key_Home:
-                app.playlist.playPrecedingItem();
-                break;
-            case Qt.Key_PageDown:
-                mpv.seek(mpv.time + 90);
-                break;
-            case Qt.Key_End:
-                mpv.seek(mpv.time - 90);
-                break;
-            case Qt.Key_Plus:
-            case Qt.Key_D:
-                mpv.setSpeed(mpv.speed + 0.1);
-                break;
-            case Qt.Key_Minus:
-            case Qt.Key_S:
-                mpv.setSpeed(mpv.speed - 0.1);
-                break;
-            case Qt.Key_R:
-                if (mpv.speed > 1.0)
-                    mpv.setSpeed(1.0)
-                else
-                    mpv.setSpeed(2.0)
-                break;
-            case Qt.Key_F:
-                if (resizeAnime.running) return
-                if (root.pipMode)
-                {
-                    root.pipMode = false
-                } else {
-                    // playerFillWindow = !playerFillWindow
-                    // fullscreen = playerFillWindow
-                    fullscreen = !fullscreen
-                }
-
-                break;
-            case Qt.Key_M:
-                mpv.mute();
-                break;
-            case Qt.Key_Z:
-            case Qt.Key_Left:
-                mpv.seek(mpv.time - 5);
-                break;
-            case Qt.Key_X:
-            case Qt.Key_Right:
-                mpv.seek(mpv.time + 5);
-                break;
-            case Qt.Key_Tab:
-            case Qt.Key_Asterisk:
-                mpv.showText(app.playlist.currentItemName);
-                break;
-            case Qt.Key_Slash:
-                mpv.peak()
-                break;
-            case Qt.Key_C:
-                break;
-            case Qt.Key_Shift:
-                mpv.setSpeed(mpv.speed * 2)
-            }
+    FileDialog {
+        id:fileDialog
+        currentFolder: "file:///D:/TV/"
+        onAccepted: {
+            app.playlist.openUrl(fileDialog.selectedFile, true)
+            mpvPage.forceActiveFocus()
         }
+
+        fileMode: FileDialog.OpenFile
+        nameFilters: ["Video files (*.mp4 *.mkv *.avi *.mp3 *.flac *.wav *.ogg *.webm *.m3u8)"]
+
     }
 
 

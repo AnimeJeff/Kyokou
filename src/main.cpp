@@ -4,18 +4,18 @@
 #include <QGuiApplication>
 #include <QQmlContext>
 #include <QFont>
-#include <iostream>
 #include <QTextStream>
 #include <QImageReader>
 #include <QNetworkProxyFactory>
 #include <QtGlobal>
-
 #include <QFontDatabase>
-#include "Components/logger.h"
-#include "Mpv/mpvObject.h"
-#include "application.h"
 #include <QtPlugin>
 
+#include "Mpv/mpvObject.h"
+#include "application.h"
+
+#include "Components/errorhandler.h"
+#include "Components/logger.h"
 //qputenv("QT_DEBUG_PLUGINS", QByteArray("1"));
 
 void setOneInstance();void testNetwork();
@@ -25,6 +25,10 @@ int main(int argc, char *argv[]){
 
     QQuickWindow::setGraphicsApi(QSGRendererInterface::OpenGLRhi);
     QGuiApplication app(argc, argv);
+
+
+
+
 
     Application application(QString::fromLocal8Bit (argv[1]));
     //Logger logger;

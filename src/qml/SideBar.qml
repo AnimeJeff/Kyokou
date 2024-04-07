@@ -26,6 +26,12 @@ Rectangle {
             gotoPage(1)
         }
     }
+    Connections{
+        target: app.playlist
+        function onAboutToPlay(){
+            gotoPage(3);
+        }
+    }
 
 
     property var pages: {
@@ -45,7 +51,7 @@ Rectangle {
             currentPage = index
             if (index === 3) {
                 mpv.peak(2000)
-                mpv.forceActiveFocus()
+                mpvPage.forceActiveFocus()
                 mpvPage.visible = true
                 stackView.visible = false
             } else {

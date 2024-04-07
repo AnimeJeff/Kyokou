@@ -5,7 +5,8 @@
 
 class Haitu : public ShowProvider
 {
-    std::regex player_aaaa_regex{R"(player_aaaa=(\{.*?\})</script>)"};
+    QRegularExpression player_aaaa_regex{R"(player_aaaa=(\{.*?\})</script>)"};
+
 public:
     explicit Haitu(QObject *parent = nullptr) : ShowProvider(parent) {};
 public:

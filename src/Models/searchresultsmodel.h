@@ -17,13 +17,12 @@ public:
     void search(const QString& query,int page,int type, ShowProvider* provider);
     void latest(int page, int type, ShowProvider* provider);
     void popular(int page, int type, ShowProvider* provider);
-    Q_INVOKABLE bool canLoadMore() const;
+    // Q_INVOKABLE bool canLoadMore() const;
+        // Q_INVOKABLE void loadMore();
+    Q_INVOKABLE void cancelLoading();
+    Q_INVOKABLE void reload();
 signals:
     void isLoadingChanged(void);
-public slots:
-    void cancel();
-    void reload();
-    void loadMore();
 private:
     bool m_isLoading = false;
     QFutureWatcher<QList<ShowData>> m_watcher;
@@ -54,5 +53,15 @@ private:
         return names;
     };
 
+
+    // QAbstractItemModel interface
+public:
+    void fetchMore(const QModelIndex &parent) override {
+        if (m_watcher.isRunning ()) return;
+        lastSearch(m_currentPageIndex + 1);
+    };
+    bool canFetchMore(const QModelIndex &parent) const override {
+        return (m_isLoading || m_watcher.isRunning ()) ? false : m_canFetchMore;
+    };
 };
 

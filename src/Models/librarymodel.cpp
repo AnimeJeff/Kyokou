@@ -1,6 +1,6 @@
 #include "librarymodel.h"
-// #include <QtGlobal>
-#include "Data/playlistitem.h"
+
+
 void LibraryModel::loadWatchList(QString filePath) {
     watchListFilePath = filePath.isEmpty() ? QDir::cleanPath(QCoreApplication::applicationDirPath() + QDir::separator() + ".library") : filePath;
     QFile file(watchListFilePath);
@@ -42,7 +42,7 @@ void LibraryModel::loadWatchList(QString filePath) {
 }
 
 void LibraryModel::fetchUnwatchedEpisodes(int listType) {
-    return;
+
     // int count = 0;
     // for (const auto& show : m_watchListJson[m_currentListType]) {
     //     QString providerName = QString::fromStdString (show["provider"].get<std::string>());
@@ -59,7 +59,7 @@ void LibraryModel::fetchUnwatchedEpisodes(int listType) {
     // emit layoutChanged();
 }
 
-QJsonObject LibraryModel::loadShow(int index) {
+QJsonObject LibraryModel::getShowJsonAt(int index) {
     // Validate the current list type and index
     const QJsonArray& currentList = m_watchListJson.at(m_currentListType).toArray();
     if (index < 0 || index >= currentList.size ()) {

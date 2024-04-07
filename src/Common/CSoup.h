@@ -1,12 +1,8 @@
 #pragma once
 #include <QString>
-#include <iostream>
-
+#include <QDebug>
 #include <tidy.h>
 #include <tidybuffio.h>
-#include <stdio.h>
-#include <errno.h>
-#include <sstream>
 #include <pugixml/pugixml.hpp>
 
 
@@ -16,11 +12,12 @@ class CSoup
 private:
     pugi::xml_document doc;
 public:
-    CSoup(const std::string& html){
-        parse(tidy(html.data()).data());
+    CSoup(const QString& html){
+        std::string tidied = tidy(html.toUtf8().constData());
+        parse(tidied.c_str());
     }
 
-    ~CSoup(){}
+    ~CSoup() = default;
 
     inline const char* selectText(const std::string& XPath) const {
         return doc.select_node(XPath.data()).node().child_value ();
@@ -34,7 +31,6 @@ public:
 
 private:
     std::string tidy(const char* input);
-
     bool parse (const char* source);
 };
 

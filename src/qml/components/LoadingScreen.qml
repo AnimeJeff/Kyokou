@@ -9,9 +9,9 @@ Popup {
     signal cancelled()
     signal timedOut()
     property bool cancellable: true
-    property bool loading:false
-    property bool timeoutEnabled:true
-    property int timeoutInterval:5000
+    property bool loading: false
+    property bool timeoutEnabled: true
+    property int timeoutInterval: 5000
     background: Rectangle {
         color: "black"
     }

@@ -6,14 +6,15 @@ TextField {
     id: textField
     property color checkedColor: "#D5DBDB"
     property color textColor: "white"
-    property int fontSize: 16
-
+    property int fontSize: 20
+    readonly property int scaledFontSize: fontSize * (root.maximised ? fontScaleFactor : 1)
+    property int fontScaleFactor: 2
 
     signal doubleClicked(var event)
 
     font.family: "QTxiaotu"
 
-    font.pixelSize: fontSize * root.fontSizeMultiplier
+    font.pixelSize: scaledFontSize
     font.weight: Font.Thin
 
     antialiasing: true

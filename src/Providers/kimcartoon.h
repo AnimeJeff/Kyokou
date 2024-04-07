@@ -1,12 +1,11 @@
 #pragma once
 #include "Providers/showprovider.h"
-#include <regex>
 
 class Kimcartoon : public ShowProvider {
 public:
     explicit Kimcartoon(QObject *parent = nullptr) : ShowProvider{parent} {};
-    std::regex sourceRegex{"sources: \\[\\{file:\"(.+?)\"\\}\\]"};
-
+    // std::regex sourceRegex{"sources: \\[\\{file:\"(.+?)\"\\}\\]"};
+    QRegularExpression sourceRegex{"sources: \\[\\{file:\"(.+?)\"\\}\\]"};
 
 
 public:
@@ -24,6 +23,28 @@ public:
     QList<Video> extractSource(const VideoServer &server) const override;
 
     QList<int> getAvailableTypes() const override { return {ShowData::ANIME}; }
+private:
+    QVector<ShowData> parseResults(const pugi::xpath_node_set &showNodes) {
+        QVector<ShowData> shows;
+        for (pugi::xpath_node_set::const_iterator it = showNodes.begin(); it != showNodes.end(); ++it) {
+            auto anchor = it->node ().select_node (".").node ();
+            QString title = QString(anchor.select_node (".//span").node ().child_value ()).replace ('\n'," ").trimmed ();
+            QString coverUrl = anchor.select_node("./img").node ().attribute("src").as_string();
+            if (coverUrl.startsWith ('/')) coverUrl = hostUrl + coverUrl;
+            QString link = anchor.attribute("href").as_string();
+            shows.emplaceBack(title, link, coverUrl, this);
+        }
+        return shows;
+    }
 };
 
+// QString divInfo = it->node ().attribute ("title").as_string ();
+// divInfo.remove (0,17);
+// int endPosition = divInfo.indexOf("</p>");
+// QString title;
+// if (endPosition != -1) {
+//     title = divInfo.first(endPosition);
+// } else {
+//     title = QString(anchor.select_node (".//span").node ().child_value ()).replace ('\n'," ").trimmed ();
+// }
 

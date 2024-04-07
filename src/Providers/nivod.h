@@ -1,6 +1,7 @@
 #pragma once
 #include "showprovider.h"
 #include "Data/showdata.h"
+
 class Nivod: public ShowProvider
 {
 public:
@@ -29,27 +30,27 @@ private:
     std::string decryptedByDES(const std::string &input) const;
 
 private:
-    const QString _HOST_CONFIG_KEY = "2x_Give_it_a_shot";
-    const QString _bp_app_version = "1.0";
-    const QString _bp_platform = "3";
-    const QString _bp_market_id = "web_nivod";
-    const QString _bp_device_code = "web";
-    const QString _bp_versioncode = "1";
+    // const QString _HOST_CONFIG_KEY = "2x_Give_it_a_shot";
     const QString _QUERY_PREFIX = "__QUERY::";
     const QString _BODY_PREFIX = "__BODY::";
     const QString _SECRET_PREFIX = "__KEY::";
+    const QString _mts = "1690816442085";
     const QString _oid = "a376c2407d77f46d0a7af5e4f20e213b67af3d346690b805";
-    const QString _mts = "1690816442085";//std::to_string(QDateTime::currentMSecsSinceEpoch())
     const QMap<QString, QString> queryMap =
         {
             {"_ts", _mts},
-            {"app_version", _bp_app_version},
-            {"device_code", _bp_device_code},
-            {"market_id", _bp_market_id},
+            {"app_version", "1.0"},
+            {"device_code", "web"},
+            {"market_id", "web_nivod"},
             {"oid", _oid},
-            {"platform", _bp_platform},
-            {"versioncode", _bp_versioncode}
+            {"platform", "3"},
+            {"versioncode", "1"}
         };
+
     QString MD5(const QString &str) const;
 };
+
+// extern "C" __declspec(dllexport) Nivod* createPlugin() {
+//     return new Nivod();
+// }
 

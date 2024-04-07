@@ -1,14 +1,15 @@
 #pragma once
-#include "Components/ErrorHandler.h"
-#include "Components/MyException.h"
+#include "Common/myexception.h"
+#include "Common/network.h"
 #include "Components/functions.h"
-#include "Components/network.h"
+
 #include "Data/showdata.h"
 #include "Data/playlistitem.h"
+#include "Data/video.h"
 #include <QFutureWatcher>
 #include <QNetworkReply>
 #include <QString>
-#include "Data/video.h"
+
 
 class ShowProvider : public QObject {
     Q_OBJECT
@@ -39,3 +40,5 @@ public:
     }
 
 };
+
+

@@ -1,7 +1,7 @@
 #include "playlistmodel.h"
 #include "Mpv/mpvObject.h"
 #include "Providers/showprovider.h"
-
+#include "Components/errorhandler.h"
 
 PlaylistModel::PlaylistModel(const QString &launchPath, QObject *parent) {
     // Opens the file to play immediately when application launches
@@ -11,25 +11,87 @@ PlaylistModel::PlaylistModel(const QString &launchPath, QObject *parent) {
     connect (&m_watcher, &QFutureWatcher<void>::finished, this, [this](){
         if (!m_watcher.future().isValid()) {
             //future was cancelled
-            ErrorHandler::instance().show ("Operation cancelled");
+            ErrorHandler::instance().show ("Operation cancelled", "");
         }
         try {
             m_watcher.waitForFinished ();
-        } catch (QException& ex) {
-            ErrorHandler::instance().show (ex.what ());
+        } catch (MyException& ex) {
+            ErrorHandler::instance().show (ex.what (), "Playlist Error");
+        } catch(const std::runtime_error& ex) {
+            ErrorHandler::instance().show (ex.what (), "Playlist Error");
+        } catch (...) {
+            ErrorHandler::instance().show ("Something went wrong", "Playlist Error");
         }
+
         m_isLoading = false;
         emit isLoadingChanged ();
+        m_errorMessage.clear ();
     });
 
     if (!launchPath.isEmpty ()) {
-        auto url = QUrl::fromUserInput(launchPath);
-        auto playlist = PlaylistItem::fromUrl(url);
-        if (playlist) {
-            replaceCurrentPlaylist(playlist);
-            qDebug() << "Log (Playlist): Successfully opened launch path";
-        }
+        QUrl url = QUrl::fromUserInput(launchPath);
+        openUrl (url, false);
     }
+}
+
+void PlaylistModel::openUrl(const QUrl &url, bool playUrl) {
+    if (!url.isValid ()) return;
+    PlaylistItem *playlist = nullptr;
+    QString urlString = url.toString ();
+
+    if (url.isLocalFile ()) {
+        playlist = PlaylistItem::fromLocalUrl (url);
+        replaceCurrentPlaylist (playlist);
+    } else {
+        // Get the playlist for pasted online videos
+        auto pastePlaylistIndex = m_rootPlaylist->indexOf ("videos");
+        if (pastePlaylistIndex == -1) {
+            // Create a new one
+            playlist = new PlaylistItem("Videos", nullptr, "videos");
+            m_rootPlaylist->currentIndex = m_rootPlaylist->size ();
+            appendPlaylist (playlist);
+        } else {
+            // Set the index to that index
+            m_rootPlaylist->currentIndex = pastePlaylistIndex;
+            playlist = m_rootPlaylist->getCurrentItem ();
+        }
+        // Add the url to the playlist
+        playlist->currentIndex = playlist->size ();
+        playlist->emplaceBack (playlist->size () + 1, urlString, urlString, true);
+    }
+
+    if (playUrl && playlist) {
+        tryPlay ();
+    }
+
+}
+
+void PlaylistModel::pasteOpen() {
+    QString clipboardText = QGuiApplication::clipboard()->text().trimmed ();
+    auto url = QUrl::fromUserInput (clipboardText);
+    if (!url.isValid ()) return;
+
+    MpvObject::instance ()->showText (QByteArrayLiteral("Pasting ") + clipboardText.toUtf8 ());
+    QString extension = QFileInfo(url.path()).suffix();
+
+    qDebug() << "Extension:" << extension;
+    QStringList subtitleExtensions = {
+        "srt", "sub", "ssa", "ass", "idx", "vtt",
+    };
+    if (subtitleExtensions.contains(extension)) {
+        MpvObject::instance ()->addSubtitle(url);
+        MpvObject::instance ()->setSubVisible(true);
+    } else {
+        static QRegularExpression urlPattern(R"(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})");
+        QRegularExpressionMatch match = urlPattern.match(clipboardText);
+        if (!match.hasMatch () || MpvObject::instance ()->getCurrentVideoUrl() == url)
+            return;
+
+        openUrl(url, true);
+        qDebug() << match.captured(0);
+
+    }
+
 }
 
 bool PlaylistModel::tryPlay(int playlistIndex, int itemIndex) {
@@ -40,24 +102,28 @@ bool PlaylistModel::tryPlay(int playlistIndex, int itemIndex) {
 
     if (!m_rootPlaylist->isValidIndex (playlistIndex))
         return false;
-    auto playlist = m_rootPlaylist->at (playlistIndex);
+    auto newPlaylist = m_rootPlaylist->at (playlistIndex);
 
     // Set to current playlist item index if -1
-    if (playlist) {
-        itemIndex = itemIndex == -1 ? (playlist->currentIndex == -1 ? 0 : playlist->currentIndex) : itemIndex;
-        if (!playlist->isValidIndex (itemIndex) || playlist->at (itemIndex)->type == PlaylistItem::LIST) {
-            qWarning() << "Index is invalid or attempted to play a list";
+    if (newPlaylist) {
+        itemIndex = itemIndex == -1 ? (newPlaylist->currentIndex == -1 ? 0 : newPlaylist->currentIndex) : itemIndex;
+        if (!newPlaylist->isValidIndex (itemIndex) || newPlaylist->at (itemIndex)->type == PlaylistItem::LIST) {
+            qWarning() << "Invalid index or attempting to play a list";
             return false;
         }
     } else return false;
 
     m_isLoading = true;
     emit isLoadingChanged();
-    if (auto lastPlaylist = m_rootPlaylist->getCurrentItem (); lastPlaylist) {
+
+    // If same playlist, update the time stamp for the last item
+    auto currentPlaylist = m_rootPlaylist->getCurrentItem ();
+    if (currentPlaylist == newPlaylist && currentPlaylist->currentIndex != itemIndex) {
         auto time = MpvObject::instance ()->time ();
         if (time > 0.9 * MpvObject::instance ()->duration ())
             time = 0;
-        lastPlaylist->setLastPlayAt(lastPlaylist->currentIndex, time);
+        qInfo() << "Log (Playlist): Saving timestamp" << time << "for" << currentPlaylist->getCurrentItem ()->link;
+        currentPlaylist->setLastPlayAt(currentPlaylist->currentIndex, time);
     }
 
     m_watcher.setFuture(QtConcurrent::run(&PlaylistModel::play, this, playlistIndex, itemIndex));
@@ -69,11 +135,8 @@ void PlaylistModel::play(int playlistIndex, int itemIndex) {
     auto playlist = m_rootPlaylist->at(playlistIndex);
     auto episode = playlist->at(itemIndex);
 
-
-    int seekTime = playlist->at(itemIndex)->timeStamp;
-    qDebug() << "Log (Playlist): Seeking to" << seekTime;
+    qDebug() << "Log (Playlist): Timestamp:" << playlist->at(itemIndex)->timeStamp;
     QString episodeName = episode->getFullName();
-
     QList<Video> videos;
     if (episode->type == PlaylistItem::LOCAL) {
         if (playlist->currentIndex != itemIndex){
@@ -83,30 +146,40 @@ void PlaylistModel::play(int playlistIndex, int itemIndex) {
         videos.emplaceBack (episode->link);
     } else {
         ShowProvider *provider = playlist->getProvider();
-        Q_ASSERT(provider);
-        qInfo() << QString("Log (Playlist): Fetching servers for episode %1 [%2/%3]")
-                       .arg (episodeName).arg (itemIndex + 1).arg (playlist->size());
-        auto servers = provider->loadServers(episode);
-        if (servers.isEmpty()) {
-            ErrorHandler::instance().show("No servers found for " + episodeName);
+        if (!provider){
+            m_errorMessage = "Cannot get provider from playlist!";
             return;
         }
+        qInfo().noquote() << QString("Log (Playlist): Fetching servers for episode %1 [%2/%3]")
+                                 .arg (episodeName).arg (itemIndex + 1).arg (playlist->size());
+
+        QList<VideoServer> servers = provider->loadServers(episode);
+        if (servers.isEmpty()) {
+            throw MyException("No servers found for " + episodeName);
+        }
         qInfo() << "Log (Playlist): Successfully fetched servers for" << episodeName;
-        auto sourceAndIndex = m_serverList.autoSelectServer(servers, provider);
+
+        QPair<QList<Video>, int> sourceAndIndex = m_serverList.autoSelectServer(servers, provider);
+
         videos = sourceAndIndex.first;
         if (!videos.isEmpty ()) {
             m_serverList.setServers(servers, provider, sourceAndIndex.second);
         }
     }
 
-    if (!videos.isEmpty ()) {
-        qInfo() << "Log (Playlist): Fetched source" << videos.first().videoUrl;
-        MpvObject::instance()->open(videos.first(), episode->timeStamp);
-        // Update current item index only if videos are returned
-        m_rootPlaylist->currentIndex = playlistIndex;
-        playlist->currentIndex = itemIndex;
-        emit currentIndexChanged();
+    if (videos.isEmpty ()) {
+        throw MyException("No sources extracted from " + episodeName);
+        return;
     }
+
+    qInfo() << "Log (Playlist): Fetched source" << videos.first().videoUrl;
+    MpvObject::instance()->open(videos.first(), episode->timeStamp);
+    // Update current item index only if videos are returned
+    m_rootPlaylist->currentIndex = playlistIndex;
+    playlist->currentIndex = itemIndex;
+    emit aboutToPlay();
+    emit currentIndexChanged();
+
 
 }
 
@@ -145,27 +218,10 @@ void PlaylistModel::loadIndex(QModelIndex index) {
     if (!index.isValid ()) return;
     auto childItem = static_cast<PlaylistItem *>(index.internalPointer());
     auto parentItem = childItem->parent();
-    if (parentItem == m_rootPlaylist.get ()) return;
+    if (parentItem == m_rootPlaylist) return;
     int itemIndex = childItem->row();
     int playlistIndex = m_rootPlaylist->indexOf(parentItem);
     play(playlistIndex, itemIndex);
-}
-
-void PlaylistModel::pasteOpen() {
-    QString clipboardText = QGuiApplication::clipboard()->text();
-    qInfo() << "Log (mpv): Pasting" << clipboardText;
-    MpvObject::instance ()->showText (QByteArray("Pasting ") + clipboardText.toUtf8 ());
-    if (clipboardText.endsWith(".vtt")) {
-        MpvObject::instance ()->addSubtitle(clipboardText);
-        MpvObject::instance ()->setSubVisible(true);
-    } else {
-        auto playlist = PlaylistItem::fromUrl(QUrl::fromUserInput (clipboardText));
-        if (playlist) {
-            MpvObject::instance ()->stop ();
-            replaceCurrentPlaylist(playlist);
-            tryPlay ();
-        }
-    }
 }
 
 bool PlaylistModel::registerPlaylist(PlaylistItem *playlist) {
@@ -226,7 +282,6 @@ void PlaylistModel::replaceCurrentPlaylist(PlaylistItem *playlist) {
     if (!m_rootPlaylist->isEmpty ())
         m_rootPlaylist->currentIndex = m_rootPlaylist->size ();
     m_rootPlaylist->append(playlist);
-    qDebug() << m_rootPlaylist->currentIndex;
     endResetModel();
 }
 
@@ -251,7 +306,7 @@ QModelIndex PlaylistModel::index(int row, int column, const QModelIndex &parent)
     if (!hasIndex(row, column, parent))
         return QModelIndex();
 
-    PlaylistItem *parentItem = parent.isValid() ? static_cast<PlaylistItem *>(parent.internalPointer()) : m_rootPlaylist.get ();
+    PlaylistItem *parentItem = parent.isValid() ? static_cast<PlaylistItem *>(parent.internalPointer()) : m_rootPlaylist;
     PlaylistItem *childItem = parentItem->at(row);
     return childItem ? createIndex(row, column, childItem) : QModelIndex();
 }
@@ -263,7 +318,7 @@ QModelIndex PlaylistModel::parent(const QModelIndex &index) const {
     PlaylistItem *childItem = static_cast<PlaylistItem *>(index.internalPointer());
     PlaylistItem *parentItem = childItem->parent();
 
-    if (parentItem == m_rootPlaylist.get ())
+    if (parentItem == m_rootPlaylist)
         return QModelIndex();
 
     return createIndex(parentItem->row(), 0, parentItem);

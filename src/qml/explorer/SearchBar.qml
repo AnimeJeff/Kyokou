@@ -7,6 +7,7 @@ import QtQuick.Layouts 1.15
 RowLayout {
     id:searchBar
     property alias textField: searchTextField
+    property alias providersBox: providersComboBox
     function search(){
         app.search(searchTextField.text, 1)
         root.lastSearch = searchTextField.text
@@ -24,7 +25,7 @@ RowLayout {
         placeholderText: qsTr("Enter query!")
         placeholderTextColor: "gray"
         text: root.lastSearch
-        font.pixelSize: 20
+        font.pixelSize: 20 * root.fontSizeMultiplier
         activeFocusOnTab:false
         onAccepted: search()
     }
@@ -48,7 +49,7 @@ RowLayout {
         Layout.fillHeight: true
         Layout.fillWidth: true
         radius: 20
-        fontSize:20
+        // fontSize:20
         activeFocusOnTab:false
         Layout.preferredWidth: 1
         focusPolicy: Qt.NoFocus
@@ -92,18 +93,9 @@ RowLayout {
         fontSize: 20
         activeFocusOnTab:false
         model: app.availableShowTypes
-        currentIndex: app.currentSearchTypeIndex
+        currentIndex: app.currentShowTypeIndex
         currentIndexColor: "red"
         onActivated: (index) => { app.currentShowTypeIndex = index}
-        Component.onCompleted: typeComboBox.currentIndex = app.currentSearchTypeIndex
-        Connections {
-            target: app
-            function onCurrentShowTypeIndexChanged(){
-                typeComboBox.currentIndex = app.currentSearchTypeIndex;
-            }
-        }
-
-
     }
 
 

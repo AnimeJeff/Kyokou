@@ -25,7 +25,7 @@ QPair<QList<Video>, int> ServerListModel::autoSelectServer(const QList<VideoServ
         for (int i = 0; i < servers.size (); i++) {
             if (servers[i].name == preferredServer) {
                 auto& server = servers.at (i);
-                qDebug() << "Log (ServerList): Using preferred server" << server.name;
+                qDebug() << "Log (Servers): Using preferred server" << server.name;
                 videos = provider->extractSource(server);
                 if (!videos.isEmpty ()) {
                     serverIndex = i;
@@ -34,7 +34,7 @@ QPair<QList<Video>, int> ServerListModel::autoSelectServer(const QList<VideoServ
             }
         }
         if (serverIndex == -1)
-            qDebug() << "Log (ServerList): Preferred server" << preferredServer << "not available for this episode";
+            qDebug() << "Log (Servers): Preferred server" << preferredServer << "not available for this episode";
     }
 
     if (serverIndex == -1) {
@@ -43,7 +43,7 @@ QPair<QList<Video>, int> ServerListModel::autoSelectServer(const QList<VideoServ
             videos = provider->extractSource(server);
             if (!videos.isEmpty ()){
                 provider->setPreferredServer (server.name);
-                qDebug() << "Log (ServerList): Using server" << server.name;
+                qDebug() << "Log (Servers): Using server" << server.name;
                 serverIndex = i;
                 break;
             }
@@ -64,19 +64,19 @@ QList<Video> ServerListModel::load(int index) {
             m_currentIndex = sourceAndIndex.second;
             emit currentIndexChanged();
         } else {
-            qInfo() << "Log (ServerList): Failed to find a working server";
+            qInfo() << "Log (Servers): Failed to find a working server";
         }
         return videos;
     } else if (index < 0 || index >= m_servers.size ()) return {};
 
     auto& server = m_servers.at (index);
-    qInfo() << "Log (ServerList): Attempting to extract source from server" << server.name;
+    qInfo() << "Log (Servers): Attempting to extract source from server" << server.name;
     videos = m_provider->extractSource(server);
     m_currentIndex = index;
     emit currentIndexChanged();
 
     if (videos.isEmpty ()) {
-        qWarning() << "Log (ServerList): Failed to extract source from" << server.name;
+        qWarning() << "Log (Servers): Failed to extract source from" << server.name;
     } else {
         m_provider->setPreferredServer (server.name);
     }

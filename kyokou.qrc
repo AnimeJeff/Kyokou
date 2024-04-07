@@ -15,7 +15,6 @@
         <file>src/qml/info/InfoPage.qml</file>
         <file>src/qml/explorer/SearchBar.qml</file>
         <file>src/qml/explorer/ExplorerPage.qml</file>
-        <file>src/qml/explorer/SearchResultsGridView.qml</file>
         <file>src/qml/download/DownloadPage.qml</file>
         <file>src/qml/components/CustomButton.qml</file>
         <file>src/qml/components/CustomComboBox.qml</file>
@@ -75,5 +74,7 @@
         <file>resources/images/tv_selected.png</file>
         <file>src/qml/library/LibraryGridView.qml</file>
         <file>src/qml/library/LibraryPage.qml</file>
+        <file>src/qml/components/ShowItem.qml</file>
+        <file>src/qml/components/MediaGridView.qml</file>
     </qresource>
 </RCC>

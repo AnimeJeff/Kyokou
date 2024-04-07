@@ -70,7 +70,7 @@ public:
     Q_INVOKABLE void reload() {
         if (m_currentVideo.videoUrl.isEmpty())
             return;
-        open(m_currentVideo);
+        open(m_currentVideo, m_time);
     }
     Q_INVOKABLE void play(void);
     Q_INVOKABLE void pause(void);
@@ -102,7 +102,15 @@ public:
         if (!m_isResizing)
             update();
     }
-
+    Q_INVOKABLE void copyVideoLink() {
+        QClipboard *clipboard = QGuiApplication::clipboard();
+        clipboard->setText(m_currentVideo.videoUrl.toString ());
+        auto message = "Copied " + m_currentVideo.videoUrl.toString ();
+        showText(message.toUtf8 ());
+    }
+    const QUrl &getCurrentVideoUrl() const {
+        return m_currentVideo.videoUrl;
+    }
 signals:
     void durationChanged(void);
     void timeChanged(void);
@@ -158,10 +166,7 @@ private:
         const char *args[] = {"keypress", cmd, nullptr};
         m_mpv.command_async(args);
     }
-    void copyVideoLink() {
-        QClipboard *clipboard = QGuiApplication::clipboard();
-        clipboard->setText(m_currentVideo.videoUrl.toString ());
-    }
+
 
 
 

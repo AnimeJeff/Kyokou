@@ -53,9 +53,9 @@ bool CSoup::parse(const char *source){
     }
     else
     {
-        std::cout << "XML [" << source << "] parsed with errors, attr value: [" << doc.child("node").attribute("attr").value() << "]\n";
-        std::cout << "Error description: " << parsed.description() << "\n";
-        std::cout << "Error offset: " << parsed.offset << " (error at [..." << (source + parsed.offset) << "]\n\n";
+        qDebug() << "XML [" << source << "] parsed with errors, attr value: [" << doc.child("node").attribute("attr").value() << "]\n";
+        qDebug() << "Error description: " << parsed.description() << "\n";
+        qDebug() << "Error offset: " << parsed.offset << " (error at [..." << (source + parsed.offset) << "]\n\n";
     }
     return false;
 }

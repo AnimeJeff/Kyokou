@@ -144,14 +144,15 @@ QJsonObject Nivod::invokeAPI(const QString &url, const QMap<QString, QString> &d
     QString input = signQuery + _SECRET_PREFIX + secretKey;
     QString sign = MD5(input);
 
-    QUrl postUrl = url + "?_ts=" + _mts +
+    QString postUrl = url + "?_ts=" + _mts +
                    "&app_version=1.0&platform=3&market_id=web_nivod&"
                    "device_code=web&versioncode=1&oid=" +
                    _oid + "&sign=" + sign;
 
-    std::string response = NetworkClient::post(postUrl, {{"referer", "https://www.nivod4.tv"}}, data).body;
+    auto response = NetworkClient::post(postUrl, {{"referer", "https://www.nivod4.tv"}}, data).body;
+    auto decryptedResponse = decryptedByDES(response.toStdString ());
     QJsonParseError error;
-    QJsonDocument jsonData = QJsonDocument::fromJson(decryptedByDES(response).c_str(), &error);
+    QJsonDocument jsonData = QJsonDocument::fromJson(decryptedResponse.c_str(), &error);
     if (error.error != QJsonParseError::NoError) {
         qWarning() << "JSON parsing error:" << error.errorString();
         return QJsonObject{};

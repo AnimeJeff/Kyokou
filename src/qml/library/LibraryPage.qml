@@ -15,6 +15,7 @@ Rectangle{
     Keys.onPressed: (event) => {
                         if (event.key === Qt.Key_Tab) {
                             event.accepted = true
+                            listTypeComboBox.popup.close()
                             app.library.cycleDisplayingListType() ;
                             listTypeComboBox.currentIndex = app.library.listType
                         }
@@ -27,9 +28,11 @@ Rectangle{
             top: parent.top
         }
 
+
         width: parent.width * 0.2
-        height: 35
+        height: parent.height * 0.07
         fontSize: 20
+
         model: ListModel{
             ListElement { text: "Watching" }
             ListElement { text: "Planned" }

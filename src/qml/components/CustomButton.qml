@@ -6,15 +6,17 @@ Button {
     property color backgroundDefaultColor: "#4E5BF2"
     property color backgroundPressedColor: Qt.darker(backgroundDefaultColor, 1.2)
     property color contentItemTextColor: "white"
-    property int fontSize: 18
+    property int fontSize: 20
+    readonly property int scaledFontSize: fontSize * (root.maximised ? fontScaleFactor : 1)
+    property int fontScaleFactor: 2
     property alias radius: backRect.radius
-    text: "Button"
+
 
     contentItem: Text {
         text: button.text
         color: button.contentItemTextColor
         font.weight: Font.Thin
-        font.pixelSize: fontSize * root.fontSizeMultiplier
+        font.pixelSize: scaledFontSize
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
         elide: Text.ElideRight

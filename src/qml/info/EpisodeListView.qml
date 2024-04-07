@@ -30,7 +30,6 @@ ListView {
             onEntered: delegateRect.border.color = "white"
             onExited: delegateRect.border.color = delegateRect.color
             onClicked:{
-                console.log(index)
                 app.playFromEpisodeList(index)
             }
         }

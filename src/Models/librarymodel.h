@@ -20,11 +20,12 @@ class LibraryModel: public QAbstractListModel
     Q_PROPERTY(bool isLoading READ isLoading NOTIFY isLoadingChanged)
     bool isLoading() { return m_isLoading; }
     bool m_isLoading = false;
+    QFutureWatcher<void> m_watcher;
 
 public:
     explicit LibraryModel(QObject *parent = nullptr): QAbstractListModel(parent){
-        loadWatchList ();
-        //m_watcher->setFuture (QtConcurrent::run(&LibraryModel::fetchUnwatchedEpisodes, this, WATCHING));
+        // loadWatchList ();
+        m_watcher.setFuture (QtConcurrent::run(&LibraryModel::loadWatchList, this, ""));
     };
     enum ListType
     {
@@ -105,7 +106,7 @@ public:
     Q_INVOKABLE void changeListTypeAt(int index, int newListType, int oldListType = -1);
     void changeShowListType(ShowData& show, int newListType);
 
-    QJsonObject loadShow(int index);
+    QJsonObject getShowJsonAt(int index);
 
 
 private:

@@ -5,21 +5,19 @@ class ErrorHandler : public QObject
 {
     Q_OBJECT
 public:
-    void show(const QString& errorMessage){
-        emit showWarning (errorMessage);
+    void show(const QString& errorMessage, const QString& errorHeader = "Error"){
+        emit showWarning (errorMessage, errorHeader);
     };
     static ErrorHandler& instance(){
         static ErrorHandler handler;
         return handler;
     }
 signals:
-    void showWarning(QString message);
+    void showWarning(const QString &message, const QString &header);
 
 private:
     ErrorHandler() = default;
     ErrorHandler(const ErrorHandler&) = delete; // Disable copy constructor.
     ErrorHandler& operator=(const ErrorHandler&) = delete; // Disable copy assignment.
     ~ErrorHandler(){} // Private destructor to prevent external deletion.
-
-
 };

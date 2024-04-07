@@ -199,7 +199,6 @@ Popup  {
             to: 1000
 
             onValueModified: {
-                // console.log(value)
                 mpv.speed = value / decimalFactor
             }
             id:spinBox

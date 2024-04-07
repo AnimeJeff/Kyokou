@@ -129,7 +129,7 @@ MpvObject::MpvObject(QQuickItem *parent) : QQuickFramebufferObject(parent) {
     m_mpv.set_option("cache-unlink-files", "whendone");
     m_mpv.set_option("config", "yes");
     m_mpv.set_option ("msg-level", "all=error");
-    // m_mpv.set_option ("script-opts", "")
+    m_mpv.set_option ("osd-font-size", "40");
 
     m_mpv.observe_property("duration");
     m_mpv.observe_property("playback-time");
@@ -384,9 +384,8 @@ void MpvObject::onMpvEvent() {
         }
 
         case MPV_EVENT_LOG_MESSAGE: {
-            mpv_event_log_message *msg =
-                static_cast<mpv_event_log_message *>(event->data);
-            fprintf(stderr, "[%s] %s", msg->prefix, msg->text); //TODO
+            // mpv_event_log_message *msg = static_cast<mpv_event_log_message *>(event->data);
+            // fprintf(stderr, "[%s] %s", msg->prefix, msg->text); //TODO
             break;
         }
 
@@ -403,10 +402,9 @@ void MpvObject::onMpvEvent() {
             }
 
             if (strcmp(prop->name, "playback-time") == 0) {
-                int64_t newTime = static_cast<double>(propValue); // It's double in mpv
+                int64_t newTime = static_cast<double>(propValue);
                 if (newTime != m_time) {
                     m_time = newTime;
-                    // qDebug() << m_time;
                     emit timeChanged();
                     if (m_time == m_duration){
                         emit playNext();
@@ -420,7 +418,7 @@ void MpvObject::onMpvEvent() {
             }
 
             else if (strcmp(prop->name, "duration") == 0) {
-                m_duration = static_cast<double>(propValue); // It's double in mpv
+                m_duration = static_cast<double>(propValue);
                 emit durationChanged();
             }
 
@@ -557,8 +555,8 @@ void MpvObject::setProperty(const QString &name, const QVariant &value) {
 void MpvObject::handleMpvError(int code) {
     if (code < 0) {
         QString errorString = mpv_error_string(code);
-        qDebug() << "MPV Error: " << errorString;
-        ErrorHandler::instance().show(errorString);
+        // qDebug() << "MPV Error: " << errorString;
+        ErrorHandler::instance().show(errorString, "Mpv Error");
     }
 }
 

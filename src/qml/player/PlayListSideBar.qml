@@ -28,16 +28,9 @@ Rectangle{
         }
         keyNavigationEnabled:false
         smooth: false
-        onContentHeightChanged: {
-            scrollToIndex(app.playlist.currentIndex)
-        }
-
         function scrollToIndex(index){
             if (index.valid) {
-                // console.log("Expanding to " + index)
                 expandToIndex(index);
-                // forceLayout()
-                // positionViewAtRow(rowAtIndex(index), Qt.AlignVCenter)
                 positionViewAtIndex(index, TableView.AlignVCenter)
                 sel.setCurrentIndex(index, ItemSelectionModel.SelectCurrent)
             }
@@ -129,5 +122,19 @@ Rectangle{
         }
         color: "#3C4144"
         height: 40
+        CustomButton {
+            id: name
+            text: qsTr("Find current")
+            anchors{
+                top:parent.top
+                left: parent.left
+                bottom: parent.bottom
+            }
+            onClicked: {
+                treeView.scrollToIndex(app.playlist.currentIndex)
+            }
+
+            fontSize: 20
+        }
     }
 }

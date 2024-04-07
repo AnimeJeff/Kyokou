@@ -19,7 +19,7 @@ QList<ShowData> Haitu::latest(int page, int type)
 QList<ShowData> Haitu::filterSearch(const QString &query, const QString &sortBy, int page)
 {
 
-    QUrl url = hostUrl + (sortBy == "--" ? "vodsearch/": "vodshow/")
+    QString url = hostUrl + (sortBy == "--" ? "vodsearch/": "vodshow/")
                + query + "--" + sortBy + "------" + QString::number(page) + "---.html";
     // qDebug() << QString::fromStdString (url);
     auto showNodes = NetworkClient::get(url).document().select("//div[@class='module-list']/div[@class='module-items']/div");
@@ -133,12 +133,14 @@ QList<VideoServer> Haitu::loadServers(const PlaylistItem *episode) const
 
 QList<Video> Haitu::extractSource(const VideoServer &server) const
 {
-    std::string response = NetworkClient::get(hostUrl + server.link).body;
-    std::smatch match;
-    if (!std::regex_search(response, match, player_aaaa_regex)) {
-        qWarning() << "Haitu failed to extract m3u8";
-        return {};
+    QString response = NetworkClient::get(hostUrl + server.link).body;
+    QRegularExpressionMatch match = player_aaaa_regex.match(response);
+
+    if (match.hasMatch()) {
+        auto source = QJsonDocument::fromJson (match.captured (1).toUtf8 ()).object ()["url"].toString ();
+        return { Video(source) };
     }
-    auto source = QJsonDocument::fromJson (match[1].str ().c_str ()).object ()["url"].toString ();
-    return { Video(source) };
+    qWarning() << "Haitu failed to extract m3u8";
+    return {};
+
 }

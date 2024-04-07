@@ -25,7 +25,7 @@ public:
         int previousIndex = m_currentIndex;
         auto videos = load(index);
         if (!videos.isEmpty ()) {
-            qInfo() << "Log (ServerList): Fetched source" << videos.first ().videoUrl;
+            qInfo() << "Log (Server): Fetched source" << videos.first ().videoUrl;
             MpvObject::instance()->open (videos.first (), MpvObject::instance()->time ());
         } else {
             m_currentIndex = previousIndex;
@@ -62,7 +62,7 @@ private:
             return server.name;
             break;
         case LinkRole:
-            return server.link.left(30) + "...";
+            return server.link;
             break;
         default:
             break;

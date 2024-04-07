@@ -60,11 +60,11 @@ target_compile_options(kyokou PRIVATE
     "$<$<CONFIG:DEBUG>:-Og>"
 )
 
-add_executable(launcher
-    launcher/main.cpp
-    #    ${app_icon_resource_windows}
-)
-add_subdirectory(${PROJECT_SOURCE_DIR}/launcher/)
+# add_executable(launcher
+#     launcher/main.cpp
+#     #    ${app_icon_resource_windows}
+# )
+# add_subdirectory(${PROJECT_SOURCE_DIR}/launcher/)
 
 
 if (Qt6_FOUND)

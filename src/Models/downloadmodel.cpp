@@ -3,6 +3,7 @@
 #include "Data/playlistitem.h"
 #include "Data/showdata.h"
 #include "Providers/showprovider.h"
+#include "Components/errorhandler.h"
 
 
 DownloadModel::DownloadModel(QObject *parent): QAbstractListModel(parent) {
@@ -165,8 +166,8 @@ void DownloadModel::downloadShow(ShowData &show, int startIndex, int count)
             startTasks ();
             playlist->disuse ();
             emit layoutChanged ();
-        }catch(...) {
-            ErrorHandler::instance ().show ("error adding download task");
+        }catch(const QException &ex) {
+            ErrorHandler::instance ().show (ex.what (), "Download Error");
         }
 
     });

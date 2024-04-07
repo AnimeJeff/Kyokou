@@ -1,8 +1,7 @@
-#ifndef VIDEOEXTRACTOR_H
-#define VIDEOEXTRACTOR_H
+#pragma once
 
-#include "Components/functions.h"
-#include "Components/network.h"
+#include "Providers/Components/functions.h"
+#include "Common/network.h"
 
 class VideoExtractor
 {
@@ -13,4 +12,4 @@ public:
     virtual QString extractLink(std::string link) = 0;
 };
 
-#endif // VIDEOEXTRACTOR_H
+

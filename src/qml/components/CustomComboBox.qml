@@ -7,9 +7,9 @@ ComboBox {
 
     property color checkedColor: "#4E5BF2"
     property color currentIndexColor: "red"
-    property int fontSize: 15
-
-
+    property int fontSize: 20
+    readonly property int scaledFontSize: fontSize * (root.maximised ? fontScaleFactor : 1)
+    property int fontScaleFactor: 2
 
     property string text: ""
     property int hAlignment: Text.AlignHCenter
@@ -23,7 +23,7 @@ ComboBox {
             text: comboBox.text.length === 0 ? modelData : model[`${comboBox.text}`]
             color: comboBox.highlightedIndex === index ? "white" : "black"
             elide: Text.ElideRight
-            font.pixelSize: fontSize * root.fontSizeMultiplier
+            font.pixelSize: scaledFontSize
             verticalAlignment: vAlignment
             horizontalAlignment: hAlignment
         }
@@ -74,7 +74,7 @@ ComboBox {
         elide: Text.ElideRight
         horizontalAlignment: hAlignment
         verticalAlignment: vAlignment
-        font.pixelSize: fontSize * root.fontSizeMultiplier
+        font.pixelSize: scaledFontSize
         font.weight: Font.Thin
         color: comboBox.down ? Qt.rgba(255, 255, 255, 0.75) : "white"
     }

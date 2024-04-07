@@ -16,19 +16,6 @@ Item {
     property real labelFontSize: 24 * root.fontSizeMultiplier
     property var currentShow: app.currentShow
 
-    Image {
-        id: posterImage
-        source: app.currentShow.exists ? currentShow.coverUrl : "qrc:/resources/images/error_image.png"
-        onStatusChanged: if (posterImage.status === Image.Null) source = "qrc:/resources/images/error_image.png"
-
-        anchors{
-            top: parent.top
-            left: parent.left
-        }
-        width: parent.width * 0.2
-        height: parent.height * 0.4
-    }
-
 
     Rectangle{
         id:episodeListHeader
@@ -78,6 +65,21 @@ Item {
         }
         width: episodeListHeader.width
     }
+
+    Image {
+        id: posterImage
+        source: app.currentShow.exists ? currentShow.coverUrl : "qrc:/resources/images/error_image.png"
+        onStatusChanged: if (posterImage.status === Image.Null) source = "qrc:/resources/images/error_image.png"
+
+        anchors{
+            top: parent.top
+            left: parent.left
+        }
+        width: parent.width * 0.2
+        fillMode: Image.PreserveAspectFit
+        // height: parent.height * 0.4
+    }
+
 
     Text {
         id: titleText

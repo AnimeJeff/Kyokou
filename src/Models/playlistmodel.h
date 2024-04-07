@@ -22,11 +22,11 @@ private:
         m_isLoading = value;
         emit isLoadingChanged();
     }
-
+    QString m_errorMessage;
     QFileSystemWatcher m_folderWatcher;
     QFutureWatcher<void> m_watcher;
     ServerListModel m_serverList;
-    std::unique_ptr<PlaylistItem> m_rootPlaylist = std::make_unique<PlaylistItem>("root", nullptr, "/");
+    PlaylistItem *m_rootPlaylist = new PlaylistItem("root", nullptr, "/");
 
     ServerListModel *getServerList() { return &m_serverList; }
     QString getCurrentItemName() const {
@@ -39,23 +39,25 @@ private:
 
     bool registerPlaylist(PlaylistItem *playlist);
     void deregisterPlaylist(PlaylistItem *playlist);
+    // Hashset containing all playlist links
+    // prevents the same playlist being added
     QSet<QString> playlistSet;
+    QMimeDatabase m_mimeDatabase;
 public:
     explicit PlaylistModel(const QString &launchPath, QObject *parent = nullptr);
 
-    ~PlaylistModel() = default;
+    ~PlaylistModel() { delete m_rootPlaylist; }
 
     Q_INVOKABLE void loadIndex(QModelIndex index);
     Q_INVOKABLE void pasteOpen();
+
     QModelIndex getCurrentIndex();
-
-    // Hashset containing all playlist links
-    // prevents the same playlist being added
-
 
     //  Traversing the playlist
     Q_INVOKABLE bool tryPlay(int playlistIndex = -1, int itemIndex = -1);
+
     Q_INVOKABLE void loadOffset(int offset);
+
     Q_INVOKABLE void playNextItem() { loadOffset(1); }
     Q_INVOKABLE void playPrecedingItem() { loadOffset(-1); }
 
@@ -68,10 +70,11 @@ public:
         // qDebug() << "size" << m_rootPlaylist->size () << "index" << m_rootPlaylist->currentIndex;
         return m_rootPlaylist->getCurrentItem ();
     }
-
+    void openUrl(const QUrl &url, bool playUrl);
 public:
     Q_SIGNAL void isLoadingChanged(void);
     Q_SIGNAL void currentIndexChanged(void);
+    Q_SIGNAL void aboutToPlay(void);
 
 private:
     enum

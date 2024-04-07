@@ -23,7 +23,7 @@ Window {
     property bool maximised: false
     property bool fullscreen: false
     property bool pipMode: false
-    property int fontSizeMultiplier: !maximised ? 1 : 2
+    property int fontSizeMultiplier: !maximised ? 1 : 1.5
 
     property real searchResultsViewlastScrollY:0
     property real watchListViewLastScrollY: 0
@@ -131,6 +131,7 @@ Window {
 
 
 
+
     Dialog {
         id: notifier
         modal: true
@@ -138,8 +139,8 @@ Window {
         height: parent.height / 4
         anchors.centerIn: parent
         focus: false
-        property alias headerText:headerText.text
-        property alias text:notifierMessage.text
+        property alias headerText: headerText.text
+        property alias text: notifierMessage.text
 
         contentItem: Rectangle {
             color: "#f2f2f2"
@@ -148,7 +149,7 @@ Window {
             radius: 10
             anchors.centerIn: parent
             Text {
-                id:headerText
+                id: headerText
                 text: "Error"
                 font.pointSize: 16
                 font.bold: true
@@ -159,6 +160,7 @@ Window {
             Text {
                 id: notifierMessage
                 text: "An error has occurred."
+                wrapMode: Text.Wrap
                 font.pointSize: 14
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.verticalCenter: parent.verticalCenter
@@ -173,8 +175,9 @@ Window {
         }
         Connections {
             target: errorHandler
-            function onShowWarning(msg){
+            function onShowWarning(msg, header){
                 notifierMessage.text = msg
+                headerText.text = header
                 notifier.open()
             }
         }

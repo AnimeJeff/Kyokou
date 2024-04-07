@@ -18,7 +18,7 @@ public:
 
     }
 
-    static PlaylistItem *fromUrl(const QUrl &pathUrl, PlaylistItem *parent = nullptr);
+    static PlaylistItem *fromLocalUrl(const QUrl &pathUrl);
 
     //Item
     PlaylistItem(float number, const QString &link, const QString &name, PlaylistItem *parent, bool isLocal = false);
@@ -33,17 +33,25 @@ public:
     inline PlaylistItem *at(int i) const { return !isValidIndex(i) ? nullptr : m_children->at(i); }
     inline int row() { return m_parent ? m_parent->m_children->indexOf(const_cast<PlaylistItem *>(this)) : 0; }
     inline PlaylistItem *first() const { return at(0); }
+    inline PlaylistItem *last() const { return at(size () - 1); }
     inline PlaylistItem *getCurrentItem() const { return at(currentIndex); }
-    inline int indexOf(PlaylistItem *child) { return m_children->indexOf (child); }
+    inline int indexOf(PlaylistItem *child) { return m_children ? m_children->indexOf (child) : -1; }
     int indexOf(const QString &link);
     inline bool isEmpty() const { return !m_children || m_children->size() == 0; }
     inline int size() const { return m_children ? m_children->size() : 0; }
     bool isValidIndex(int index) const;
 
     void append(PlaylistItem *value);
+    void removeOne(PlaylistItem *value) {
+        if (!m_children || !value) return;
+        checkDelete (value);
+        m_children->removeOne (value);
+    }
+
     void emplaceBack(float number, const QString &link, const QString &name, bool isLocal = false);
     void clear();
     void removeAt(int index);
+    inline void removeLast() { if (m_children) removeAt(m_children->size () - 1); }
     bool replace(int index, PlaylistItem *value);
     QString getDisplayNameAt(int index) const;
     void updateHistoryFile(qint64 time = 0);
@@ -67,7 +75,7 @@ public:
     void disuse() {
         --useCount;
         if (useCount == 0) {
-            qDebug() << "Log (Downloader): Playlist deleted by downloader" ;
+            //qDebug() << "Log (Downloader): Playlist deleted by downloader" ;
             delete this;
         }
     }
@@ -80,7 +88,12 @@ private:
     PlaylistItem *m_parent = nullptr;
     std::unique_ptr<QList<PlaylistItem*>> m_children = nullptr;
     std::atomic<int> useCount = 0;
-
+    void checkDelete(PlaylistItem *value) {
+        value->m_parent = nullptr;
+        if (--value->useCount == 0) {
+            delete value;
+        }
+    }
     bool loadFromFolder(const QUrl &pathUrl);
 };
 

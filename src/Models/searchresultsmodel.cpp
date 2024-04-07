@@ -9,7 +9,7 @@ SearchResultsModel::SearchResultsModel(QObject *parent) : QAbstractListModel(par
 
         if (!m_watcher.future().isValid()) {
             // Operation was cancelled
-            ErrorHandler::instance().show ("Operation cancelled: " + m_cancelReason);
+            ErrorHandler::instance().show ("Operation cancelled: " + m_cancelReason, "");
         } else {
             try {
                 auto results = m_watcher.result();
@@ -34,8 +34,12 @@ SearchResultsModel::SearchResultsModel(QObject *parent) : QAbstractListModel(par
                     }
                 }
             }
-            catch (QException& ex) {
-                ErrorHandler::instance().show (ex.what ());
+            catch (const MyException& ex) {
+                ErrorHandler::instance().show (ex.what (), "Explorer Error");
+            } catch(const std::runtime_error& ex) {
+                ErrorHandler::instance().show (ex.what (), "Explorer Error");
+            } catch(...) {
+                ErrorHandler::instance().show ("Something went wrong", "Explorer Error");
             }
         }
 
@@ -76,7 +80,7 @@ void SearchResultsModel::popular(int page, int type, ShowProvider* provider){
     };
 }
 
-void SearchResultsModel::cancel() {
+void SearchResultsModel::cancelLoading() {
     if (m_watcher.isRunning ()) {
         m_watcher.cancel ();
     }
@@ -85,15 +89,6 @@ void SearchResultsModel::cancel() {
 void SearchResultsModel::reload() {
     if (m_watcher.isRunning ()) return;
     lastSearch(m_currentPageIndex);
-}
-
-void SearchResultsModel::loadMore() {
-    if (m_watcher.isRunning ()) return;
-    lastSearch(m_currentPageIndex + 1);
-}
-
-bool SearchResultsModel::canLoadMore() const {
-    return (m_isLoading || m_watcher.isRunning ()) ? false : m_canFetchMore;
 }
 
 int SearchResultsModel::rowCount(const QModelIndex &parent) const {

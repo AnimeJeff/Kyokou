@@ -1,6 +1,6 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
-
+import QtQuick.Layouts
 Popup {
     id:serverListPopup
     visible: true
@@ -16,12 +16,15 @@ Popup {
     Text {
         id: serversText
         text: qsTr("Servers")
+        font.pixelSize: parent.height * 0.14
+        horizontalAlignment: Text.AlignHCenter
         anchors{
             top: parent.top
             left: parent.left
             right: parent.right
         }
-        height: parent.height / 5
+        height: parent.height * 0.15
+        color: "white"
     }
     ListView{
         id:serversListView
@@ -33,32 +36,48 @@ Popup {
             left: parent.left
             right: parent.right
             bottom:parent.bottom
+            bottomMargin: 5
+            leftMargin: 5
+            rightMargin: 5
+            topMargin: 3
         }
 
         delegate: Rectangle {
+            required property string name
+            required property string link
+            required property int index
             width: serversListView.width
-            height: 20 * root.fontSizeMultiplier * 3
+            height: 60 * root.fontSizeMultiplier
             color: app.playlist.serverList.currentIndex === index ? "purple" : "black"
             border.width: 2
             border.color: "white"
-            Text {
-                id:serverText
-                text: `${model.name}\n${model.link}`
-                font.pixelSize: 20 * root.fontSizeMultiplier
+            ColumnLayout {
                 anchors {
-                    left: parent.left
-                    right: parent.right
-                    top: parent.top
-                    bottom: parent.bottom
-                    leftMargin: 2
-                    rightMargin: 2
-                    topMargin: 2
-                    bottomMargin: 2
+                    fill: parent
+                    margins: 3
                 }
-
-                wrapMode: Text.Wrap
-                color: "white"
+                Text {
+                    id:serverNameText
+                    text: name
+                    font.pixelSize: 25 * root.fontSizeMultiplier
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    elide: Text.ElideRight
+                    wrapMode: Text.Wrap
+                    color: "white"
+                }
+                Text {
+                    id: serverLinkText
+                    text: link
+                    font.pixelSize: 25 * root.fontSizeMultiplier
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    elide: Text.ElideRight
+                    wrapMode: Text.Wrap
+                    color: "white"
+                }
             }
+
             MouseArea {
                 anchors.fill: parent
                 onClicked: app.playlist.serverList.currentIndex = index

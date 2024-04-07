@@ -1,32 +1,20 @@
 import QtQuick 2.15
 import QtQuick.Controls
-GridView {
+import "../components"
+MediaGridView {
     id: gridView
 
-    property real itemPerRow: Math.floor(root.width/200)
-    property real spacing: 2
-    property real fontSize: 18 * root.fontSizeMultiplier
-    boundsBehavior: Flickable.StopAtBounds
-    clip: true
-    cellWidth: width / itemPerRow
-    cellHeight: cellWidth * imageAspectRatio + fontSize * 2
-    property real imageAspectRatio: 319/225
-    onContentYChanged: watchListViewLastScrollY = contentY
     property int dragFromIndex: -1
     property int dragToIndex: -1
     property bool isDragging: false
-
     property int heldZ: z + 1000
+    onContentYChanged: watchListViewLastScrollY = contentY
+
     //https://doc.qt.io/qt-6/qtquick-tutorials-dynamicview-dynamicview3-example.html
     model: DelegateModel {
         id: visualModel
-        model:app.library
-        delegate: Item {
-            required property string title
-            required property string cover
-            required property int index
-            required property int unwatchedEpisodes
-            property var view: gridView
+        model: app.library
+        delegate: ShowItem {
             id: content
             width: gridView.cellWidth
             height: gridView.cellHeight
@@ -34,65 +22,39 @@ GridView {
             Drag.source: dragArea
             Drag.hotSpot.x: width / 2
             Drag.hotSpot.y: height / 2
+            title: model.title
+            cover: model.cover
+            // required property int index
+            // required property int unwatchedEpisodes
 
-            Image {
-                id:coverImage
-                source: cover
-                onStatusChanged: if (status === Image.Error) source = "qrc:/resources/images/error_image.png"
-                height: width * gridView.imageAspectRatio
-                anchors {
-                    left: parent.left
-                    right: parent.right
-                    top: parent.top
-                    leftMargin: gridView.spacing
-                    rightMargin: gridView.spacing
-                    topMargin: gridView.spacing
-                }
-            }
-
-            Text {
-                text: title
-                anchors {
-                    left: parent.left
-                    right: parent.right
-                    top: coverImage.bottom
-                    bottom: parent.bottom
-                    leftMargin: gridView.spacing
-                    rightMargin: gridView.spacing
-                    topMargin: gridView.spacing
-                }
-                horizontalAlignment:Text.AlignHCenter
-                maximumLineCount: 2
-                wrapMode: Text.WordWrap
-                font.pixelSize: gridView.fontSize
-                elide: Text.ElideRight
-                color: "white"
-            }
 
             MouseArea {
                 id: dragArea
                 anchors.fill: parent
                 acceptedButtons: Qt.LeftButton | Qt.RightButton
+                hoverEnabled: true
+                drag.target: held ? content : undefined
+                drag.axis: Drag.XAndYAxis
+                cursorShape: drag.active ? Qt.ClosedHandCursor : Qt.PointingHandCursor
+
+                property bool held: false
+
+
                 onClicked: (mouse) => {
                                if (mouse.button === Qt.LeftButton) {
-                                   app.loadShow(dragArea.DelegateModel.itemsIndex, true)
+                                   app.loadShow(index, true)
                                } else {
-                                   contextMenu.showIndex = dragArea.DelegateModel.itemsIndex
+                                   contextMenu.showIndex = index
                                    contextMenu.popup()
                                }
                            }
-
-                drag.target: held ? content : undefined
-                drag.axis: Drag.XAndYAxis
-                // property int lastZ
-                property bool held: false
-                cursorShape: drag.active ? Qt.ClosedHandCursor : Qt.PointingHandCursor
 
                 onPressed: (mouse) => {
                                if (mouse.button === Qt.LeftButton) {
                                    held=true
                                }
                            }
+
                 onReleased: (mouse) => {
                                 if (mouse.button === Qt.LeftButton) {
                                     held=false
@@ -101,38 +63,33 @@ GridView {
 
                 drag.onActiveChanged: {
                     if (drag.active) {
-                        // held ?= true
                         content.z = gridView.heldZ
                     }
                     else
                     {
-                        //held = false
                         content.z = gridView.z
                         // console.log("moved",content.view.dragFromIndex, content.view.dragToIndex, content.view.isDragging)
-                        app.library.move(content.view.dragFromIndex, content.view.dragToIndex)
-                        visualModel.items.move(content.view.dragToIndex, content.view.dragToIndex)
-                        content.view.dragFromIndex = -1
+                        app.library.move(gridView.dragFromIndex, gridView.dragToIndex)
+                        visualModel.items.move(gridView.dragToIndex, gridView.dragToIndex)
+                        gridView.dragFromIndex = -1
                     }
                 }
-                hoverEnabled: true
+
                 DropArea {
                     id:dropArea
                     anchors.fill:parent
                     anchors.margins: 10
                     onEntered: (drag) => {
+                                   //console.log(drag.source.DelegateModel, drag.source.DelegateModel.itemsIndex)
                                    let oldIndex = drag.source.DelegateModel.itemsIndex
                                    let newIndex = dragArea.DelegateModel.itemsIndex
-                                   if (content.view.dragFromIndex === -1){
-                                       content.view.dragFromIndex = oldIndex
-                                       // console.log("from", content.view.dragFromIndex)
+                                   if (gridView.dragFromIndex === -1){
+                                       gridView.dragFromIndex = oldIndex
                                    }
-                                   // console.log("to", newIndex)
-                                   content.view.dragToIndex = newIndex
+                                   gridView.dragToIndex = newIndex
                                    visualModel.items.move(oldIndex, newIndex)
                                }
                 }
-
-
 
             }
 

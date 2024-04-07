@@ -1,14 +1,16 @@
 #include "playlistitem.h"
 #include <cmath>
-#include "video.h"
+
 
 bool PlaylistItem::loadFromFolder(const QUrl &pathUrl) {
     if (!m_isLoadedFromFolder) return false;
     clear ();
 
     QDir playlistDir;
-    QString currentFilename = "";
+    QString lastPlayedFilename = "";
+    QString openedFilename = "";
     QString timeString = "";
+
     if (!pathUrl.isEmpty ()) {
         QFileInfo path = QFileInfo(pathUrl.toLocalFile ());
         if (!path.exists ()) {
@@ -18,7 +20,7 @@ bool PlaylistItem::loadFromFolder(const QUrl &pathUrl) {
 
         if (!path.isDir ()) {
             playlistDir = path.dir ();
-            currentFilename = path.fileName ();
+            openedFilename = path.fileName ();
         } else {
             playlistDir = QDir(pathUrl.toLocalFile ());
         }
@@ -27,16 +29,6 @@ bool PlaylistItem::loadFromFolder(const QUrl &pathUrl) {
         name = playlistDir.dirName();
         link = playlistDir.absolutePath ();
 
-        // Read/update history file
-        if (path.isFile()) {
-            bool fileOpened = m_historyFile->open(QIODevice::WriteOnly | QIODevice::Text);
-            if (!fileOpened) {
-                qDebug() << "Log (PlaylistItem): Failed to open history file";
-                return false;
-            }
-            m_historyFile->write(currentFilename.toUtf8());
-            m_historyFile->close ();
-        }
     } else {
         if (link.isEmpty ()) return false;
         playlistDir = QDir(link);
@@ -49,7 +41,7 @@ bool PlaylistItem::loadFromFolder(const QUrl &pathUrl) {
 
 
     QStringList fileNames = playlistDir.entryList(
-        {"*.mp4", "*.mkv", "*.avi", "*.mp3", "*.flac", "*.wav", "*.ogg", "*.webm"}, QDir::Files);
+        {"*.mp4", "*.mkv", "*.avi", "*.mp3", "*.flac", "*.wav", "*.ogg", "*.webm", "*.m3u8"}, QDir::Files);
     if (fileNames.isEmpty()) {
         qDebug() << "Log (PlaylistItem): No files to play in" << playlistDir.absolutePath ();
         currentIndex = -1;
@@ -57,7 +49,7 @@ bool PlaylistItem::loadFromFolder(const QUrl &pathUrl) {
     }
 
     // Read history file
-    if (currentFilename.isEmpty() && m_historyFile->exists ()) {
+    if (m_historyFile->exists ()) {
         // Open history file
         bool fileOpened = m_historyFile->open(QIODevice::ReadOnly | QIODevice::Text);
         if (!fileOpened) {
@@ -68,16 +60,25 @@ bool PlaylistItem::loadFromFolder(const QUrl &pathUrl) {
         auto fileData = QTextStream(m_historyFile.get()).readAll().trimmed().split(":");
         m_historyFile->close();
         if (!fileData.isEmpty()) {
-            currentFilename = fileData.first();
+            lastPlayedFilename = fileData.first();
             if (fileData.size() == 2) {
                 timeString = fileData.last();
             }
         }
-
     }
 
-
-
+    // Check if the opened file is different from the last played file
+    if (!openedFilename.isEmpty () && lastPlayedFilename != openedFilename) {
+        bool fileOpened = m_historyFile->open(QIODevice::WriteOnly | QIODevice::Text);
+        if (!fileOpened) {
+            qDebug() << "Log (PlaylistItem): Failed to open history file";
+            return false;
+        }
+        m_historyFile->write(openedFilename.toUtf8());
+        m_historyFile->close ();
+        timeString.clear ();
+        lastPlayedFilename = openedFilename;
+    }
 
     PlaylistItem *currentItemPtr = nullptr;
 
@@ -86,8 +87,8 @@ bool PlaylistItem::loadFromFolder(const QUrl &pathUrl) {
         QString title = match.hasMatch() ? match.captured("title").trimmed() : "";
         int itemNumber = match.hasMatch() ? !match.captured("number").isEmpty() ? match.captured("number").toInt() : i : i;
         emplaceBack (itemNumber,  playlistDir.absoluteFilePath(fileNames[i]), title, true);
-        if (fileNames[i] == currentFilename) {
-            // Set current index and time
+        if (fileNames[i] == lastPlayedFilename) {
+            // Set current item
             // qDebug() << fileNames[i];
             currentItemPtr = m_children->last ();
         }
@@ -128,15 +129,15 @@ PlaylistItem::PlaylistItem(float number, const QString &link, const QString &nam
 
 }
 
-PlaylistItem *PlaylistItem::fromUrl(const QUrl &pathUrl, PlaylistItem *parent) {
+PlaylistItem *PlaylistItem::fromLocalUrl(const QUrl &pathUrl) {
 
-    if (!pathUrl.isLocalFile ()) {
-        auto pathString = pathUrl.toString ();
-        PlaylistItem *playlist = new PlaylistItem("Pasted Link", nullptr, pathString);
-        playlist->emplaceBack (-1, pathString, pathString, true);
-        playlist->currentIndex = 0;
-        return playlist;
-    }
+    if (!pathUrl.isLocalFile ())
+        return nullptr;
+    // auto pathString = pathUrl.toString ();
+    // PlaylistItem *playlist = new PlaylistItem("Pasted Link", nullptr, "pasted");
+    // playlist->emplaceBack (-1, pathString, pathString, true);
+    // playlist->currentIndex = 0;
+    // return playlist;
 
     PlaylistItem *playlist = new PlaylistItem("", nullptr, "");
     playlist->m_isLoadedFromFolder = true;
@@ -166,13 +167,9 @@ void PlaylistItem::clear() {
 
 void PlaylistItem::removeAt(int index) {
     auto toRemove = at(index);
-    if (toRemove) {
-        toRemove->m_parent = nullptr;
-        if (--toRemove->useCount == 0) {
-            delete toRemove;
-        }
-        m_children->removeAt (index);
-    }
+    if (!m_children || !toRemove) return;
+    checkDelete (toRemove);
+    m_children->removeAt (index);
 }
 
 bool PlaylistItem::replace(int index, PlaylistItem *value) {
@@ -189,6 +186,7 @@ bool PlaylistItem::replace(int index, PlaylistItem *value) {
 }
 
 int PlaylistItem::indexOf(const QString &link) {
+    if (!m_children) return -1;
     for (int i = 0; i < m_children->size (); i++) {
         auto child = m_children->at (i);
         if (child->link == link) {
@@ -236,7 +234,7 @@ void PlaylistItem::updateHistoryFile(qint64 time) {
 
 void PlaylistItem::setLastPlayAt(int index, int time) {
     if (!isValidIndex (index)) return;
-    qDebug() << "Setting playlist last play info at" << index << time;
+    qDebug() << "Log (PlaylistItem)： Setting playlist last play info at" << index << time;
     currentIndex = index;
     m_children->at (index)->timeStamp = time;
 }

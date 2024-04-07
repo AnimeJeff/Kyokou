@@ -39,16 +39,16 @@ QString Functions::getHostFromUrl(const QString &url) {
     return "";
 }
 
-std::string Functions::reverseString(const std::string &str){
-    std::string result;
-    result.reserve(str.length()); // Reserve memory to avoid reallocation
+// std::string Functions::reverseString(const std::string &str){
+//     std::string result;
+//     result.reserve(str.length()); // Reserve memory to avoid reallocation
 
-    for (auto it = str.rbegin(); it != str.rend(); ++it){
-        result.push_back(*it);
-    }
+//     for (auto it = str.rbegin(); it != str.rend(); ++it){
+//         result.push_back(*it);
+//     }
 
-    return result;
-}
+//     return result;
+// }
 
 // std::string Functions::rc4(const std::string &key, const std::string &input){
 //     std::vector<int> s(256);

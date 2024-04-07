@@ -5,7 +5,7 @@ import "../components"
 import MpvPlayer 1.0
 Item {
     id: controlBar
-    property bool hovered: hoverHandler.hovered || sliderHovered
+    readonly property bool hovered: hoverHandler.hovered || sliderHovered
     signal sidebarButtonClicked()
     signal folderButtonClicked()
     signal seekRequested(int time)

@@ -8,14 +8,15 @@ ShowManager::ShowManager(QObject *parent) : QObject{parent} {
         if (!m_watcher.future().isValid()) {
             //future was cancelled
             ErrorHandler::instance().show ("Operation cancelled");
-            m_show = ShowData("", "", "", nullptr);
-            m_episodeListModel.setPlaylist(nullptr);
-            return;
+            // m_show = ShowData("", "", "", nullptr);
+            // m_episodeListModel.setPlaylist(nullptr);
+            // return;
         }
-        qInfo() << "Log (ShowManager)： Successfully loaded details for" << m_show.title;
+
+
         m_isLoading = false;
         emit isLoadingChanged ();
-        emit showChanged();
+
     });
 }
 
@@ -30,21 +31,24 @@ void ShowManager::loadShow(const ShowData &show, const ShowData::LastWatchInfo &
             << "using the link:" << show.link;
     try {
         show.provider->loadDetails(tempShow);
-    } catch(...) {
-        qDebug() << "Failed to load show";
+    } catch(QException& ex) {
+        ErrorHandler::instance().show (ex.what (), show.provider->name () + " Error");
         return;
     }
+
+
     // Only set the show as the current show if it succeeds loading
     m_show = std::move(tempShow);
     m_show.listType = lastWatchInfo.listType;
     if (m_show.playlist) {
-        qDebug() << "Setting last watch info for" << show.title
+        qInfo() << "Log (ShowManager)： Setting last play info for" << show.title
                  << lastWatchInfo.lastWatchedIndex << lastWatchInfo.timeStamp;
         m_show.playlist->setLastPlayAt(lastWatchInfo.lastWatchedIndex, lastWatchInfo.timeStamp);
     }
     m_episodeListModel.setPlaylist(m_show.playlist);
     m_episodeListModel.setIsReversed(true);
-
+    emit showChanged();
+    qInfo() << "Log (ShowManager)： Successfully loaded details for" << m_show.title;
 }
 
 

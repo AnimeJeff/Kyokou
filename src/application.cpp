@@ -1,5 +1,7 @@
 
 #include "application.h"
+#include "Components/errorhandler.h"
+#include "Providers/iyf.h"
 #include "Providers/testprovider.h"
 #include "Providers/kimcartoon.h"
 #include "Providers/gogoanime.h"
@@ -12,8 +14,25 @@ Application::Application(const QString &launchPath) : m_playlist(launchPath, thi
 {
     NetworkClient::init ();
 
+    // QDir pluginsDir(qApp->applicationDirPath());
+    // pluginsDir.cd("plugins");
+    // foreach (QString fileName, pluginsDir.entryList(QDir::Files)) {
+    //     QPluginLoader loader(pluginsDir.absoluteFilePath(fileName));
+    //     QObject *plugin = loader.instance();
+    //     if (plugin) {
+    //         ShowProvider *provider = qobject_cast<ShowProvider *>(plugin);
+    //         if (provider) {
+    //             m_providers.push_back (provider);
+    //         }
+    //     } else {
+    //         qDebug() << "Could not load plugin:" << loader.errorString();
+    //     }
+    // }
+
+
     m_providers =
         {
+            new IyfProvider,
             new AllAnime,
             new Haitu,
             new Nivod,
@@ -28,18 +47,6 @@ Application::Application(const QString &launchPath) : m_playlist(launchPath, thi
         m_providersMap.insert(provider->name (), provider);
     }
     setCurrentProviderIndex(0);
-
-    // Cancels the task when it takes too long
-    m_timeoutTimer.setSingleShot (true);
-    m_timeoutTimer.setInterval (5000);
-    connect(&m_timeoutTimer, &QTimer::timeout, this,[this](){
-        m_cancelReason = "Loading took too long";
-        m_watcher.future ().cancel ();
-    });
-
-
-
-
 
     QString N_m3u8DLPath = QDir::cleanPath(QCoreApplication::applicationDirPath() + QDir::separator() + "N_m3u8DL-CLI_v3.0.2.exe");
     if (QFileInfo::exists (N_m3u8DLPath)) {
@@ -72,13 +79,13 @@ void Application::popular(int page) {
 }
 
 void Application::loadShow(int index, bool fromWatchList) {
-    setIsLoading (true);
+
     if (fromWatchList) {
-        auto showJson = m_libraryModel.loadShow(index);
+        auto showJson = m_libraryModel.getShowJsonAt(index);
         if (showJson.isEmpty ()) return;
         QString providerName = showJson["provider"].toString ();
         if (!m_providersMap.contains(providerName)) {
-            qWarning() << providerName << "does not exist";
+            ErrorHandler::instance().showWarning (providerName + " does not exist", "Show Error");
             return;
         }
         auto provider = m_providersMap[providerName];
@@ -112,8 +119,10 @@ void Application::removeCurrentShowFromLibrary() {
 
 void Application::playFromEpisodeList(int index) {
     updateTimeStamp();
-    m_playlist.replaceCurrentPlaylist (m_showManager.getPlaylist ());
-    m_playlist.tryPlay(-1, m_showManager.correctIndex(index));
+    auto showPlaylist = m_showManager.getPlaylist ();
+    index = m_showManager.correctIndex(index);
+    m_playlist.replaceCurrentPlaylist (showPlaylist);
+    m_playlist.tryPlay(-1, index);
 }
 
 void Application::continueWatching() {
@@ -131,11 +140,10 @@ void Application::updateTimeStamp() {
     auto lastPlaylist = m_playlist.getCurrentPlaylist();
     if (!lastPlaylist) return;
     auto time = MpvObject::instance ()->time ();
-    qDebug() << "Updating time stamp for" << lastPlaylist->link << "to" << time;
-
-    if (lastPlaylist->isLoadedFromFolder ())
+    qDebug() << "Log (App): Attempting to updating time stamp for" << lastPlaylist->link << "to" << time;
+    if (lastPlaylist->isLoadedFromFolder ()){
         lastPlaylist->updateHistoryFile (time);
-    else {
+    } else {
         m_libraryModel.updateTimeStamp (lastPlaylist->link, time);
     }
 }
@@ -151,23 +159,16 @@ void Application::updateLastWatchedIndex() {
     m_libraryModel.updateLastWatchedIndex (currentPlaylist->link, currentPlaylist->currentIndex);
 }
 
-void Application::cancel()
-{
-    if (m_watcher.isRunning ())
-    {
-        m_watcher.cancel ();
-        setIsLoading (false);
-    }
-}
+
 
 void Application::setCurrentProviderIndex(int index) {
     if (index == m_currentProviderIndex) return;
-    int currentType = m_currentProviderIndex != -1 ? m_availableTypes[m_currentShowTypeIndex] : -1;
+    int currentType = m_availableTypes.isEmpty () ? -1 : m_availableTypes[m_currentShowTypeIndex];
     m_currentProviderIndex = index;
     m_currentSearchProvider = m_providers.at (index);
     m_availableTypes = m_currentSearchProvider->getAvailableTypes ();
     emit currentProviderIndexChanged();
-    int searchTypeIndex = searchTypeIndex == -1 ? -1 : m_availableTypes.indexOf (currentType);
+    int searchTypeIndex =  m_availableTypes.indexOf (currentType);
     m_currentShowTypeIndex = searchTypeIndex == -1 ? 0 : searchTypeIndex;
     emit currentShowTypeIndexChanged();
 }
