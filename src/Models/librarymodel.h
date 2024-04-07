@@ -68,10 +68,8 @@ public:
     void updateProperty(const QString& showLink, QString propertyName, QVariant propertyValue, PropertyType propertyType);
 
     ShowData::LastWatchInfo getLastWatchInfo(const QString& showLink) {
-        // Check if the show exists in the hashmap
-        int lastWatchedIndex = -1;
-        int timeStamp = 0;
         ShowData::LastWatchInfo info;
+        // Check if the show exists in the hashmap
         if (m_showHashmap.contains (showLink)) {
             // Retrieve the list type and index for the show
             QPair<int, int> listTypeAndIndex = m_showHashmap.value(showLink);

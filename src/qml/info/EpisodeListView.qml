@@ -12,7 +12,8 @@ ListView {
     model:app.currentShow.episodeList
 
     Component.onCompleted: {
-        episodeListView.positionViewAtIndex(app.currentShow.episodeList.lastWatchedIndex, ListView.Center)
+        if (app.currentShow.episodeList.lastWatchedIndex !== -1)
+            episodeListView.positionViewAtIndex(app.currentShow.episodeList.lastWatchedIndex, ListView.Center)
     }
 
     boundsMovement: Flickable.StopAtBounds

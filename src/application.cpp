@@ -121,6 +121,8 @@ void Application::playFromEpisodeList(int index) {
     updateTimeStamp();
     auto showPlaylist = m_showManager.getPlaylist ();
     index = m_showManager.correctIndex(index);
+
+
     m_playlist.replaceCurrentPlaylist (showPlaylist);
     m_playlist.tryPlay(-1, index);
 }
@@ -132,7 +134,8 @@ void Application::continueWatching() {
 }
 
 void Application::downloadCurrentShow(int startIndex, int count) {
-    m_downloader->downloadShow (m_showManager.getShow (), m_showManager.correctIndex(startIndex), count); //TODO
+    startIndex = m_showManager.correctIndex(startIndex);
+    m_downloader->downloadShow (m_showManager.getShow (), startIndex, count); //TODO
 }
 
 void Application::updateTimeStamp() {
@@ -141,10 +144,17 @@ void Application::updateTimeStamp() {
     if (!lastPlaylist) return;
     auto time = MpvObject::instance ()->time ();
     qDebug() << "Log (App): Attempting to updating time stamp for" << lastPlaylist->link << "to" << time;
+
     if (lastPlaylist->isLoadedFromFolder ()){
         lastPlaylist->updateHistoryFile (time);
     } else {
-        m_libraryModel.updateTimeStamp (lastPlaylist->link, time);
+        if (time > 0.85 * MpvObject::instance ()->duration () && lastPlaylist->currentIndex + 1 < lastPlaylist->size ()) {
+            qDebug() << "Log (App): Setting to next episode" << lastPlaylist->link;
+            m_libraryModel.updateLastWatchedIndex (lastPlaylist->link, lastPlaylist->currentIndex + 1);
+        }
+        else {
+            m_libraryModel.updateTimeStamp (lastPlaylist->link, time);
+        }
     }
 }
 

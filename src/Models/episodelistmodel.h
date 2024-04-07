@@ -10,9 +10,10 @@ class EpisodeListModel : public QAbstractListModel {
 
 
     bool m_isReversed = false;
-    int continueIndex = -1;
+
     PlaylistItem *m_rootItem = new PlaylistItem("root", nullptr, "/");
 
+    int continueIndex = -1;
     QString m_continueText = "";
     QString getContinueText() { return m_continueText; };
 
@@ -38,8 +39,7 @@ public:
     void updateLastWatchedIndex() {
         if (auto playlist = m_rootItem->getCurrentItem (); playlist){
             // If the index in second to last of the latest episode then continue from latest episode
-            continueIndex = playlist->currentIndex == playlist->size () - 2 ? playlist->currentIndex + 1 : playlist->currentIndex;
-
+            continueIndex = playlist->currentIndex;
             if (continueIndex < 0) continueIndex = 0;
 
             const PlaylistItem *episode = playlist->at(continueIndex);

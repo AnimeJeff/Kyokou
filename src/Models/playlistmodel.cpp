@@ -117,14 +117,7 @@ bool PlaylistModel::tryPlay(int playlistIndex, int itemIndex) {
     emit isLoadingChanged();
 
     // If same playlist, update the time stamp for the last item
-    auto currentPlaylist = m_rootPlaylist->getCurrentItem ();
-    if (currentPlaylist == newPlaylist && currentPlaylist->currentIndex != itemIndex) {
-        auto time = MpvObject::instance ()->time ();
-        if (time > 0.9 * MpvObject::instance ()->duration ())
-            time = 0;
-        qInfo() << "Log (Playlist): Saving timestamp" << time << "for" << currentPlaylist->getCurrentItem ()->link;
-        currentPlaylist->setLastPlayAt(currentPlaylist->currentIndex, time);
-    }
+
 
     m_watcher.setFuture(QtConcurrent::run(&PlaylistModel::play, this, playlistIndex, itemIndex));
     return true;
@@ -175,6 +168,15 @@ void PlaylistModel::play(int playlistIndex, int itemIndex) {
     qInfo() << "Log (Playlist): Fetched source" << videos.first().videoUrl;
     MpvObject::instance()->open(videos.first(), episode->timeStamp);
     // Update current item index only if videos are returned
+    auto currentPlaylist = m_rootPlaylist->getCurrentItem ();
+    if (currentPlaylist == playlist && currentPlaylist->currentIndex != -1 && currentPlaylist->currentIndex != itemIndex) {
+        auto time = MpvObject::instance ()->time ();
+        if (time > 0.85 * MpvObject::instance ()->duration ())
+            time = 0;
+        qInfo() << "Log (Playlist): Saving timestamp" << time << "for" << currentPlaylist->getCurrentItem ()->link;
+        currentPlaylist->setLastPlayAt(currentPlaylist->currentIndex, time);
+    }
+
     m_rootPlaylist->currentIndex = playlistIndex;
     playlist->currentIndex = itemIndex;
     emit aboutToPlay();
