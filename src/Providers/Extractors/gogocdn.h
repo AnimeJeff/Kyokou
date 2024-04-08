@@ -17,7 +17,8 @@
 #include <cryptopp/modes.h>
 
 // #include <regex>
-#include "Providers/Components/functions.h"
+#include "Providers/utils/functions.h"
+#include "network/network.h"
 
 class GogoCDN
 {

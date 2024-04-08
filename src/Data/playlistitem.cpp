@@ -1,5 +1,6 @@
 #include "playlistitem.h"
-#include <cmath>
+
+
 
 
 bool PlaylistItem::loadFromFolder(const QUrl &pathUrl) {
@@ -14,7 +15,7 @@ bool PlaylistItem::loadFromFolder(const QUrl &pathUrl) {
     if (!pathUrl.isEmpty ()) {
         QFileInfo path = QFileInfo(pathUrl.toLocalFile ());
         if (!path.exists ()) {
-            qDebug() << "Log (PlaylistItem): Path" << path << "doesn't exist";
+            qDebug() << "Log (Playlist)   : Path" << path << "doesn't exist";
             return false;
         }
 
@@ -33,7 +34,7 @@ bool PlaylistItem::loadFromFolder(const QUrl &pathUrl) {
         if (link.isEmpty ()) return false;
         playlistDir = QDir(link);
         if (!playlistDir.exists ()) {
-            qDebug() << "Log (PlaylistItem): Path" << link << "doesn't exist";
+            qDebug() << "Log (Playlist)   : Path" << link << "doesn't exist";
             currentIndex = -1;
             return false;
         }
@@ -43,9 +44,9 @@ bool PlaylistItem::loadFromFolder(const QUrl &pathUrl) {
     QStringList fileNames = playlistDir.entryList(
         {"*.mp4", "*.mkv", "*.avi", "*.mp3", "*.flac", "*.wav", "*.ogg", "*.webm", "*.m3u8"}, QDir::Files);
     if (fileNames.isEmpty()) {
-        qDebug() << "Log (PlaylistItem): No files to play in" << playlistDir.absolutePath ();
+        qDebug() << "Log (Playlist)   : No files to play in" << playlistDir.absolutePath ();
         currentIndex = -1;
-        return false; //TODO
+        return false;
     }
 
     // Read history file
@@ -53,7 +54,7 @@ bool PlaylistItem::loadFromFolder(const QUrl &pathUrl) {
         // Open history file
         bool fileOpened = m_historyFile->open(QIODevice::ReadOnly | QIODevice::Text);
         if (!fileOpened) {
-            qDebug() << "Log (PlaylistItem): Failed to open history file";
+            qDebug() << "Log (Playlist)   : Failed to open history file";
             currentIndex = -1;
             return false;
         }
@@ -71,7 +72,7 @@ bool PlaylistItem::loadFromFolder(const QUrl &pathUrl) {
     if (!openedFilename.isEmpty () && lastPlayedFilename != openedFilename) {
         bool fileOpened = m_historyFile->open(QIODevice::WriteOnly | QIODevice::Text);
         if (!fileOpened) {
-            qDebug() << "Log (PlaylistItem): Failed to open history file";
+            qDebug() << "Log (Playlist)   : Failed to open history file";
             return false;
         }
         m_historyFile->write(openedFilename.toUtf8());
@@ -234,7 +235,7 @@ void PlaylistItem::updateHistoryFile(qint64 time) {
 
 void PlaylistItem::setLastPlayAt(int index, int time) {
     if (!isValidIndex (index)) return;
-    qDebug() << "Log (PlaylistItem)： Setting playlist last play info at" << index << time;
+    qDebug() << "Log (Playlist)   ： Setting playlist last play info at" << index << time;
     currentIndex = index;
     m_children->at (index)->timeStamp = time;
 }

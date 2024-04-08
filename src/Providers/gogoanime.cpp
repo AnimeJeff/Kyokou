@@ -7,8 +7,8 @@ QList<ShowData> Gogoanime::search(QString query, int page, int type)
     QList<ShowData> animes;
     if (query.isEmpty ())
         return animes;
-    QString url = hostUrl + "search.html";
-    auto animeNodes = NetworkClient::get(url, {}, { {"keyword", query}, {"page", QString::number (page)} })
+    QString url = hostUrl + "search.html?keyword=" + query + "&page=" + QString::number (page);
+    auto animeNodes = NetworkClient::get(url, {})
                           .document().select("//ul[@class='items']/li");
     if (animeNodes.empty ())
         return animes;
@@ -24,8 +24,7 @@ QList<ShowData> Gogoanime::search(QString query, int page, int type)
     return animes;
 }
 
-QList<ShowData> Gogoanime::popular(int page, int type)
-{
+QList<ShowData> Gogoanime::popular(int page, int type) {
     QList<ShowData> animes;
     QString url = "https://ajax.gogocdn.net/ajax/page-recent-release-ongoing.html?page=" + QString::number(page);
     auto animeNodes = NetworkClient::get (url).document ().select ("//div[@class='added_series_body popular']/ul/li");
@@ -42,11 +41,11 @@ QList<ShowData> Gogoanime::popular(int page, int type)
     return animes;
 }
 
-QList<ShowData> Gogoanime::latest(int page, int type)
-{
+QList<ShowData> Gogoanime::latest(int page, int type) {
     QList<ShowData> animes;
-    QString url("https://ajax.gogocdn.net/ajax/page-recent-release.html");
-    auto response = NetworkClient::get(url, {}, { {"page", QString::number(page)}, {"type", "1"} });
+    QString url = "https://ajax.gogocdn.net/ajax/page-recent-release.html?page=" + QString::number(page) + "&type=1" ;
+    auto response = NetworkClient::get(url);
+
     pugi::xpath_node_set animeNodes = response.document().select("//ul[@class='items']/li");
     if (animeNodes.empty()) return animes;
 

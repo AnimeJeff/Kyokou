@@ -76,5 +76,6 @@
         <file>src/qml/library/LibraryPage.qml</file>
         <file>src/qml/components/ShowItem.qml</file>
         <file>src/qml/components/MediaGridView.qml</file>
+        <file>src/qml/download/DownloadListView.qml</file>
     </qresource>
 </RCC>

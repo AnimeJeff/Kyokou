@@ -83,7 +83,7 @@ Rectangle {
             cursorShape: enabled ? Qt.PointingHandCursor : Qt.ForbiddenCursor
             Layout.preferredWidth: sideBar.width
             Layout.preferredHeight: sideBar.width
-            onClicked:gotoPage(1)
+            onClicked: gotoPage(1)
             selected: currentPage == 1
         }
 

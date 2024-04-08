@@ -116,32 +116,18 @@ Window {
         z:root.z
         id:mpvPage
         visible: true
-        anchors.fill: root.fullscreen || root.pipMode ? parent : stackView
-    }
-    Component.onCompleted: {
-        setTimeout(() => {
-                       if (app.playlist.tryPlay(0, -1)) {
-                           sideBar.gotoPage(3)
-                       } else {
-                           app.latest(1)
-                           mpvPage.visible = false
-                       }
-                   }, 100)
+        anchors.fill: (root.fullscreen || root.pipMode) ? parent : stackView
     }
 
 
 
 
-    Dialog {
+    Popup {
         id: notifier
         modal: true
         width: parent.width / 3
         height: parent.height / 4
         anchors.centerIn: parent
-        focus: false
-        property alias headerText: headerText.text
-        property alias text: notifierMessage.text
-
         contentItem: Rectangle {
             color: "#f2f2f2"
             border.color: "#c2c2c2"
@@ -181,13 +167,26 @@ Window {
                 notifier.open()
             }
         }
+
         onClosed: {
             if (mpvPage.visible)
                 mpvPage.forceActiveFocus()
+            else
+                stackView.currentItem.forceActiveFocus()
         }
     }
 
 
+    Component.onCompleted: {
+        setTimeout(() => {
+                       if (app.playlist.tryPlay(0, -1)) {
+                           sideBar.gotoPage(3)
+                       } else {
+                           app.latest(1)
+                           mpvPage.visible = false
+                       }
+                   }, 100)
+    }
 
 
 
@@ -322,8 +321,7 @@ Window {
         sequence: "Ctrl+W"
         onActivated:
         {
-            if (!pipMode)
-            {
+            if (!pipMode) {
                 app.updateTimeStamp()
                 Qt.quit()
             }

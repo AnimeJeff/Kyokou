@@ -11,11 +11,12 @@
 #include <QFontDatabase>
 #include <QtPlugin>
 
-#include "Mpv/mpvObject.h"
+#include "utils/errorhandler.h"
+
+#include "player/mpvObject.h"
 #include "application.h"
 
-#include "Components/errorhandler.h"
-#include "Components/logger.h"
+// #include "utils/logger.h"
 //qputenv("QT_DEBUG_PLUGINS", QByteArray("1"));
 
 void setOneInstance();void testNetwork();
@@ -26,14 +27,11 @@ int main(int argc, char *argv[]){
     QQuickWindow::setGraphicsApi(QSGRendererInterface::OpenGLRhi);
     QGuiApplication app(argc, argv);
 
-
-
-
-
+    NetworkClient::init ();
     Application application(QString::fromLocal8Bit (argv[1]));
+
     //Logger logger;
     //logger.init ();
-
 
     QQmlApplicationEngine engine;
 
@@ -51,10 +49,8 @@ int main(int argc, char *argv[]){
 
 
     qmlRegisterType<MpvObject>("MpvPlayer", 1, 0, "MpvObject");
-
     engine.rootContext ()->setContextProperty("app",&application);
     engine.rootContext ()->setContextProperty("errorHandler", &ErrorHandler::instance ());
-
 
     const QUrl url(QStringLiteral("qrc:src/qml/main.qml"));
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,

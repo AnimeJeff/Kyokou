@@ -1,88 +1,61 @@
 #pragma once
 #include <QAbstractListModel>
 #include <QObject>
-#include <Components/cursor.h>
-#include "Models/searchresultsmodel.h"
-#include "Models/downloadmodel.h"
-#include "Models/playlistmodel.h"
-#include "Models/librarymodel.h"
-#include "showmanager.h"
+#include "utils/cursor.h"
 
-#include "Providers/showprovider.h"
+#include "downloader/downloadmanager.h"
+#include "player/playlistmanager.h"
+#include "core/librarymanager.h"
+#include "core/providermanager.h"
+#include "core/searchresultmanager.h"
+#include "core/showmanager.h"
 
-class Application: public QAbstractListModel
+
+class Application: public QObject
 {
     Q_OBJECT
-    Q_PROPERTY(ShowManager *currentShow READ getCurrentShow CONSTANT)
-    Q_PROPERTY(int currentProviderIndex READ getCurrentProviderIndex WRITE setCurrentProviderIndex NOTIFY currentProviderIndexChanged)
-    Q_PROPERTY(int currentShowTypeIndex READ getCurrentShowTypeIndex WRITE setCurrentShowTypeIndex NOTIFY currentShowTypeIndexChanged)
-    Q_PROPERTY(QVariant availableShowTypes READ getAvailableShowTypes NOTIFY currentProviderIndexChanged)
-
-    Q_PROPERTY(Cursor *cursor READ cursor CONSTANT)
-    Q_PROPERTY(PlaylistModel *playlist READ playlistModel CONSTANT)
-    Q_PROPERTY(LibraryModel *library READ libraryModel CONSTANT)
-    Q_PROPERTY(DownloadModel *downloader READ downloadModel CONSTANT)
-    Q_PROPERTY(SearchResultsModel *explorer READ searchResultsModel CONSTANT)
+    Q_PROPERTY(ProviderManager     *providerManager READ getProviderManager      CONSTANT)
+    Q_PROPERTY(ShowManager         *currentShow     READ getCurrentShow          CONSTANT)
+    Q_PROPERTY(SearchResultManager *explorer        READ getSearchResultsManager CONSTANT)
+    Q_PROPERTY(LibraryManager      *library         READ getLibrary              CONSTANT)
+    Q_PROPERTY(PlaylistManager     *playlist        READ getPlaylist             CONSTANT)
+    Q_PROPERTY(DownloadManager     *downloader      READ getDownloader           CONSTANT)
+    Q_PROPERTY(Cursor              *cursor          READ getCursor               CONSTANT)
 private:
-    SearchResultsModel *searchResultsModel() { return &m_searchResultsModel; }
-    SearchResultsModel m_searchResultsModel{this};
-    DownloadModel *m_downloader = nullptr;
-    DownloadModel *downloadModel() { return m_downloader; }
-    LibraryModel m_libraryModel{this};
-    LibraryModel *libraryModel() { return &m_libraryModel; }
-    PlaylistModel m_playlist;
-    PlaylistModel *playlistModel() { return &m_playlist; }
-    Cursor m_cursor {this};
-    Cursor *cursor() { return &m_cursor; }
+    ProviderManager     *getProviderManager()      { return &m_providerManager; }
+    ShowManager         *getCurrentShow()          { return &m_showManager; }
+    SearchResultManager *getSearchResultsManager() { return &m_searchResultManager; }
+    LibraryManager      *getLibrary()              { return &m_libraryManager; }
+    PlaylistManager     *getPlaylist()             { return &m_playlistManager; }
+    DownloadManager     *getDownloader()           { return m_downloadManager; }
+    Cursor              *getCursor()               { return &m_cursor; }
 
-    ShowManager m_showManager {this};
-    ShowManager *getCurrentShow() { return &m_showManager; };
-
-    QList<ShowProvider*> m_providers;
-    QHash<QString, ShowProvider*> m_providersMap;
-    ShowProvider *m_currentSearchProvider;
-
-    int getCurrentProviderIndex() const { return m_currentProviderIndex; }
-    void setCurrentProviderIndex(int index);;
-    int m_currentProviderIndex = -1;
-
-    void setCurrentShowTypeIndex(int index);;
-    int getCurrentShowTypeIndex() const { return m_currentShowTypeIndex; }
-    int m_currentShowTypeIndex = 0;
-
-
-    QList<int> m_availableTypes;
-    QVariant getAvailableShowTypes() {
-        QStringList stringTypes = {"Movie", "Tv Series", "Variety", "Anime", "Documentary", "None"};
-        QStringList availableTypes;
-        for (auto type : m_availableTypes){
-            availableTypes.push_back (stringTypes[type - 1]);
-        }
-        return QVariant::fromValue(availableTypes);
-    }
+    ProviderManager     m_providerManager{this};
+    SearchResultManager m_searchResultManager{this};
+    LibraryManager      m_libraryManager{this};
+    PlaylistManager     m_playlistManager{this};
+    DownloadManager    *m_downloadManager;
+    Cursor              m_cursor {this};
+    ShowManager         m_showManager {this};
 private:
     Application(const Application &) = delete;
     Application &operator=(const Application &) = delete;
 
 public:
-    Q_INVOKABLE void cycleProviders();
     Q_INVOKABLE void search(const QString& query, int page);
     Q_INVOKABLE void latest(int page);
     Q_INVOKABLE void popular(int page);
     Q_INVOKABLE void loadShow(int index, bool fromWatchList);
+    Q_INVOKABLE void playFromEpisodeList(int index);
+    Q_INVOKABLE void continueWatching();
     Q_INVOKABLE void addCurrentShowToLibrary(int listType);
     Q_INVOKABLE void removeCurrentShowFromLibrary();
-    Q_INVOKABLE void playFromEpisodeList(int index);
-
-    Q_INVOKABLE void continueWatching();
     Q_INVOKABLE void downloadCurrentShow(int startIndex, int count = 1);;
     Q_INVOKABLE void updateTimeStamp();
-signals:
-    void isLoadingChanged(void);
-    void currentShowTypeIndexChanged(void);
-    void currentProviderIndexChanged(void);
+
 private slots:
-    void updateLastWatchedIndex();
+    Q_SLOT void updateLastWatchedIndex();
+
 
 public:
     Application(Application &&) = delete;
@@ -91,11 +64,5 @@ public:
     ~Application();
 
 private:
-    enum {
-        NameRole = Qt::UserRole,
-        // IconRole, //TODO add icons next to providers
-    };
-    int rowCount(const QModelIndex &parent) const override;
-    QVariant data(const QModelIndex &index, int role) const override;
-    QHash<int, QByteArray> roleNames() const override;
+
 };

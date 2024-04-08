@@ -1,95 +1,58 @@
 
 #include "application.h"
-#include "Components/errorhandler.h"
-#include "Providers/iyf.h"
-#include "Providers/testprovider.h"
-#include "Providers/kimcartoon.h"
-#include "Providers/gogoanime.h"
-#include "Providers/nivod.h"
-#include "Providers/haitu.h"
-#include "Providers/allanime.h"
-#include <QtConcurrent>
-
-Application::Application(const QString &launchPath) : m_playlist(launchPath, this)
-{
-    NetworkClient::init ();
-
-    // QDir pluginsDir(qApp->applicationDirPath());
-    // pluginsDir.cd("plugins");
-    // foreach (QString fileName, pluginsDir.entryList(QDir::Files)) {
-    //     QPluginLoader loader(pluginsDir.absoluteFilePath(fileName));
-    //     QObject *plugin = loader.instance();
-    //     if (plugin) {
-    //         ShowProvider *provider = qobject_cast<ShowProvider *>(plugin);
-    //         if (provider) {
-    //             m_providers.push_back (provider);
-    //         }
-    //     } else {
-    //         qDebug() << "Could not load plugin:" << loader.errorString();
-    //     }
-    // }
+#include "utils/errorhandler.h"
 
 
-    m_providers =
-        {
-            new IyfProvider,
-            new AllAnime,
-            new Haitu,
-            new Nivod,
-            new Gogoanime,
-            new Kimcartoon,
-            // #ifdef QT_DEBUG
-            //             new TestProvider
-            // #endif
-        };
 
-    for (ShowProvider* provider : m_providers) {
-        m_providersMap.insert(provider->name (), provider);
-    }
-    setCurrentProviderIndex(0);
+Application::Application(const QString &launchPath) {
 
     QString N_m3u8DLPath = QDir::cleanPath(QCoreApplication::applicationDirPath() + QDir::separator() + "N_m3u8DL-CLI_v3.0.2.exe");
     if (QFileInfo::exists (N_m3u8DLPath)) {
-        m_downloader = new DownloadModel;
+        m_downloadManager = new DownloadManager(this);
     }
-    connect(&m_playlist, &PlaylistModel::currentIndexChanged, this, &Application::updateLastWatchedIndex);
 
+    if (!launchPath.isEmpty ()) {
+        QUrl url = QUrl::fromUserInput(launchPath);
+        m_playlistManager.openUrl (url, false);
+    }
+
+    QObject::connect(&m_playlistManager, &PlaylistManager::currentIndexChanged, this, &Application::updateLastWatchedIndex);
 }
 
 Application::~Application() {
-    NetworkClient::cleanUp ();
-    qDeleteAll (m_providers);
-    if (m_downloader)
-        delete m_downloader;
+    // NetworkClient::cleanUp ();
+    if (m_downloadManager)
+        delete m_downloadManager;
 }
 
 void Application::search(const QString &query, int page) {
-    int type = m_availableTypes[m_currentShowTypeIndex];
-    m_searchResultsModel.search (query, page, type, m_currentSearchProvider);
+    int type = m_providerManager.getCurrentSearchType();
+    auto provider = m_providerManager.getCurrentSearchProvider();
+    m_searchResultManager.search (query, page, type, provider);
 }
 
 void Application::latest(int page) {
-    int type = m_availableTypes[m_currentShowTypeIndex];
-    m_searchResultsModel.latest (page, type, m_currentSearchProvider);
+    int type = m_providerManager.getCurrentSearchType();
+    auto provider = m_providerManager.getCurrentSearchProvider();
+    m_searchResultManager.latest(page, type, provider);
 }
 
 void Application::popular(int page) {
-    int type = m_availableTypes[m_currentShowTypeIndex];
-    m_searchResultsModel.popular (page,type,m_currentSearchProvider);
+    int type = m_providerManager.getCurrentSearchType();
+    auto provider = m_providerManager.getCurrentSearchProvider();
+    m_searchResultManager.popular(page, type, provider);
 }
 
 void Application::loadShow(int index, bool fromWatchList) {
-
     if (fromWatchList) {
-        auto showJson = m_libraryModel.getShowJsonAt(index);
+        auto showJson = m_libraryManager.getShowJsonAt(index);
         if (showJson.isEmpty ()) return;
         QString providerName = showJson["provider"].toString ();
-        if (!m_providersMap.contains(providerName)) {
-            ErrorHandler::instance().showWarning (providerName + " does not exist", "Show Error");
+        auto provider = m_providerManager.getProvider(providerName);
+        if (!provider) {
+            ErrorHandler::instance().show(providerName + " does not exist", "Show Error");
             return;
         }
-        auto provider = m_providersMap[providerName];
-
         QString title = showJson["title"].toString ();
         QString link = showJson["link"].toString ();
         QString coverUrl = showJson["cover"].toString ();
@@ -97,24 +60,28 @@ void Application::loadShow(int index, bool fromWatchList) {
         int type = showJson["type"].toInt ();
         auto show = ShowData(title, link, coverUrl, provider, "", type);
         auto timeStamp = showJson["timeStamp"].toInt (0);
-        int listType = m_libraryModel.getCurrentListType();
+        int listType = m_libraryManager.getCurrentListType();
         m_showManager.setShow(show, {listType, lastWatchedIndex, timeStamp});
     } else {
-        auto show = m_searchResultsModel.at(index);
-        auto lastWatchedInfo = m_libraryModel.getLastWatchInfo (show.link);
+        auto show = m_searchResultManager.at(index);
+        auto lastWatchedInfo = m_libraryManager.getLastWatchInfo (show.link);
         m_showManager.setShow(show, lastWatchedInfo);
     }
 }
 
-void Application::addCurrentShowToLibrary(int listType)
-{
-    m_libraryModel.add (m_showManager.getShow (), listType); //either changes the list type or adds to library
+void Application::addCurrentShowToLibrary(int listType) {
+    m_libraryManager.add (m_showManager.getShow (), listType); // Either changes the list type or adds to library
     m_showManager.setListType(listType);
 }
 
 void Application::removeCurrentShowFromLibrary() {
-    m_libraryModel.remove (m_showManager.getShow ());
+    m_libraryManager.remove (m_showManager.getShow ());
     m_showManager.setListType(-1);
+}
+
+void Application::downloadCurrentShow(int startIndex, int count) {
+    startIndex = m_showManager.correctIndex(startIndex);
+    m_downloadManager->downloadShow (m_showManager.getShow (), startIndex, count); //TODO
 }
 
 void Application::playFromEpisodeList(int index) {
@@ -123,8 +90,8 @@ void Application::playFromEpisodeList(int index) {
     index = m_showManager.correctIndex(index);
 
 
-    m_playlist.replaceCurrentPlaylist (showPlaylist);
-    m_playlist.tryPlay(-1, index);
+    m_playlistManager.replaceCurrentPlaylist (showPlaylist);
+    m_playlistManager.tryPlay(-1, index);
 }
 
 void Application::continueWatching() {
@@ -133,89 +100,37 @@ void Application::continueWatching() {
     playFromEpisodeList(index);
 }
 
-void Application::downloadCurrentShow(int startIndex, int count) {
-    startIndex = m_showManager.correctIndex(startIndex);
-    m_downloader->downloadShow (m_showManager.getShow (), startIndex, count); //TODO
-}
 
 void Application::updateTimeStamp() {
     // Update the last play time
-    auto lastPlaylist = m_playlist.getCurrentPlaylist();
+    auto lastPlaylist = m_playlistManager.getCurrentPlaylist();
     if (!lastPlaylist) return;
     auto time = MpvObject::instance ()->time ();
-    qDebug() << "Log (App): Attempting to updating time stamp for" << lastPlaylist->link << "to" << time;
+    qDebug() << "Log (App)        : Attempting to updating time stamp for" << lastPlaylist->link << "to" << time;
 
     if (lastPlaylist->isLoadedFromFolder ()){
         lastPlaylist->updateHistoryFile (time);
     } else {
         if (time > 0.85 * MpvObject::instance ()->duration () && lastPlaylist->currentIndex + 1 < lastPlaylist->size ()) {
-            qDebug() << "Log (App): Setting to next episode" << lastPlaylist->link;
-            m_libraryModel.updateLastWatchedIndex (lastPlaylist->link, lastPlaylist->currentIndex + 1);
+            qDebug() << "Log (App)        : Setting to next episode" << lastPlaylist->link;
+            m_libraryManager.updateLastWatchedIndex (lastPlaylist->link, ++lastPlaylist->currentIndex);
         }
         else {
-            m_libraryModel.updateTimeStamp (lastPlaylist->link, time);
+            m_libraryManager.updateTimeStamp (lastPlaylist->link, time);
         }
     }
 }
 
 void Application::updateLastWatchedIndex() {
-    PlaylistItem *currentPlaylist = m_playlist.getCurrentPlaylist();
+    PlaylistItem *currentPlaylist = m_playlistManager.getCurrentPlaylist();
     auto showPlaylist = m_showManager.getPlaylist ();
     if (!showPlaylist || !currentPlaylist) return;
 
     if (showPlaylist->link == currentPlaylist->link)
         m_showManager.updateLastWatchedIndex ();
 
-    m_libraryModel.updateLastWatchedIndex (currentPlaylist->link, currentPlaylist->currentIndex);
+    m_libraryManager.updateLastWatchedIndex (currentPlaylist->link, currentPlaylist->currentIndex);
 }
 
 
 
-void Application::setCurrentProviderIndex(int index) {
-    if (index == m_currentProviderIndex) return;
-    int currentType = m_availableTypes.isEmpty () ? -1 : m_availableTypes[m_currentShowTypeIndex];
-    m_currentProviderIndex = index;
-    m_currentSearchProvider = m_providers.at (index);
-    m_availableTypes = m_currentSearchProvider->getAvailableTypes ();
-    emit currentProviderIndexChanged();
-    int searchTypeIndex =  m_availableTypes.indexOf (currentType);
-    m_currentShowTypeIndex = searchTypeIndex == -1 ? 0 : searchTypeIndex;
-    emit currentShowTypeIndexChanged();
-}
-
-void Application::setCurrentShowTypeIndex(int index) {
-    if (index == m_currentShowTypeIndex) return;
-    m_currentShowTypeIndex = index;
-    emit currentShowTypeIndexChanged ();
-}
-
-void Application::cycleProviders() {
-    setCurrentProviderIndex((m_currentProviderIndex + 1) % m_providers.count ());
-}
-
-int Application::rowCount(const QModelIndex &parent) const{
-    return m_providers.count ();
-}
-
-QVariant Application::data(const QModelIndex &index, int role) const{
-    if (!index.isValid())
-        return QVariant();
-    auto provider = m_providers.at(index.row ());
-    switch (role){
-    case NameRole:
-        return provider->name ();
-        break;
-    // case IconRole:
-    // break;
-    default:
-        break;
-    }
-    return QVariant();
-}
-
-QHash<int, QByteArray> Application::roleNames() const{
-    QHash<int, QByteArray> names;
-    names[NameRole] = "text";
-    // names[IconRole] = "icon";
-    return names;
-}

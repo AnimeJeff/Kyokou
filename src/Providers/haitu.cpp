@@ -16,8 +16,7 @@ QList<ShowData> Haitu::latest(int page, int type)
     return filterSearch(QString::number(type), "time", page);
 }
 
-QList<ShowData> Haitu::filterSearch(const QString &query, const QString &sortBy, int page)
-{
+QList<ShowData> Haitu::filterSearch(const QString &query, const QString &sortBy, int page) {
 
     QString url = hostUrl + (sortBy == "--" ? "vodsearch/": "vodshow/")
                + query + "--" + sortBy + "------" + QString::number(page) + "---.html";

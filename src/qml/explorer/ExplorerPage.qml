@@ -28,7 +28,7 @@ Item {
         }
         delegate: ShowItem {
             title: model.title
-            cover:model.cover
+            cover: model.cover
             width: showGridView.cellWidth
             height: showGridView.cellHeight
             MouseArea{
@@ -91,7 +91,7 @@ Item {
                 break;
             case Qt.Key_Tab:
                 searchBar.providersBox.popup.close()
-                app.cycleProviders()
+                app.providerManager.cycleProviders()
                 event.accepted = true
                 break;
             case Qt.Key_Enter:

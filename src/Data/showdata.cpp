@@ -1,5 +1,5 @@
-#include "Data/showdata.h"
-#include "Data/playlistitem.h"
+#include "data/showdata.h"
+#include "data/playlistitem.h"
 #include "Providers/showprovider.h"
 
 

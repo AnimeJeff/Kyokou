@@ -13,7 +13,7 @@ Item {
     }
     focus: true
     property real aspectRatio: root.width/root.height
-    property real labelFontSize: 24 * root.fontSizeMultiplier
+    property real labelFontSize: 24 * (root.maximised ? 1.6 : 1)
     property var currentShow: app.currentShow
 
 
@@ -68,8 +68,8 @@ Item {
 
     Image {
         id: posterImage
-        source: app.currentShow.exists ? currentShow.coverUrl : "qrc:/resources/images/error_image.png"
-        onStatusChanged: if (posterImage.status === Image.Null) source = "qrc:/resources/images/error_image.png"
+        source: currentShow.coverUrl
+        onStatusChanged: if (posterImage.status === Image.Error) source = "qrc:/resources/images/error_image.png"
 
         anchors{
             top: parent.top
@@ -87,11 +87,13 @@ Item {
         font.bold: true
         color: "white"
         wrapMode: Text.Wrap
-        font.pixelSize: 26 * root.fontSizeMultiplier
+        font.pixelSize: 26 * (root.maximised ? 1.6 : 1)
+        height: contentHeight
         anchors {
             top: parent.top
             left:posterImage.right
             right: episodeList.left
+            leftMargin: 2
         }
         MouseArea{
             anchors.fill: parent
@@ -99,7 +101,7 @@ Item {
             cursorShape: Qt.PointingHandCursor
         }
 
-        height: contentHeight
+
     }
 
     Flickable{
@@ -112,7 +114,11 @@ Item {
             left: posterImage.right
             right: episodeList.left
             top: titleText.bottom
-            bottom: continueWatchingButton.visible ? posterImage.bottom : libraryComboBox.bottom
+            bottom: continueWatchingButton.top
+            bottomMargin: 5
+            leftMargin: 2
+            rightMargin: 2
+            topMargin: 2
         }
 
         Text {
@@ -122,7 +128,7 @@ Item {
             height: contentHeight
             color: "white"
             wrapMode: Text.Wrap
-            font.pixelSize: 22 * root.fontSizeMultiplier
+            font.pixelSize: 24 * (root.maximised ? 1.6 : 1)
         }
     }
 
@@ -177,31 +183,21 @@ Item {
         fontSize: 20
         radius: height
         anchors {
-            top: descriptionBox.bottom
+            top: libraryComboBox.top
+            bottom: libraryComboBox.bottom
             horizontalCenter: descriptionBox.horizontalCenter
-            topMargin: 10
+
         }
         width: descriptionBox.width * 0.5
-        height: libraryComboBox.height
+
     }
-    Keys.enabled: true
-    Keys.onPressed: (event) => {
-                        switch (event.key){
-                            case Qt.Key_Space:
-                            app.continueWatching();
-                            break
-                            case Qt.Key_Escape:
-                            infoPage.forceActiveFocus()
-                            break
-                        }
-                    }
+
 
     ColumnLayout{
         anchors {
             top: libraryComboBox.bottom
             left: parent.left
             right: episodeList.left
-
         }
 
         Text {
@@ -210,11 +206,9 @@ Item {
             text: `<b>SCORE:</b> <font size="-0.5">${currentShow.rating}</font>`
             font.pixelSize: labelFontSize
             Layout.preferredHeight: implicitHeight
-            //Layout.fillHeight: true
             Layout.fillWidth: true
-
             color: "white"
-
+            visible: text.length !== 0
         }
 
         Text {
@@ -224,9 +218,7 @@ Item {
             text: `<b>STATUS:</b> <font size="-0.5">${currentShow.status}</font>`
             font.pixelSize: labelFontSize
             color: "white"
-
-
-
+            visible: text.length !== 0
             // Layout.preferredWidth: 2
             Layout.preferredHeight: implicitHeight
             //Layout.fillHeight: true
@@ -246,6 +238,7 @@ Item {
             Layout.preferredHeight: implicitHeight
             //Layout.fillHeight: true
             Layout.fillWidth: true
+            visible: text.length !== 0
         }
 
         Text {
@@ -260,6 +253,7 @@ Item {
             Layout.preferredHeight: implicitHeight
             //Layout.fillHeight: true
             Layout.fillWidth: true
+            visible: text.length !== 0
         }
         Text {
             id:updateTimeText
@@ -271,6 +265,7 @@ Item {
 
             Layout.preferredHeight: implicitHeight
             Layout.fillWidth: true
+            visible: text.length !== 0
         }
         RowLayout {
             Layout.preferredHeight: implicitHeight
@@ -279,35 +274,37 @@ Item {
             // Layout.preferredHeight: implicitHeight
             Text {
                 text: "<b>GENRE(S):</b>"
-                font.pixelSize: 24 * root.fontSizeMultiplier
+                font.pixelSize: 24 * (root.maximised ? 1.6 : 1)
                 color: "white"
                 Layout.fillHeight: true
             }
             Text {
                 text: currentShow.genresString
-                font.pixelSize: 23 * root.fontSizeMultiplier
+                font.pixelSize: 23.5 * (root.maximised ? 1.6 : 1)
                 color: "white"
                 wrapMode: Text.Wrap
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                visible: text.length !== 0
 
             }
         }
-
-        // Text {
-        //     text: `<b>GENRE(S):</b> <font size="-1.0">${currentShow.genresString}</font>`
-        //     color: "white"
-        //     font.bold: true
-        //     font.pixelSize: labelFontSize
-
-        //     Layout.fillWidth: true
-        // }
-
-
     }
 
 
+    Keys.enabled: true
+    Keys.onPressed: (event) => {
+                        switch (event.key){
+                            case Qt.Key_Space:
+                            app.continueWatching();
+                            break
+                            case Qt.Key_Escape:
+                            infoPage.forceActiveFocus()
+                            break
+                        }
+                    }
 
+    Component.onCompleted: infoPage.forceActiveFocus()
 
 
 }

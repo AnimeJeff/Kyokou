@@ -24,15 +24,17 @@ Rectangle{
     CustomComboBox {
         id:listTypeComboBox
         anchors {
+            topMargin: 5
+            leftMargin: 5
             left: parent.left
             top: parent.top
         }
-
-
         width: parent.width * 0.2
         height: parent.height * 0.07
         fontSize: 20
-
+        text: "text"
+        currentIndex: app.library.listType
+        onActivated: (index) => {app.library.listType = index}
         model: ListModel{
             ListElement { text: "Watching" }
             ListElement { text: "Planned" }
@@ -40,9 +42,6 @@ Rectangle{
             ListElement { text: "Dropped" }
             ListElement { text: "Completed" }
         }
-        text: "text"
-        currentIndex: app.library.listType
-        onActivated: (index) => {app.library.listType = index}
 
     }
 

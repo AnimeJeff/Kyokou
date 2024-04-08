@@ -1,11 +1,11 @@
 #pragma once
 
 
-#include <QAbstractListModel>
 #include <QDir>
-#include <QStandardItemModel>
-#include <QtConcurrent>
 #include <memory>
+#include <QMutex>
+#include <QRegularExpression>
+#include <QUrl>
 
 class ShowProvider;
 class Video;
@@ -75,7 +75,7 @@ public:
     void disuse() {
         --useCount;
         if (useCount == 0) {
-            //qDebug() << "Log (Downloader): Playlist deleted by downloader" ;
+            //qDebug() << "Log (Downloader) : Playlist deleted by downloader" ;
             delete this;
         }
     }

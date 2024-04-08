@@ -76,10 +76,10 @@ RowLayout {
         Layout.preferredWidth: 2
         contentRadius: 20
         fontSize: 20
-        model: app
-        currentIndex: app.currentProviderIndex
+        model: app.providerManager
+        currentIndex: app.providerManager.currentProviderIndex
         activeFocusOnTab:false
-        onActivated: (index) => {app.currentProviderIndex = index}
+        onActivated: (index) => {app.providerManager.currentProviderIndex = index}
         text: "text"
 
     }
@@ -92,10 +92,10 @@ RowLayout {
         contentRadius: 20
         fontSize: 20
         activeFocusOnTab:false
-        model: app.availableShowTypes
-        currentIndex: app.currentShowTypeIndex
+        model: app.providerManager.availableShowTypes
+        currentIndex: app.providerManager.currentSearchTypeIndex
         currentIndexColor: "red"
-        onActivated: (index) => { app.currentShowTypeIndex = index}
+        onActivated: (index) => { app.providerManager.currentSearchTypeIndex = index}
     }
 
 

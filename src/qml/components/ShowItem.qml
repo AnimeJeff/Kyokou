@@ -8,16 +8,16 @@ Item {
 
     Image {
         id: showImage
-        source:  cover
+        // source:  cover
         anchors {
             top: parent.top
             left: parent.left
             right: parent.right
             margins: 2
         }
-        height: width * 319/225
+        height: width * (319/225)
         onStatusChanged: {
-            if (showImage.status != Image.Loading) loadingAnimation.destroy()
+            // if (showImage.status != Image.Loading) loadingAnimation.destroy()
             if (showImage.status === Image.Error) source = "qrc:/resources/images/error_image.png"
         }
         AnimatedImage {

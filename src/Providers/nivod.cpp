@@ -1,5 +1,7 @@
 #include "nivod.h"
 
+#include <QCryptographicHash>
+
 QList<ShowData> Nivod::filterSearch(int page, const QString &sortBy, int type,
                                     const QString &regionId,
                                     const QString &langId,
@@ -12,11 +14,9 @@ QList<ShowData> Nivod::filterSearch(int page, const QString &sortBy, int type,
                                    {"region_id", "0"},
                                    {"lang_id", "0"},
                                    {"year_range", " "},
-                                   {"start", QString::number((page - 1) * 20)}};
+                                   {"start", QString::number((page-1) * 20)}};
 
-    QJsonArray responseJson =
-        invokeAPI("https://api.nivodz.com/show/filter/WEB/3.2", data)["list"]
-            .toArray();
+    QJsonArray responseJson = invokeAPI("https://api.nivodz.com/show/filter/WEB/3.2", data)["list"].toArray();
     return parseShows(responseJson);
 }
 
@@ -24,12 +24,11 @@ QList<ShowData> Nivod::search(QString query, int page, int type) {
     if (query.isEmpty())
         return QList<ShowData>();
     QMap<QString, QString> data = {{"keyword", query},
-                                   {"start", QString::number((page - 1) * 20)},
+                                   {"start", QString::number(--page * 20)},
                                    {"cat_id", "1"},
                                    {"keyword_type", "0"}};
-    QJsonArray responseJson =
-        invokeAPI("https://api.nivodz.com/show/search/WEB/3.2", data)["list"]
-            .toArray();
+
+    QJsonArray responseJson = invokeAPI("https://api.nivodz.com/show/search/WEB/3.2", data)["list"].toArray();
     return parseShows(responseJson);
 }
 
@@ -73,8 +72,7 @@ QList<ShowData> Nivod::parseShows(const QJsonArray &showArrayJson) {
 
 QJsonObject Nivod::getInfoJson(const QString &link) const {
     return invokeAPI("https://api.nivodz.com/show/detail/WEB/3.3",
-                   {{"show_id_code", link}, {"episode_id", "0"}})["entity"]
-        .toObject();
+                   {{"show_id_code", link}, {"episode_id", "0"}})["entity"].toObject();
 }
 
 void Nivod::loadDetails(ShowData &show) const {
@@ -149,8 +147,10 @@ QJsonObject Nivod::invokeAPI(const QString &url, const QMap<QString, QString> &d
                    "device_code=web&versioncode=1&oid=" +
                    _oid + "&sign=" + sign;
 
-    auto response = NetworkClient::post(postUrl, {{"referer", "https://www.nivod4.tv"}}, data).body;
-    auto decryptedResponse = decryptedByDES(response.toStdString ());
+    auto response = NetworkClient::post(postUrl, m_headers, data);
+    if (response.code != 200)
+        return QJsonObject{};
+    auto decryptedResponse = decryptedByDES(response.body.toStdString ());
     QJsonParseError error;
     QJsonDocument jsonData = QJsonDocument::fromJson(decryptedResponse.c_str(), &error);
     if (error.error != QJsonParseError::NoError) {

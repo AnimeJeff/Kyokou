@@ -1,6 +1,7 @@
 #pragma once
 #include "showprovider.h"
-#include "Data/showdata.h"
+#include "data/showdata.h"
+#include <QJsonArray>
 
 class Nivod: public ShowProvider
 {
@@ -30,12 +31,13 @@ private:
     std::string decryptedByDES(const std::string &input) const;
 
 private:
+    QMap<QString, QString> m_headers{ {"referer", "https://www.nivod5.tv"} };
     // const QString _HOST_CONFIG_KEY = "2x_Give_it_a_shot";
     const QString _QUERY_PREFIX = "__QUERY::";
     const QString _BODY_PREFIX = "__BODY::";
     const QString _SECRET_PREFIX = "__KEY::";
-    const QString _mts = "1690816442085";
-    const QString _oid = "a376c2407d77f46d0a7af5e4f20e213b67af3d346690b805";
+    const QString _mts = "1712541606828";
+    const QString _oid = "fc3d2a97c1aae488ac22c2072b4a6abe923be124e8f35937";
     const QMap<QString, QString> queryMap =
         {
             {"_ts", _mts},

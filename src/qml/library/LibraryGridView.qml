@@ -10,7 +10,7 @@ MediaGridView {
     property int heldZ: z + 1000
     onContentYChanged: watchListViewLastScrollY = contentY
 
-    //https://doc.qt.io/qt-6/qtquick-tutorials-dynamicview-dynamicview3-example.html
+    // https://doc.qt.io/qt-6/qtquick-tutorials-dynamicview-dynamicview3-example.html
     model: DelegateModel {
         id: visualModel
         model: app.library
@@ -36,15 +36,13 @@ MediaGridView {
                 drag.target: held ? content : undefined
                 drag.axis: Drag.XAndYAxis
                 cursorShape: drag.active ? Qt.ClosedHandCursor : Qt.PointingHandCursor
-
                 property bool held: false
-
 
                 onClicked: (mouse) => {
                                if (mouse.button === Qt.LeftButton) {
                                    app.loadShow(index, true)
                                } else {
-                                   contextMenu.showIndex = index
+                                   contextMenu.index = index
                                    contextMenu.popup()
                                }
                            }
@@ -99,36 +97,47 @@ MediaGridView {
 
     Menu {
         id: contextMenu
-        property int showIndex
+        property int index
         MenuItem {
             text: "Remove from library"
             onTriggered:  {
-                app.library.removeAt(contextMenu.showIndex, -1)
+                app.library.removeAt(contextMenu.index)
             }
         }
 
         Menu {
-            id: changeListTypeMenu
             title: "Change list type"
-            Connections{
-                target: app.library
-                function onLayoutChanged(){
-                    instantiator.model = app.library.getChangeableListTypes()
-                }
+            MenuItem {
+                visible: app.library.listType !== 0
+                text: "Watching"
+                onTriggered: app.library.changeListTypeAt(contextMenu.index, 0, -1)
+                height: visible ? implicitHeight : 0
+            }
+            MenuItem {
+                visible: app.library.listType !== 1
+                text: "Planned"
+                onTriggered: app.library.changeListTypeAt(contextMenu.index, 1, -1)
+                height: visible ? implicitHeight : 0
+            }
+            MenuItem {
+                visible: app.library.listType !== 2
+                text: "On Hold"
+                onTriggered: app.library.changeListTypeAt(contextMenu.index, 2, -1)
+                height: visible ? implicitHeight : 0
+            }
+            MenuItem {
+                visible: app.library.listType !== 3
+                text: "Dropped"
+                onTriggered: app.library.changeListTypeAt(contextMenu.index, 3, -1)
+                height: visible ? implicitHeight : 0
+            }
+            MenuItem {
+                visible: app.library.listType !== 4
+                text: "Completed"
+                onTriggered: app.library.changeListTypeAt(contextMenu.index, 4, -1)
+                height: visible ? implicitHeight : 0
             }
 
-            Instantiator {
-                id:instantiator
-                model: app.library.changeableListTypes
-                delegate: MenuItem {
-                    text: app.library.displayableListType(modelData)
-                    onTriggered: app.library.changeListTypeAt(contextMenu.showIndex, modelData, -1)
-                }
-                onObjectAdded: (index, object) => changeListTypeMenu.insertItem(index, object)
-                onObjectRemoved: (index, object) => changeListTypeMenu.removeItem(object)
-
-
-            }
         }
     }
 

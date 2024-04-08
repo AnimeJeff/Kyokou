@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Providers/Components/functions.h"
-#include "Common/network.h"
+#include "Providers/utils/functions.h"
+#include "network/network.h"
 
 class VideoExtractor
 {

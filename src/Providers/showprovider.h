@@ -1,13 +1,12 @@
 #pragma once
-#include "Common/myexception.h"
-#include "Common/network.h"
-#include "Components/functions.h"
+#include "network/myexception.h"
+#include "network/network.h"
+#include "Providers/utils/functions.h"
 
-#include "Data/showdata.h"
-#include "Data/playlistitem.h"
-#include "Data/video.h"
-#include <QFutureWatcher>
-#include <QNetworkReply>
+#include "data/showdata.h"
+#include "data/playlistitem.h"
+#include "data/video.h"
+
 #include <QString>
 
 

@@ -3,7 +3,7 @@
 #include "Providers/Extractors/gogocdn.h"
 #include "showprovider.h"
 #include <QJsonArray>
-#include <Data/video.h>
+#include <data/video.h>
 
 class AllAnime : public ShowProvider
 {
@@ -22,35 +22,7 @@ public:
         return {ShowData::ANIME};
     };
     
-    QList<ShowData> search(QString query, int page, int type = 0) override {
-        QString url = "https://api.allanime.day/api?variables={\"search\":{\"query\":\""
-                            + QUrl::toPercentEncoding(query) + "\"},\"limit\":26,\"page\":"
-                            + QString::number(page)
-                            + ",\"translationType\":\"sub\",\"countryOrigin\":\"ALL\"}&extensions={\"persistedQuery\":{\"version\":1,\"sha256Hash\":\"06327bc10dd682e1ee7e07b6db9c16e9ad2fd56c1b769e47513128cd5c9fc77a\"}}";
-        QList<ShowData> animes;
-        QJsonArray jsonResponse = NetworkClient::get(url, headers)
-                                      .toJson()["data"]
-                                      .toObject()["shows"]
-                                      .toObject()["edges"]
-                                      .toArray();
-
-        for (const QJsonValue& value : jsonResponse) {
-            QJsonObject animeJson = value.toObject();
-            QString coverUrl = animeJson["thumbnail"].toString();
-            coverUrl.replace("https:/", "https://wp.youtube-anime.com");
-            if (coverUrl.startsWith("images3"))
-                coverUrl = "https://wp.youtube-anime.com/aln.youtube-anime.com/" + coverUrl;
-
-            QString title = animeJson.value("name").toString();
-            QString link = animeJson.value("_id").toString();
-
-            // Adding checks for empty values if necessary
-            if (!title.isEmpty() && !link.isEmpty()) {
-                animes.emplaceBack (title, link, coverUrl, this);
-            }
-        }
-        return animes;
-    }
+    QList<ShowData> search(QString query, int page, int type = 0) override;
 
     QList<ShowData> popular(int page, int type = 0) override;;
 
@@ -90,7 +62,7 @@ public:
 
             // qInfo() .noquote()<< decryptedLink;
             // qDebug ().noquote() << endPoint.toStdString () + decryptedLink;
-            //qDebug() .noquote() << "response json \n" << QJsonDocument(jsonResponse).toJson ();
+            //qDebug() .noquote() << "response json \n" << QJsonDocument(jsonResponse).toJson();
 
             for (const QJsonValue& value : links) {
                 QJsonObject linkObject = value.toObject();

@@ -1,7 +1,7 @@
 #include "showprovider.h"
 
-#include <regex>
-
+#include <QJsonArray>
+#include <QtConcurrent>
 #pragma once
 
 class IyfProvider: public ShowProvider
@@ -37,7 +37,7 @@ public:
 private:
     QJsonObject invokeAPI(const QString &prefixUrl, const QString &params) const {
         auto url = prefixUrl + params + "&vv=" + hash(params) + "&pub=" + publicKey;
-        return NetworkClient::get (url).toJson ()["data"].toObject ()["info"].toArray ().at (0).toObject ();
+        return NetworkClient::get (url).toJson()["data"].toObject ()["info"].toArray ().at (0).toObject ();
     }
     QString hash(const QString &input) const {
         auto toHash = publicKey + "&"  + input.toLower ()+ "&"  + privateKey;
